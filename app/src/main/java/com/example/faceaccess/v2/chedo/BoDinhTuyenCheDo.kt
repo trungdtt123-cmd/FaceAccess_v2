@@ -1,68 +1,59 @@
 package com.example.faceaccess.v2.chedo
 
+/**
+ * Tầng điều khiển việc chuyển chế độ.
+ *
+ * Class này KHÔNG tự giữ state nữa.
+ *
+ * State thật nằm duy nhất tại:
+ * TrangThaiCheDoToanCuc
+ */
 class BoDinhTuyenCheDo(
     private val khiCheDoThayDoi:
         (CheDoDieuKhien) -> Unit
 ) {
 
-    private var cheDoHienTai:
-            CheDoDieuKhien =
-        CheDoDieuKhien.DIEU_HUONG
-
     /**
-     * Trả về chế độ hiện tại.
+     * Trả về chế độ hiện tại từ
+     * nguồn trạng thái toàn cục.
      */
     fun layCheDoHienTai():
             CheDoDieuKhien {
 
-        return cheDoHienTai
+        return TrangThaiCheDoToanCuc
+            .layCheDoHienTai()
     }
+
 
     /**
      * Chuyển sang chế độ kế tiếp.
      *
-     * DIEU_HUONG
-     * → MEDIA
-     * → HO_TRO
-     * → CON_TRO
-     * → DIEU_HUONG
+     * Việc thay đổi state thật được thực hiện
+     * trong TrangThaiCheDoToanCuc.
      */
     fun chuyenCheDoTiepTheo() {
 
-        cheDoHienTai =
-            when (cheDoHienTai) {
-
-                CheDoDieuKhien.DIEU_HUONG ->
-                    CheDoDieuKhien.MEDIA
-
-                CheDoDieuKhien.MEDIA ->
-                    CheDoDieuKhien.HO_TRO
-
-                CheDoDieuKhien.HO_TRO ->
-                    CheDoDieuKhien.CON_TRO
-
-                CheDoDieuKhien.CON_TRO ->
-                    CheDoDieuKhien.DIEU_HUONG
-            }
+        val cheDoMoi =
+            TrangThaiCheDoToanCuc
+                .chuyenCheDoTiepTheo()
 
         khiCheDoThayDoi(
-            cheDoHienTai
+            cheDoMoi
         )
     }
 
+
     /**
      * Đặt lại về Điều hướng.
-     *
-     * Hiện chưa sử dụng nhưng giữ API rõ ràng
-     * cho lifecycle/session sau này.
      */
     fun datLai() {
 
-        cheDoHienTai =
-            CheDoDieuKhien.DIEU_HUONG
+        val cheDoMoi =
+            TrangThaiCheDoToanCuc
+                .datLai()
 
         khiCheDoThayDoi(
-            cheDoHienTai
+            cheDoMoi
         )
     }
 }
