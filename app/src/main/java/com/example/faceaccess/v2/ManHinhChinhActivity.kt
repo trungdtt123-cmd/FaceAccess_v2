@@ -23,6 +23,8 @@ import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
+import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
+import com.example.faceaccess.v2.cuchi.huongdau.NhanDienHuongDau
 import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
 import com.example.faceaccess.v2.dichvu.DichVuTheoDoiFaceAccess
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
@@ -96,6 +98,44 @@ class ManHinhChinhActivity : AppCompatActivity() {
     }
 
 
+
+    // =========================================================
+    // DETECTOR HƯỚNG ĐẦU YAW / PITCH
+    // =========================================================
+
+    /**
+     * Checkpoint này chỉ Logcat.
+     * Chưa gán hành động Navigation / Media / Cursor.
+     */
+    private fun khoiTaoNhanDienHuongDau() {
+
+        nhanDienHuongDau =
+            NhanDienHuongDau { huong ->
+
+                val tenHuong =
+                    when (huong) {
+
+                        HuongDau.TRAI ->
+                            "TRAI"
+
+                        HuongDau.PHAI ->
+                            "PHAI"
+
+                        HuongDau.LEN ->
+                            "LEN"
+
+                        HuongDau.XUONG ->
+                            "XUONG"
+                    }
+
+                Log.d(
+                    TAG_CU_CHI_HUONG_DAU,
+                    "APP: HUONG $tenHuong"
+                )
+            }
+    }
+
+
     // =========================================================
     // MEDIAPIPE
     // =========================================================
@@ -118,6 +158,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var nhanDienMoMieng:
             NhanDienMoMieng
+
+    private lateinit var nhanDienHuongDau:
+            NhanDienHuongDau
 
 
     // =========================================================
@@ -484,6 +527,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         khoiTaoNhanDienMoMieng()
 
+        khoiTaoNhanDienHuongDau()
+
         khoiTaoXuLyKhuonMat()
 
         khoiTaoCamera()
@@ -812,6 +857,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                     thoiGianHienTai
                             )
 
+                            nhanDienHuongDau.capNhat(
+                                roll = duLieu.roll,
+                                yaw = duLieu.yaw,
+                                pitch = duLieu.pitch,
+                                thoiGianMs =
+                                    thoiGianHienTai
+                            )
+
                             nhanDienMoMieng.capNhat(
                                 doMoMieng =
                                     duLieu.doMoMieng,
@@ -834,6 +887,16 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             nhanDienNghiengDau.datLai()
 
                             nhanDienMoMieng.datLai()
+
+                            nhanDienHuongDau.datLai()
+
+                            nhanDienHuongDau.datLai()
+
+                            nhanDienHuongDau.datLai()
+
+                            nhanDienHuongDau.datLai()
+
+                            nhanDienHuongDau.datLai()
 
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = false
@@ -1609,6 +1672,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
 
         if (
+            ::nhanDienHuongDau.isInitialized
+        ) {
+
+            nhanDienHuongDau.datLai()
+        }
+
+        if (
             ::quanLyCamera.isInitialized
         ) {
 
@@ -1654,5 +1724,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_CU_CHI_MIENG =
             "CuChiMieng"
+
+        private const val TAG_CU_CHI_HUONG_DAU =
+            "CuChiHuongDau"
     }
 }
