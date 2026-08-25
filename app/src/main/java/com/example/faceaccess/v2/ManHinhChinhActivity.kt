@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.example.faceaccess.v2.camera.QuanLyCamera
+import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
+import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
@@ -63,7 +65,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // ĐIỀU PHỐI
+    // ĐIỀU PHỐI CỬ CHỈ
     // =========================================================
 
     private lateinit var dieuPhoiCuChi:
@@ -71,12 +73,40 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // GIAO DIỆN
+    // CHẾ ĐỘ
+    // =========================================================
+
+    private lateinit var boDinhTuyenCheDo:
+            BoDinhTuyenCheDo
+
+
+    // =========================================================
+    // GIAO DIỆN HỆ THỐNG
     // =========================================================
 
     private lateinit var btnBatDauTheoDoi: Button
 
     private lateinit var txtTrangThaiHeThong: TextView
+
+
+    // =========================================================
+    // GIAO DIỆN CHẾ ĐỘ
+    // =========================================================
+
+    private lateinit var txtCheDoHienTai: TextView
+
+    private lateinit var cardDieuHuong: TextView
+
+    private lateinit var cardMedia: TextView
+
+    private lateinit var cardHoTro: TextView
+
+    private lateinit var cardConTro: TextView
+
+
+    // =========================================================
+    // GIAO DIỆN DEBUG
+    // =========================================================
 
     private lateinit var txtRoll: TextView
 
@@ -137,10 +167,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
         khoiTaoTrichXuatDuLieu()
 
         /*
-         * Điều phối phải được tạo trước detector.
+         * Khởi tạo hệ thống chế độ trước điều phối.
          *
-         * Vì detector sẽ gửi sự kiện vào DieuPhoiCuChi.
+         * DieuPhoiCuChi sẽ gọi BoDinhTuyenCheDo
+         * khi nhận LENH DOI_CHE_DO.
          */
+        khoiTaoBoDinhTuyenCheDo()
+
         khoiTaoDieuPhoiCuChi()
 
         khoiTaoNhanDienNghiengDau()
@@ -165,18 +198,40 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private fun anhXaGiaoDien() {
 
+        // Camera
         khungCamera =
             findViewById(R.id.khungCamera)
 
         txtTrangThaiCamera =
             findViewById(R.id.txtTrangThaiCamera)
 
+
+        // Hệ thống
         btnBatDauTheoDoi =
             findViewById(R.id.btnBatDauTheoDoi)
 
         txtTrangThaiHeThong =
             findViewById(R.id.txtTrangThaiHeThong)
 
+
+        // Chế độ
+        txtCheDoHienTai =
+            findViewById(R.id.txtCheDoHienTai)
+
+        cardDieuHuong =
+            findViewById(R.id.cardDieuHuong)
+
+        cardMedia =
+            findViewById(R.id.cardMedia)
+
+        cardHoTro =
+            findViewById(R.id.cardHoTro)
+
+        cardConTro =
+            findViewById(R.id.cardConTro)
+
+
+        // Debug
         txtRoll =
             findViewById(R.id.txtRoll)
 
@@ -206,6 +261,36 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // HỆ THỐNG CHẾ ĐỘ
+    // =========================================================
+
+    private fun khoiTaoBoDinhTuyenCheDo() {
+
+        boDinhTuyenCheDo =
+            BoDinhTuyenCheDo { cheDoMoi ->
+
+                Log.d(
+                    TAG_CHE_DO,
+                    "Che do moi: $cheDoMoi"
+                )
+
+                capNhatGiaoDienCheDo(
+                    cheDoMoi
+                )
+            }
+
+        /*
+         * Chế độ mặc định khi mở app:
+         * ĐIỀU HƯỚNG.
+         */
+        capNhatGiaoDienCheDo(
+            boDinhTuyenCheDo
+                .layCheDoHienTai()
+        )
+    }
+
+
+    // =========================================================
     // ĐIỀU PHỐI CỬ CHỈ
     // =========================================================
 
@@ -219,9 +304,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     LenhToanCuc.HOME -> {
 
                         /*
-                         * CHƯA thực hiện HOME thật.
+                         * HOME thật CHƯA được thực hiện.
                          *
-                         * Chỉ log để test kiến trúc.
+                         * Bước tiếp theo mới nối
+                         * AccessibilityService.
                          */
                         Log.d(
                             TAG_LENH,
@@ -229,15 +315,20 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         )
                     }
 
+
                     LenhToanCuc.DOI_CHE_DO -> {
 
-                        /*
-                         * CHƯA đổi mode thật.
-                         */
                         Log.d(
                             TAG_LENH,
                             "LENH DOI_CHE_DO"
                         )
+
+                        /*
+                         * Đây là nơi duy nhất hiện tại
+                         * xử lý yêu cầu đổi chế độ.
+                         */
+                        boDinhTuyenCheDo
+                            .chuyenCheDoTiepTheo()
                     }
                 }
             }
@@ -254,11 +345,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
             NhanDienNghiengDau { huong ->
 
                 /*
-                 * Detector chỉ báo người dùng
-                 * vừa nghiêng về hướng nào.
+                 * Detector chỉ biết:
                  *
-                 * Detector không biết HOME,
-                 * không biết mode.
+                 * TRAI
+                 * PHAI
+                 *
+                 * Không biết HOME.
+                 * Không biết mode.
                  */
                 when (huong) {
 
@@ -268,6 +361,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             SuKienCuChi.NghiengTrai
                         )
                     }
+
 
                     HuongNghiengDau.PHAI -> {
 
@@ -308,6 +402,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             chieuCaoAnh: Int
                         ) {
 
+                            /*
+                             * Có thể còn callback MediaPipe cũ
+                             * ngay sau khi Camera vừa dừng.
+                             */
                             if (!cameraDangBat) {
                                 return
                             }
@@ -316,21 +414,29 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
 
+
+                            // ---------------------------------
+                            // KHUÔN MẶT
+                            // ---------------------------------
+
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = true
                             )
+
+
+                            // ---------------------------------
+                            // DEBUG REALTIME
+                            // ---------------------------------
 
                             capNhatDuLieuKhuonMat(
                                 duLieu
                             )
 
-                            /*
-                             * MediaPipe
-                             * ↓
-                             * dữ liệu thô
-                             * ↓
-                             * detector ROLL
-                             */
+
+                            // ---------------------------------
+                            // DETECTOR ROLL
+                            // ---------------------------------
+
                             nhanDienNghiengDau.capNhat(
                                 roll = duLieu.roll,
                                 yaw = duLieu.yaw,
@@ -348,8 +454,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             }
 
                             /*
-                             * Tracking mất thì detector
-                             * phải trở về trạng thái sạch.
+                             * Mất tracking thì detector
+                             * không được giữ gesture cũ.
                              */
                             nhanDienNghiengDau.datLai()
 
@@ -383,6 +489,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
 
 
+        /*
+         * ImageProxy
+         * ↓
+         * MPImage
+         * ↓
+         * XuLyKhuonMat
+         */
         phanTichKhungHinhKhuonMat =
             PhanTichKhungHinhKhuonMat(
                 xuLyKhuonMat = xuLyKhuonMat,
@@ -409,7 +522,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // UI EVENT
+    // SỰ KIỆN UI
     // =========================================================
 
     private fun ganSuKien() {
@@ -471,6 +584,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
         btnBatDauTheoDoi.isEnabled =
             false
 
+        /*
+         * Session mới phải bắt đầu
+         * với detector sạch.
+         */
         nhanDienNghiengDau.datLai()
 
         quanLyCamera.batCamera(
@@ -538,7 +655,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private fun tatCamera() {
 
         /*
-         * Khóa xử lý callback đến muộn trước.
+         * Chặn callback MediaPipe đến muộn.
          */
         cameraDangBat =
             false
@@ -564,6 +681,125 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         btnBatDauTheoDoi.text =
             "BẮT ĐẦU THEO DÕI"
+    }
+
+
+    // =========================================================
+    // CẬP NHẬT GIAO DIỆN CHẾ ĐỘ
+    // =========================================================
+
+    private fun capNhatGiaoDienCheDo(
+        cheDo: CheDoDieuKhien
+    ) {
+
+        runOnUiThread {
+
+            /*
+             * Đầu tiên đưa tất cả card về trạng thái thường.
+             */
+            datTatCaCardVeTrangThaiThuong()
+
+            /*
+             * Sau đó chỉ highlight card đang hoạt động.
+             */
+            when (cheDo) {
+
+                CheDoDieuKhien.DIEU_HUONG -> {
+
+                    txtCheDoHienTai.text =
+                        "ĐIỀU HƯỚNG"
+
+                    danhDauCardDangChon(
+                        cardDieuHuong
+                    )
+                }
+
+
+                CheDoDieuKhien.MEDIA -> {
+
+                    txtCheDoHienTai.text =
+                        "MEDIA"
+
+                    danhDauCardDangChon(
+                        cardMedia
+                    )
+                }
+
+
+                CheDoDieuKhien.HO_TRO -> {
+
+                    txtCheDoHienTai.text =
+                        "HỖ TRỢ"
+
+                    danhDauCardDangChon(
+                        cardHoTro
+                    )
+                }
+
+
+                CheDoDieuKhien.CON_TRO -> {
+
+                    txtCheDoHienTai.text =
+                        "CON TRỎ"
+
+                    danhDauCardDangChon(
+                        cardConTro
+                    )
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Đưa 4 card về giao diện chưa được chọn.
+     */
+    private fun datTatCaCardVeTrangThaiThuong() {
+
+        val mauChuThuong =
+            ContextCompat.getColor(
+                this,
+                R.color.chu_chinh
+            )
+
+        val danhSachCard =
+            listOf(
+                cardDieuHuong,
+                cardMedia,
+                cardHoTro,
+                cardConTro
+            )
+
+        danhSachCard.forEach { card ->
+
+            card.setBackgroundResource(
+                R.drawable.nen_che_do_thuong
+            )
+
+            card.setTextColor(
+                mauChuThuong
+            )
+        }
+    }
+
+
+    /**
+     * Highlight card của chế độ đang chạy.
+     */
+    private fun danhDauCardDangChon(
+        card: TextView
+    ) {
+
+        card.setBackgroundResource(
+            R.drawable.nen_che_do_dang_chon
+        )
+
+        card.setTextColor(
+            ContextCompat.getColor(
+                this,
+                R.color.xanh_chinh
+            )
+        )
     }
 
 
@@ -624,6 +860,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
         val thoiGianHienTai =
             SystemClock.uptimeMillis()
 
+        /*
+         * MediaPipe có thể chạy nhiều frame/giây,
+         * nhưng TextView chỉ cần khoảng 10Hz.
+         */
         if (
             thoiGianHienTai -
             thoiGianCapNhatUiGanNhat <
@@ -720,7 +960,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // RESET UI
+    // RESET DEBUG UI
     // =========================================================
 
     private fun datLaiThongTinNhanDien() {
@@ -773,24 +1013,31 @@ class ManHinhChinhActivity : AppCompatActivity() {
         if (
             ::nhanDienNghiengDau.isInitialized
         ) {
+
             nhanDienNghiengDau.datLai()
         }
 
         if (
             ::quanLyCamera.isInitialized
         ) {
+
             quanLyCamera.dong()
         }
 
         if (
             ::xuLyKhuonMat.isInitialized
         ) {
+
             xuLyKhuonMat.dong()
         }
 
         super.onDestroy()
     }
 
+
+    // =========================================================
+    // CONSTANT
+    // =========================================================
 
     companion object {
 
@@ -802,5 +1049,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_MEDIAPIPE =
             "FaceAccessMediaPipe"
+
+        private const val TAG_CHE_DO =
+            "CheDoDieuKhien"
     }
 }
