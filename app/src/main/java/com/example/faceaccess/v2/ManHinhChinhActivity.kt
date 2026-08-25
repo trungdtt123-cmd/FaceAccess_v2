@@ -23,6 +23,7 @@ import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
+import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
 import com.example.faceaccess.v2.dichvu.DichVuTheoDoiFaceAccess
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
@@ -69,6 +70,29 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // DETECTOR MỞ MIỆNG
+    // =========================================================
+
+    /**
+     * Checkpoint hiện tại CHỈ ghi Logcat.
+     *
+     * Chưa gọi BACK thật.
+     * Chưa đi qua DieuPhoiCuChi.
+     */
+    private fun khoiTaoNhanDienMoMieng() {
+
+        nhanDienMoMieng =
+            NhanDienMoMieng {
+
+                Log.d(
+                    TAG_CU_CHI_MIENG,
+                    "APP: MO MIENG"
+                )
+            }
+    }
+
+
+    // =========================================================
     // MEDIAPIPE
     // =========================================================
 
@@ -87,6 +111,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var nhanDienNghiengDau:
             NhanDienNghiengDau
+
+    private lateinit var nhanDienMoMieng:
+            NhanDienMoMieng
 
 
     // =========================================================
@@ -451,6 +478,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         khoiTaoNhanDienNghiengDau()
 
+        khoiTaoNhanDienMoMieng()
+
         khoiTaoXuLyKhuonMat()
 
         khoiTaoCamera()
@@ -734,12 +763,22 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             // DETECTOR ROLL
                             // ---------------------------------
 
+                            val thoiGianHienTai =
+                                SystemClock.uptimeMillis()
+
                             nhanDienNghiengDau.capNhat(
                                 roll = duLieu.roll,
                                 yaw = duLieu.yaw,
                                 pitch = duLieu.pitch,
                                 thoiGianMs =
-                                    SystemClock.uptimeMillis()
+                                    thoiGianHienTai
+                            )
+
+                            nhanDienMoMieng.capNhat(
+                                doMoMieng =
+                                    duLieu.doMoMieng,
+                                thoiGianMs =
+                                    thoiGianHienTai
                             )
                         }
 
@@ -755,6 +794,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                              * không được giữ gesture cũ.
                              */
                             nhanDienNghiengDau.datLai()
+
+                            nhanDienMoMieng.datLai()
 
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = false
@@ -887,6 +928,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
          */
         nhanDienNghiengDau.datLai()
 
+        nhanDienMoMieng.datLai()
+
         /*
          * Foreground Service được bật trước Camera.
          * Nếu Camera khởi động thất bại, service sẽ
@@ -911,6 +954,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     0L
 
                 nhanDienNghiengDau.datLai()
+
+                nhanDienMoMieng.datLai()
 
                 txtTrangThaiHeThong.text =
                     "● Camera đang hoạt động - đang tìm khuôn mặt"
@@ -1077,6 +1122,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
             false
 
         nhanDienNghiengDau.datLai()
+
+        nhanDienMoMieng.datLai()
 
         quanLyCamera.tatCamera()
 
@@ -1487,6 +1534,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             nhanDienNghiengDau.datLai()
 
+            nhanDienMoMieng.datLai()
+
             quanLyCamera.tatCamera()
 
             Log.d(
@@ -1512,6 +1561,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
         ) {
 
             nhanDienNghiengDau.datLai()
+        }
+
+        if (
+            ::nhanDienMoMieng.isInitialized
+        ) {
+
+            nhanDienMoMieng.datLai()
         }
 
         if (
@@ -1557,5 +1613,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_BAN_GIAO_CAMERA =
             "BanGiaoCamera"
+
+        private const val TAG_CU_CHI_MIENG =
+            "CuChiMieng"
     }
 }

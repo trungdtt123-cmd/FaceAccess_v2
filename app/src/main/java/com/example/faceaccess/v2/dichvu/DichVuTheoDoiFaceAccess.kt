@@ -18,6 +18,7 @@ import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.camera.QuanLyCamera
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
+import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
 import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
@@ -61,6 +62,9 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var nhanDienNghiengDau:
             NhanDienNghiengDau
+
+    private lateinit var nhanDienMoMieng:
+            NhanDienMoMieng
 
     private lateinit var dieuPhoiCuChi:
             DieuPhoiCuChi
@@ -149,6 +153,8 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoDieuPhoiCuChiNen()
 
         khoiTaoNhanDienCuChiNen()
+
+        khoiTaoNhanDienMoMiengNen()
 
         khoiTaoXuLyKhuonMatNen()
 
@@ -345,6 +351,28 @@ class DichVuTheoDoiFaceAccess :
 
 
     // =========================================================
+    // NHẬN DIỆN MỞ MIỆNG NỀN
+    // =========================================================
+
+    /**
+     * Checkpoint hiện tại CHỈ ghi Logcat.
+     *
+     * Chưa gọi BACK thật.
+     */
+    private fun khoiTaoNhanDienMoMiengNen() {
+
+        nhanDienMoMieng =
+            NhanDienMoMieng {
+
+                Log.d(
+                    TAG_CU_CHI_MIENG,
+                    "NEN: MO MIENG"
+                )
+            }
+    }
+
+
+    // =========================================================
     // KHỞI TẠO MEDIAPIPE NỀN
     // =========================================================
 
@@ -390,6 +418,13 @@ class DichVuTheoDoiFaceAccess :
                                 thoiGianMs = hienTai
                             )
 
+                            nhanDienMoMieng.capNhat(
+                                doMoMieng =
+                                    duLieu.doMoMieng,
+                                thoiGianMs =
+                                    hienTai
+                            )
+
                             /*
                              * Chỉ log tối đa 1 lần/giây để kiểm tra
                              * pipeline nền mà không spam Logcat.
@@ -418,6 +453,8 @@ class DichVuTheoDoiFaceAccess :
                             }
 
                             nhanDienNghiengDau.datLai()
+
+                            nhanDienMoMieng.datLai()
 
                             val hienTai =
                                 SystemClock.uptimeMillis()
@@ -526,6 +563,8 @@ class DichVuTheoDoiFaceAccess :
                     true
 
                 nhanDienNghiengDau.datLai()
+
+                nhanDienMoMieng.datLai()
 
                 Log.d(
                     TAG_CAMERA_NEN,
@@ -647,6 +686,8 @@ class DichVuTheoDoiFaceAccess :
 
         nhanDienNghiengDau.datLai()
 
+        nhanDienMoMieng.datLai()
+
         quanLyCamera.tatCamera()
 
         Log.d(
@@ -744,6 +785,10 @@ class DichVuTheoDoiFaceAccess :
 
         if (::nhanDienNghiengDau.isInitialized) {
             nhanDienNghiengDau.datLai()
+        }
+
+        if (::nhanDienMoMieng.isInitialized) {
+            nhanDienMoMieng.datLai()
         }
 
         cameraNenDangBat =
@@ -876,6 +921,9 @@ class DichVuTheoDoiFaceAccess :
 
         private const val TAG_CU_CHI_NEN =
             "CuChiNen"
+
+        private const val TAG_CU_CHI_MIENG =
+            "CuChiMieng"
 
         const val HANH_DONG_BAT_CAMERA_NEN =
             "com.example.faceaccess.v2.BAT_CAMERA_NEN"
