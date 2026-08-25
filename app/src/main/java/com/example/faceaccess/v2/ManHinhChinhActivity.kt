@@ -15,6 +15,9 @@ import androidx.core.content.ContextCompat
 import com.example.faceaccess.v2.camera.QuanLyCamera
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
+import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
+import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
+import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.khuonmat.DuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
@@ -60,6 +63,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // ĐIỀU PHỐI
+    // =========================================================
+
+    private lateinit var dieuPhoiCuChi:
+            DieuPhoiCuChi
+
+
+    // =========================================================
     // GIAO DIỆN
     // =========================================================
 
@@ -84,12 +95,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private var dangThayKhuonMat: Boolean? = null
 
-    /**
-     * Chỉ cập nhật TextView khoảng 10 lần/giây.
-     *
-     * MediaPipe vẫn xử lý frame với tốc độ bình thường.
-     * Chỉ UI được giảm tần suất cập nhật.
-     */
     private var thoiGianCapNhatUiGanNhat = 0L
 
 
@@ -131,6 +136,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         khoiTaoTrichXuatDuLieu()
 
+        /*
+         * Điều phối phải được tạo trước detector.
+         *
+         * Vì detector sẽ gửi sự kiện vào DieuPhoiCuChi.
+         */
+        khoiTaoDieuPhoiCuChi()
+
         khoiTaoNhanDienNghiengDau()
 
         khoiTaoXuLyKhuonMat()
@@ -148,7 +160,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // ÁNH XẠ GIAO DIỆN
+    // ÁNH XẠ UI
     // =========================================================
 
     private fun anhXaGiaoDien() {
@@ -194,29 +206,37 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // DETECTOR NGHIÊNG ĐẦU
+    // ĐIỀU PHỐI CỬ CHỈ
     // =========================================================
 
-    private fun khoiTaoNhanDienNghiengDau() {
+    private fun khoiTaoDieuPhoiCuChi() {
 
-        nhanDienNghiengDau =
-            NhanDienNghiengDau { huong ->
+        dieuPhoiCuChi =
+            DieuPhoiCuChi { lenh ->
 
-                when (huong) {
+                when (lenh) {
 
-                    HuongNghiengDau.TRAI -> {
+                    LenhToanCuc.HOME -> {
 
+                        /*
+                         * CHƯA thực hiện HOME thật.
+                         *
+                         * Chỉ log để test kiến trúc.
+                         */
                         Log.d(
-                            TAG_CU_CHI,
-                            "NGHIENG TRAI"
+                            TAG_LENH,
+                            "LENH HOME"
                         )
                     }
 
-                    HuongNghiengDau.PHAI -> {
+                    LenhToanCuc.DOI_CHE_DO -> {
 
+                        /*
+                         * CHƯA đổi mode thật.
+                         */
                         Log.d(
-                            TAG_CU_CHI,
-                            "NGHIENG PHAI"
+                            TAG_LENH,
+                            "LENH DOI_CHE_DO"
                         )
                     }
                 }
@@ -225,7 +245,43 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // MEDIAPIPE FACE LANDMARKER
+    // DETECTOR ROLL
+    // =========================================================
+
+    private fun khoiTaoNhanDienNghiengDau() {
+
+        nhanDienNghiengDau =
+            NhanDienNghiengDau { huong ->
+
+                /*
+                 * Detector chỉ báo người dùng
+                 * vừa nghiêng về hướng nào.
+                 *
+                 * Detector không biết HOME,
+                 * không biết mode.
+                 */
+                when (huong) {
+
+                    HuongNghiengDau.TRAI -> {
+
+                        dieuPhoiCuChi.xuLy(
+                            SuKienCuChi.NghiengTrai
+                        )
+                    }
+
+                    HuongNghiengDau.PHAI -> {
+
+                        dieuPhoiCuChi.xuLy(
+                            SuKienCuChi.NghiengPhai
+                        )
+                    }
+                }
+            }
+    }
+
+
+    // =========================================================
+    // MEDIAPIPE
     // =========================================================
 
     private fun khoiTaoXuLyKhuonMat() {
@@ -237,11 +293,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     object :
                         XuLyKhuonMat.LangNgheXuLyKhuonMat {
 
-                        /**
-                         * MediaPipe load model thành công.
-                         *
-                         * Không thay đổi trạng thái Camera tại đây.
-                         */
                         override fun khiKhoiTaoThanhCong() {
 
                             Log.d(
@@ -251,19 +302,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         }
 
 
-                        /**
-                         * Có kết quả nhận diện khuôn mặt.
-                         */
                         override fun khiCoKetQua(
                             result: FaceLandmarkerResult,
                             chieuRongAnh: Int,
                             chieuCaoAnh: Int
                         ) {
 
-                            /*
-                             * Có thể còn một callback cũ
-                             * sau khi Camera vừa dừng.
-                             */
                             if (!cameraDangBat) {
                                 return
                             }
@@ -272,38 +316,20 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
 
-                            /*
-                             * Cập nhật trạng thái:
-                             *
-                             * Có khuôn mặt.
-                             */
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = true
                             )
 
-                            /*
-                             * Hiển thị dữ liệu thô:
-                             *
-                             * ROLL
-                             * YAW
-                             * PITCH
-                             * MẮT
-                             * MIỆNG
-                             */
                             capNhatDuLieuKhuonMat(
                                 duLieu
                             )
 
                             /*
-                             * Đưa dữ liệu sang detector ROLL.
-                             *
-                             * Detector hiện tại CHỈ nhận diện:
-                             *
-                             * TRAI
-                             * PHAI
-                             *
-                             * Chưa HOME.
-                             * Chưa đổi chế độ.
+                             * MediaPipe
+                             * ↓
+                             * dữ liệu thô
+                             * ↓
+                             * detector ROLL
                              */
                             nhanDienNghiengDau.capNhat(
                                 roll = duLieu.roll,
@@ -315,9 +341,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         }
 
 
-                        /**
-                         * MediaPipe không thấy khuôn mặt.
-                         */
                         override fun khiKhongThayKhuonMat() {
 
                             if (!cameraDangBat) {
@@ -325,12 +348,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             }
 
                             /*
-                             * Mất tracking:
-                             *
-                             * detector phải reset.
-                             *
-                             * Không được giữ trạng thái
-                             * nghiêng đầu cũ.
+                             * Tracking mất thì detector
+                             * phải trở về trạng thái sạch.
                              */
                             nhanDienNghiengDau.datLai()
 
@@ -342,9 +361,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         }
 
 
-                        /**
-                         * MediaPipe gặp lỗi runtime.
-                         */
                         override fun khiCoLoi(
                             thongBao: String
                         ) {
@@ -367,10 +383,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
 
 
-        /*
-         * Chuyển frame CameraX
-         * thành MPImage cho MediaPipe.
-         */
         phanTichKhungHinhKhuonMat =
             PhanTichKhungHinhKhuonMat(
                 xuLyKhuonMat = xuLyKhuonMat,
@@ -397,7 +409,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // SỰ KIỆN GIAO DIỆN
+    // UI EVENT
     // =========================================================
 
     private fun ganSuKien() {
@@ -459,10 +471,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         btnBatDauTheoDoi.isEnabled =
             false
 
-        /*
-         * Mỗi session Camera mới
-         * phải bắt đầu detector từ trạng thái sạch.
-         */
         nhanDienNghiengDau.datLai()
 
         quanLyCamera.batCamera(
@@ -530,20 +538,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private fun tatCamera() {
 
         /*
-         * Đánh dấu dừng trước để callback MediaPipe
-         * đến muộn không tiếp tục xử lý gesture.
+         * Khóa xử lý callback đến muộn trước.
          */
         cameraDangBat =
             false
 
-        /*
-         * Reset detector.
-         */
         nhanDienNghiengDau.datLai()
 
-        /*
-         * Dừng CameraX + ImageAnalysis.
-         */
         quanLyCamera.tatCamera()
 
         dangThayKhuonMat =
@@ -609,7 +610,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // HIỂN THỊ DỮ LIỆU THÔ
+    // DỮ LIỆU REALTIME
     // =========================================================
 
     private fun capNhatDuLieuKhuonMat(
@@ -623,9 +624,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         val thoiGianHienTai =
             SystemClock.uptimeMillis()
 
-        /*
-         * UI chỉ update tối đa khoảng 10Hz.
-         */
         if (
             thoiGianHienTai -
             thoiGianCapNhatUiGanNhat <
@@ -686,7 +684,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // FORMAT GÓC
+    // FORMAT
     // =========================================================
 
     private fun dinhDangGoc(
@@ -705,10 +703,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
     }
 
 
-    // =========================================================
-    // FORMAT BLENDSHAPE
-    // =========================================================
-
     private fun dinhDangDiem(
         giaTri: Float?
     ): String {
@@ -726,7 +720,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // RESET THÔNG TIN NHẬN DIỆN
+    // RESET UI
     // =========================================================
 
     private fun datLaiThongTinNhanDien() {
@@ -752,7 +746,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // PLACEHOLDER CAMERA
+    // CAMERA PLACEHOLDER
     // =========================================================
 
     private fun hienThiCameraDaDung(
@@ -771,14 +765,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // GIẢI PHÓNG TÀI NGUYÊN
+    // DESTROY
     // =========================================================
 
     override fun onDestroy() {
 
-        /*
-         * Ngăn detector giữ state khi Activity bị hủy.
-         */
         if (
             ::nhanDienNghiengDau.isInitialized
         ) {
@@ -801,27 +792,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
     }
 
 
-    // =========================================================
-    // CONSTANT
-    // =========================================================
-
     companion object {
 
-        /**
-         * Cập nhật TextView tối đa khoảng 10 lần/giây.
-         */
         private const val KHOANG_CAP_NHAT_UI_MS =
             100L
 
-        /**
-         * Logcat cho detector ROLL.
-         */
-        private const val TAG_CU_CHI =
-            "CuChiNghiengDau"
+        private const val TAG_LENH =
+            "LenhToanCuc"
 
-        /**
-         * Logcat MediaPipe.
-         */
         private const val TAG_MEDIAPIPE =
             "FaceAccessMediaPipe"
     }
