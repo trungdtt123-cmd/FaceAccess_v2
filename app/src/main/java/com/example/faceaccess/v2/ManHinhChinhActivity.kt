@@ -88,6 +88,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     TAG_CU_CHI_MIENG,
                     "APP: MO MIENG"
                 )
+
+                dieuPhoiCuChi.xuLy(
+                    SuKienCuChi.MoMieng
+                )
             }
     }
 
@@ -655,6 +659,40 @@ class ManHinhChinhActivity : AppCompatActivity() {
                          */
                         boDinhTuyenCheDo
                             .chuyenCheDoTiepTheo()
+                    }
+
+
+                    LenhToanCuc.BACK -> {
+
+                        Log.d(
+                            TAG_LENH,
+                            "LENH BACK"
+                        )
+
+                        runOnUiThread {
+
+                            val thanhCong =
+                                DichVuTruyCapFaceAccess
+                                    .thucThiBack()
+
+                            if (thanhCong) {
+
+                                Log.d(
+                                    TAG_LENH,
+                                    "BACK Android: THANH_CONG"
+                                )
+
+                            } else {
+
+                                Log.e(
+                                    TAG_LENH,
+                                    "BACK Android: THAT_BAI - AccessibilityService chua san sang"
+                                )
+
+                                txtTrangThaiHeThong.text =
+                                    "● Hãy bật dịch vụ trợ năng FaceAccess"
+                            }
+                        }
                     }
                 }
             }

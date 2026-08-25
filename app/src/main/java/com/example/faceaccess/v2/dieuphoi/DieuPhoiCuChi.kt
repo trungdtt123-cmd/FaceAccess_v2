@@ -3,16 +3,10 @@ package com.example.faceaccess.v2.dieuphoi
 import android.util.Log
 
 class DieuPhoiCuChi(
-    private val khiCoLenhToanCuc:
+    private val khiCoLenh:
         (LenhToanCuc) -> Unit
 ) {
 
-    /**
-     * Điểm duy nhất nhận sự kiện từ các detector.
-     *
-     * Detector không được tự gọi HOME,
-     * đổi mode hoặc AccessibilityService.
-     */
     fun xuLy(
         suKien: SuKienCuChi
     ) {
@@ -26,10 +20,11 @@ class DieuPhoiCuChi(
                     "NghiengTrai -> HOME"
                 )
 
-                phatLenh(
+                khiCoLenh(
                     LenhToanCuc.HOME
                 )
             }
+
 
             SuKienCuChi.NghiengPhai -> {
 
@@ -38,21 +33,26 @@ class DieuPhoiCuChi(
                     "NghiengPhai -> DOI_CHE_DO"
                 )
 
-                phatLenh(
+                khiCoLenh(
                     LenhToanCuc.DOI_CHE_DO
+                )
+            }
+
+
+            SuKienCuChi.MoMieng -> {
+
+                Log.d(
+                    TAG,
+                    "MoMieng -> BACK"
+                )
+
+                khiCoLenh(
+                    LenhToanCuc.BACK
                 )
             }
         }
     }
 
-    private fun phatLenh(
-        lenh: LenhToanCuc
-    ) {
-
-        khiCoLenhToanCuc(
-            lenh
-        )
-    }
 
     companion object {
 

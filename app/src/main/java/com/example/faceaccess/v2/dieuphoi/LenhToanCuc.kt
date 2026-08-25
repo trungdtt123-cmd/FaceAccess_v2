@@ -4,5 +4,7 @@ enum class LenhToanCuc {
 
     HOME,
 
-    DOI_CHE_DO
+    DOI_CHE_DO,
+
+    BACK
 }

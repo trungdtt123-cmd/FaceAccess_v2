@@ -21,11 +21,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         event: AccessibilityEvent?
     ) {
         /*
-         * Hiện tại FaceAccess chưa cần đọc
-         * AccessibilityEvent.
+         * FaceAccess hiện không cần đọc AccessibilityEvent.
          *
-         * Service ở bước này chỉ dùng
-         * performGlobalAction().
+         * Service chỉ dùng performGlobalAction()
+         * cho các thao tác điều hướng Android.
          */
     }
 
@@ -51,15 +50,26 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         super.onDestroy()
     }
 
-    /**
-     * Thực hiện HOME thật của Android.
-     */
+
+    // =========================================================
+    // GLOBAL ACTIONS
+    // =========================================================
+
     private fun thucThiHomeNoiBo(): Boolean {
 
         return performGlobalAction(
             GLOBAL_ACTION_HOME
         )
     }
+
+
+    private fun thucThiBackNoiBo(): Boolean {
+
+        return performGlobalAction(
+            GLOBAL_ACTION_BACK
+        )
+    }
+
 
     companion object {
 
@@ -70,24 +80,13 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         private var phienBanDangHoatDong:
                 DichVuTruyCapFaceAccess? = null
 
-        /**
-         * Cho tầng thực thi bên ngoài biết
-         * AccessibilityService đã được người dùng bật hay chưa.
-         */
+
         fun dangHoatDong(): Boolean {
 
             return phienBanDangHoatDong != null
         }
 
-        /**
-         * Yêu cầu Android thực hiện HOME.
-         *
-         * true:
-         * yêu cầu đã được AccessibilityService chấp nhận.
-         *
-         * false:
-         * service chưa bật hoặc HOME thất bại.
-         */
+
         fun thucThiHome(): Boolean {
 
             val dichVu =
@@ -96,6 +95,17 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
             return dichVu
                 .thucThiHomeNoiBo()
+        }
+
+
+        fun thucThiBack(): Boolean {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .thucThiBackNoiBo()
         }
     }
 }

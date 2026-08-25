@@ -302,6 +302,37 @@ class DichVuTheoDoiFaceAccess :
                         boDinhTuyenCheDo
                             .chuyenCheDoTiepTheo()
                     }
+
+
+                    LenhToanCuc.BACK -> {
+
+                        Log.d(
+                            TAG_CU_CHI_MIENG,
+                            "NEN: LENH BACK"
+                        )
+
+                        mainHandler.post {
+
+                            val thanhCong =
+                                DichVuTruyCapFaceAccess
+                                    .thucThiBack()
+
+                            if (thanhCong) {
+
+                                Log.d(
+                                    TAG_CU_CHI_MIENG,
+                                    "NEN: BACK Android THANH_CONG"
+                                )
+
+                            } else {
+
+                                Log.e(
+                                    TAG_CU_CHI_MIENG,
+                                    "NEN: BACK Android THAT_BAI - AccessibilityService chua san sang"
+                                )
+                            }
+                        }
+                    }
                 }
             }
     }
@@ -367,6 +398,10 @@ class DichVuTheoDoiFaceAccess :
                 Log.d(
                     TAG_CU_CHI_MIENG,
                     "NEN: MO MIENG"
+                )
+
+                dieuPhoiCuChi.xuLy(
+                    SuKienCuChi.MoMieng
                 )
             }
     }
