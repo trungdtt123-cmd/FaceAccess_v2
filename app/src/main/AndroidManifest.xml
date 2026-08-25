@@ -2,15 +2,44 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Quyền sử dụng Camera -->
+    <!-- ================================================= -->
+    <!-- QUYỀN CAMERA -->
+    <!-- ================================================= -->
+
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!--
-        Khai báo phần cứng Camera.
 
-        required=false giúp Android/Play Store không tự loại thiết bị
-        chỉ vì khai báo quyền CAMERA.
-        Trong app, chúng ta vẫn tự kiểm tra Camera trước khi sử dụng.
+    <!-- ================================================= -->
+    <!-- QUYỀN FOREGROUND SERVICE -->
+    <!-- ================================================= -->
+
+    <!-- Cho phép chạy Foreground Service -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!--
+        Android 14+ yêu cầu quyền riêng cho
+        Foreground Service sử dụng Camera.
+    -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+
+    <!--
+        Android 13+ dùng cho notification của
+        Foreground Service.
+    -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS" />
+
+
+    <!-- ================================================= -->
+    <!-- PHẦN CỨNG CAMERA -->
+    <!-- ================================================= -->
+
+    <!--
+        required=false:
+        Không bắt Play Store loại thiết bị chỉ vì
+        thiết bị không khai báo camera tương ứng.
     -->
     <uses-feature
         android:name="android.hardware.camera"
@@ -20,6 +49,10 @@
         android:name="android.hardware.camera.front"
         android:required="false" />
 
+
+    <!-- ================================================= -->
+    <!-- APPLICATION -->
+    <!-- ================================================= -->
 
     <application
         android:allowBackup="true"
@@ -43,9 +76,11 @@
 
             <intent-filter>
 
-                <action android:name="android.intent.action.MAIN" />
+                <action
+                    android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category
+                    android:name="android.intent.category.LAUNCHER" />
 
             </intent-filter>
 
@@ -56,6 +91,10 @@
         <!-- ACCESSIBILITY SERVICE -->
         <!-- ================================================= -->
 
+        <!--
+            Dùng để thực hiện các thao tác Android toàn cục:
+            HOME, sau này BACK...
+        -->
         <service
             android:name=".truycap.DichVuTruyCapFaceAccess"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -73,6 +112,24 @@
                 android:resource="@xml/cau_hinh_truy_cap" />
 
         </service>
+
+
+        <!-- ================================================= -->
+        <!-- FOREGROUND TRACKING SERVICE -->
+        <!-- ================================================= -->
+
+        <!--
+            Service này sẽ chịu trách nhiệm chạy theo dõi
+            khuôn mặt kể cả khi Activity xuống background.
+
+            Hiện tại mới tạo khung Foreground Service.
+            Bước sau mới chuyển CameraX + MediaPipe vào đây.
+        -->
+        <service
+            android:name=".dichvu.DichVuTheoDoiFaceAccess"
+            android:exported="false"
+            android:foregroundServiceType="camera" />
+
 
     </application>
 

@@ -1,7 +1,9 @@
 package com.example.faceaccess.v2
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -17,6 +19,7 @@ import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
+import com.example.faceaccess.v2.dichvu.DichVuTheoDoiFaceAccess
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
@@ -130,6 +133,59 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // FOREGROUND TRACKING SERVICE
+    // =========================================================
+
+    /**
+     * Khởi động Foreground Service theo dõi.
+     *
+     * Ở checkpoint hiện tại service mới chịu trách nhiệm
+     * duy trì tiến trình foreground + notification.
+     * CameraX/MediaPipe vẫn còn ở Activity và sẽ được
+     * chuyển sang service ở bước tiếp theo.
+     */
+    private fun batDichVuTheoDoi() {
+
+        val intent =
+            Intent(
+                this,
+                DichVuTheoDoiFaceAccess::class.java
+            )
+
+        ContextCompat.startForegroundService(
+            this,
+            intent
+        )
+
+        Log.d(
+            TAG_DICH_VU,
+            "Yeu cau BAT dich vu theo doi"
+        )
+    }
+
+
+    /**
+     * Dừng Foreground Service khi người dùng chủ động
+     * bấm DỪNG THEO DÕI hoặc Camera khởi động thất bại.
+     */
+    private fun tatDichVuTheoDoi() {
+
+        val intent =
+            Intent(
+                this,
+                DichVuTheoDoiFaceAccess::class.java
+            )
+
+        stopService(intent)
+
+        Log.d(
+            TAG_DICH_VU,
+            "Yeu cau DUNG dich vu theo doi"
+        )
+    }
+
+
+    // =========================================================
     // QUYỀN CAMERA
     // =========================================================
 
@@ -155,6 +211,52 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // QUYỀN THÔNG BÁO
+    // =========================================================
+
+    private val yeuCauQuyenThongBao =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { duocCapQuyen ->
+
+            Log.d(
+                TAG_DICH_VU,
+                "Quyen thong bao: $duocCapQuyen"
+            )
+        }
+
+
+    /**
+     * Android 13+ yêu cầu POST_NOTIFICATIONS ở runtime.
+     *
+     * Quyền này chỉ quyết định notification có được hiển thị
+     * trong notification drawer hay không; Foreground Service
+     * vẫn có lifecycle riêng của nó.
+     */
+    private fun kiemTraVaYeuCauQuyenThongBao() {
+
+        if (
+            Build.VERSION.SDK_INT >=
+            Build.VERSION_CODES.TIRAMISU
+        ) {
+
+            val daCoQuyenThongBao =
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+
+            if (!daCoQuyenThongBao) {
+
+                yeuCauQuyenThongBao.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            }
+        }
+    }
+
+
+    // =========================================================
     // ON CREATE
     // =========================================================
 
@@ -164,6 +266,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         anhXaGiaoDien()
+
+        /*
+         * Xin quyền notification sớm để Foreground Service
+         * có thể hiển thị thông báo trên Android 13+.
+         */
+        kiemTraVaYeuCauQuyenThongBao()
 
         khoiTaoTrichXuatDuLieu()
 
@@ -615,6 +723,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
          */
         nhanDienNghiengDau.datLai()
 
+        /*
+         * Foreground Service được bật trước Camera.
+         * Nếu Camera khởi động thất bại, service sẽ
+         * được dừng trong callback khiLoi.
+         */
+        batDichVuTheoDoi()
+
         quanLyCamera.batCamera(
 
             khiThanhCong = {
@@ -642,6 +757,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
             khiLoi = { exception ->
+
+                /*
+                 * Không giữ Foreground Service chạy nếu
+                 * Camera không thể khởi động.
+                 */
+                tatDichVuTheoDoi()
 
                 cameraDangBat =
                     false
@@ -688,6 +809,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
         nhanDienNghiengDau.datLai()
 
         quanLyCamera.tatCamera()
+
+        /*
+         * Người dùng chủ động dừng theo dõi thì
+         * Foreground Service cũng phải dừng.
+         */
+        tatDichVuTheoDoi()
 
         dangThayKhuonMat =
             null
@@ -1077,5 +1204,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_CHE_DO =
             "CheDoDieuKhien"
+
+        private const val TAG_DICH_VU =
+            "DichVuTheoDoi"
     }
 }
