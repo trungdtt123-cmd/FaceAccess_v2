@@ -24,6 +24,7 @@ import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
 import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
+import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
@@ -267,14 +268,23 @@ class DichVuTheoDoiFaceAccess :
                         huong ->
 
                     /*
-                     * CHECKPOINT ROUTING NỀN:
-                     *
-                     * Chỉ log mode + hướng.
-                     * Chưa thực hiện hành động theo mode.
+                     * Giữ log routing tổng quát để kiểm tra
+                     * mode dùng chung khi app chạy nền.
                      */
                     Log.d(
                         TAG_CU_CHI_THEO_CHE_DO,
                         "NEN: MODE=$cheDo | HUONG=$huong"
+                    )
+                },
+                khiCoLenhDieuHuong = { lenhDieuHuong ->
+
+                    /*
+                     * CHECKPOINT HIỆN TẠI:
+                     * chỉ Logcat, chưa gọi Accessibility.
+                     */
+                    Log.d(
+                        TAG_LENH_DIEU_HUONG,
+                        "NEN: LENH_DIEU_HUONG=$lenhDieuHuong"
                     )
                 },
                 khiCoLenh = { lenh ->
@@ -1059,6 +1069,9 @@ class DichVuTheoDoiFaceAccess :
 
         private const val TAG_CU_CHI_THEO_CHE_DO =
             "CuChiTheoCheDo"
+
+        private const val TAG_LENH_DIEU_HUONG =
+            "LenhDieuHuong"
 
         const val HANH_DONG_BAT_CAMERA_NEN =
             "com.example.faceaccess.v2.BAT_CAMERA_NEN"

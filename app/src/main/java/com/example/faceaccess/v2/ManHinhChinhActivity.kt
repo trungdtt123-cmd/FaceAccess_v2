@@ -29,6 +29,7 @@ import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
 import com.example.faceaccess.v2.dichvu.DichVuTheoDoiFaceAccess
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
+import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.khuonmat.DuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
@@ -670,14 +671,23 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         huong ->
 
                     /*
-                     * CHECKPOINT ROUTING:
-                     *
-                     * Chỉ log mode + hướng.
-                     * Chưa thực hiện hành động theo mode.
+                     * Giữ log routing tổng quát để kiểm tra
+                     * DIEU_HUONG / MEDIA / HO_TRO / CON_TRO.
                      */
                     Log.d(
                         TAG_CU_CHI_THEO_CHE_DO,
                         "APP: MODE=$cheDo | HUONG=$huong"
+                    )
+                },
+                khiCoLenhDieuHuong = { lenhDieuHuong ->
+
+                    /*
+                     * CHECKPOINT HIỆN TẠI:
+                     * chỉ Logcat, chưa gọi Accessibility.
+                     */
+                    Log.d(
+                        TAG_LENH_DIEU_HUONG,
+                        "APP: LENH_DIEU_HUONG=$lenhDieuHuong"
                     )
                 },
                 khiCoLenh = { lenh ->
@@ -1763,5 +1773,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_CU_CHI_THEO_CHE_DO =
             "CuChiTheoCheDo"
+
+        private const val TAG_LENH_DIEU_HUONG =
+            "LenhDieuHuong"
     }
 }

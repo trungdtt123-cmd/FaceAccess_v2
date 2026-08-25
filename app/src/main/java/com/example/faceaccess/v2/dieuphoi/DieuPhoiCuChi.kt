@@ -3,6 +3,7 @@ package com.example.faceaccess.v2.dieuphoi
 import android.util.Log
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
+import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 
 class DieuPhoiCuChi(
 
@@ -25,6 +26,16 @@ class DieuPhoiCuChi(
     private val khiCoHuongTheoCheDo:
         (CheDoDieuKhien, HuongDau) -> Unit =
         { _, _ -> },
+
+    /**
+     * Chỉ dùng khi mode hiện tại là DIEU_HUONG.
+     *
+     * Checkpoint này callback chỉ Logcat.
+     * Chưa thực thi Accessibility action thật.
+     */
+    private val khiCoLenhDieuHuong:
+        (LenhDieuHuong) -> Unit =
+        { _ -> },
 
     /**
      * Các lệnh toàn cục đang hoạt động thật.
@@ -105,15 +116,52 @@ class DieuPhoiCuChi(
                 )
 
                 /*
-                 * CHƯA thực hiện hành động thật.
-                 *
-                 * Chỉ chuyển semantic event + mode hiện tại
-                 * sang callback để kiểm tra routing.
+                 * Luôn log semantic route hiện tại để regression-test
+                 * được tất cả mode.
                  */
                 khiCoHuongTheoCheDo(
                     cheDoHienTai,
                     suKien.huong
                 )
+
+
+                /*
+                 * Chỉ mode DIEU_HUONG mới ánh xạ sang LenhDieuHuong.
+                 *
+                 * MEDIA / HO_TRO / CON_TRO hiện chưa có hành động thật.
+                 */
+                if (
+                    cheDoHienTai ==
+                    CheDoDieuKhien.DIEU_HUONG
+                ) {
+
+                    val lenhDieuHuong =
+                        when (suKien.huong) {
+
+                            HuongDau.TRAI ->
+                                LenhDieuHuong.TRUOC
+
+                            HuongDau.PHAI ->
+                                LenhDieuHuong.TIEP_THEO
+
+                            HuongDau.LEN ->
+                                LenhDieuHuong.CUON_LEN
+
+                            HuongDau.XUONG ->
+                                LenhDieuHuong.CUON_XUONG
+                        }
+
+
+                    Log.d(
+                        TAG,
+                        "DIEU_HUONG: ${suKien.huong} -> $lenhDieuHuong"
+                    )
+
+
+                    khiCoLenhDieuHuong(
+                        lenhDieuHuong
+                    )
+                }
             }
         }
     }
