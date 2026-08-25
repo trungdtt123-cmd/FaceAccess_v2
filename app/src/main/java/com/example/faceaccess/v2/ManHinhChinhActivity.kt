@@ -1,7 +1,10 @@
 package com.example.faceaccess.v2
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -14,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import com.example.faceaccess.v2.camera.QuanLyCamera
 import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
@@ -45,6 +49,23 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     @Volatile
     private var cameraDangBat = false
+
+    /**
+     * Trạng thái phiên theo dõi tổng thể.
+     *
+     * true  = người dùng đã bấm BẮT ĐẦU THEO DÕI và chưa bấm DỪNG.
+     * false = hệ thống theo dõi đã dừng hoàn toàn.
+     *
+     * Biến này khác cameraDangBat:
+     * cameraDangBat chỉ cho biết Camera đang thuộc Activity.
+     */
+    @Volatile
+    private var theoDoiDangHoatDong = false
+
+    @Volatile
+    private var dangChoCameraNenNhaQuyen = false
+
+    private var daDangKyBoNhanBanGiaoCamera = false
 
 
     // =========================================================
@@ -133,16 +154,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
-    // FOREGROUND TRACKING SERVICE
+    // FOREGROUND TRACKING SERVICE + BÀN GIAO CAMERA
     // =========================================================
 
     /**
-     * Khởi động Foreground Service theo dõi.
+     * Khởi động Foreground Service khi người dùng bắt đầu theo dõi.
      *
-     * Ở checkpoint hiện tại service mới chịu trách nhiệm
-     * duy trì tiến trình foreground + notification.
-     * CameraX/MediaPipe vẫn còn ở Activity và sẽ được
-     * chuyển sang service ở bước tiếp theo.
+     * Lệnh này chỉ tạo/duy trì Service. Camera nền chưa tự bật.
      */
     private fun batDichVuTheoDoi() {
 
@@ -165,8 +183,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     /**
-     * Dừng Foreground Service khi người dùng chủ động
-     * bấm DỪNG THEO DÕI hoặc Camera khởi động thất bại.
+     * Dừng hoàn toàn Foreground Service khi người dùng
+     * chủ động bấm DỪNG THEO DÕI hoặc Camera khởi động lỗi.
      */
     private fun tatDichVuTheoDoi() {
 
@@ -182,6 +200,150 @@ class ManHinhChinhActivity : AppCompatActivity() {
             TAG_DICH_VU,
             "Yeu cau DUNG dich vu theo doi"
         )
+    }
+
+
+    /**
+     * Activity đã nhả Camera và yêu cầu Service lấy Camera.
+     */
+    private fun yeuCauBatCameraNen() {
+
+        val intent =
+            Intent(
+                this,
+                DichVuTheoDoiFaceAccess::class.java
+            ).apply {
+
+                action =
+                    DichVuTheoDoiFaceAccess
+                        .HANH_DONG_BAT_CAMERA_NEN
+            }
+
+        startService(intent)
+
+        Log.d(
+            TAG_BAN_GIAO_CAMERA,
+            "Activity da nha Camera -> yeu cau Service BAT Camera nen"
+        )
+    }
+
+
+    /**
+     * Yêu cầu Service nhả Camera.
+     *
+     * Activity KHÔNG bind Camera ngay tại đây.
+     * Activity chỉ bind lại sau khi nhận broadcast xác nhận
+     * HANH_DONG_CAMERA_NEN_DA_TAT từ Service.
+     */
+    private fun yeuCauTatCameraNenDeNhanLaiCamera() {
+
+        if (dangChoCameraNenNhaQuyen) {
+            return
+        }
+
+        dangChoCameraNenNhaQuyen =
+            true
+
+        val intent =
+            Intent(
+                this,
+                DichVuTheoDoiFaceAccess::class.java
+            ).apply {
+
+                action =
+                    DichVuTheoDoiFaceAccess
+                        .HANH_DONG_TAT_CAMERA_NEN
+            }
+
+        startService(intent)
+
+        Log.d(
+            TAG_BAN_GIAO_CAMERA,
+            "Activity yeu cau Service TAT Camera nen"
+        )
+    }
+
+
+    /**
+     * BroadcastReceiver nhận xác nhận từ Service rằng
+     * Camera nền đã được nhả hoàn toàn.
+     *
+     * Chỉ sau mốc này Activity mới được bind Camera lại.
+     */
+    private val boNhanBanGiaoCamera =
+        object : BroadcastReceiver() {
+
+            override fun onReceive(
+                context: Context?,
+                intent: Intent?
+            ) {
+
+                when (intent?.action) {
+
+                    DichVuTheoDoiFaceAccess
+                        .HANH_DONG_CAMERA_NEN_DA_TAT -> {
+
+                        dangChoCameraNenNhaQuyen =
+                            false
+
+                        Log.d(
+                            TAG_BAN_GIAO_CAMERA,
+                            "Activity DA NHAN ACK Camera nen DA TAT"
+                        )
+
+                        if (
+                            theoDoiDangHoatDong &&
+                            !cameraDangBat &&
+                            lifecycle.currentState
+                                .isAtLeast(
+                                    Lifecycle.State.STARTED
+                                )
+                        ) {
+
+                            batLaiCameraActivitySauBanGiao()
+                        }
+                    }
+                }
+            }
+        }
+
+
+    private fun dangKyBoNhanBanGiaoCamera() {
+
+        if (daDangKyBoNhanBanGiaoCamera) {
+            return
+        }
+
+        val boLoc =
+            IntentFilter(
+                DichVuTheoDoiFaceAccess
+                    .HANH_DONG_CAMERA_NEN_DA_TAT
+            )
+
+        ContextCompat.registerReceiver(
+            this,
+            boNhanBanGiaoCamera,
+            boLoc,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+
+        daDangKyBoNhanBanGiaoCamera =
+            true
+    }
+
+
+    private fun huyDangKyBoNhanBanGiaoCamera() {
+
+        if (!daDangKyBoNhanBanGiaoCamera) {
+            return
+        }
+
+        unregisterReceiver(
+            boNhanBanGiaoCamera
+        )
+
+        daDangKyBoNhanBanGiaoCamera =
+            false
     }
 
 
@@ -266,6 +428,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         anhXaGiaoDien()
+
+        dangKyBoNhanBanGiaoCamera()
 
         /*
          * Xin quyền notification sớm để Foreground Service
@@ -737,6 +901,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 cameraDangBat =
                     true
 
+                theoDoiDangHoatDong =
+                    true
+
                 dangThayKhuonMat =
                     null
 
@@ -767,6 +934,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 cameraDangBat =
                     false
 
+                theoDoiDangHoatDong =
+                    false
+
                 dangThayKhuonMat =
                     null
 
@@ -795,10 +965,110 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // NHẬN LẠI CAMERA TỪ SERVICE
+    // =========================================================
+
+    /**
+     * Chỉ được gọi sau khi Service đã broadcast xác nhận
+     * Camera nền đã tắt.
+     *
+     * Không khởi động lại Foreground Service và không tạo
+     * một phiên theo dõi mới; chỉ bind Camera về Activity.
+     */
+    private fun batLaiCameraActivitySauBanGiao() {
+
+        if (
+            !theoDoiDangHoatDong ||
+            cameraDangBat
+        ) {
+            return
+        }
+
+        Log.d(
+            TAG_BAN_GIAO_CAMERA,
+            "Bat lai Camera tren Activity sau ban giao"
+        )
+
+        nhanDienNghiengDau.datLai()
+
+        quanLyCamera.batCamera(
+
+            khiThanhCong = {
+
+                cameraDangBat =
+                    true
+
+                dangThayKhuonMat =
+                    null
+
+                thoiGianCapNhatUiGanNhat =
+                    0L
+
+                nhanDienNghiengDau.datLai()
+
+                runOnUiThread {
+
+                    khungCamera.visibility =
+                        View.VISIBLE
+
+                    txtTrangThaiCamera.visibility =
+                        View.GONE
+
+                    txtTrangThaiHeThong.text =
+                        "● Camera đang hoạt động - đang tìm khuôn mặt"
+
+                    btnBatDauTheoDoi.text =
+                        "DỪNG THEO DÕI"
+
+                    btnBatDauTheoDoi.isEnabled =
+                        true
+                }
+
+                Log.d(
+                    TAG_BAN_GIAO_CAMERA,
+                    "Activity da nhan lai Camera thanh cong"
+                )
+            },
+
+
+            khiLoi = { exception ->
+
+                cameraDangBat =
+                    false
+
+                Log.e(
+                    TAG_BAN_GIAO_CAMERA,
+                    "Activity khong the nhan lai Camera",
+                    exception
+                )
+
+                runOnUiThread {
+
+                    txtTrangThaiHeThong.text =
+                        "● Không thể nhận lại Camera: ${
+                            exception.message
+                                ?: "Không xác định"
+                        }"
+                }
+            }
+        )
+    }
+
+
+    // =========================================================
     // DỪNG CAMERA
     // =========================================================
 
     private fun tatCamera() {
+
+        /*
+         * Người dùng chủ động dừng toàn bộ phiên theo dõi.
+         */
+        theoDoiDangHoatDong =
+            false
+
+        dangChoCameraNenNhaQuyen =
+            false
 
         /*
          * Chặn callback MediaPipe đến muộn.
@@ -1157,6 +1427,66 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
 
     // =========================================================
+    // ACTIVITY LIFECYCLE - BÀN GIAO CAMERA
+    // =========================================================
+
+    override fun onStart() {
+        super.onStart()
+
+        /*
+         * Nếu phiên theo dõi vẫn còn hoạt động nhưng Camera
+         * đang thuộc Service, yêu cầu Service nhả Camera.
+         *
+         * Activity sẽ chờ broadcast xác nhận trước khi bind lại.
+         */
+        if (
+            theoDoiDangHoatDong &&
+            !cameraDangBat &&
+            ::quanLyCamera.isInitialized
+        ) {
+
+            yeuCauTatCameraNenDeNhanLaiCamera()
+        }
+    }
+
+
+    override fun onStop() {
+
+        /*
+         * Activity đi background nhưng người dùng CHƯA dừng
+         * phiên theo dõi:
+         *
+         * 1. Activity nhả Camera trước.
+         * 2. Sau đó mới yêu cầu Service lấy Camera.
+         *
+         * Nhờ thứ tự này hai owner không bind Camera đồng thời.
+         */
+        if (
+            theoDoiDangHoatDong &&
+            cameraDangBat &&
+            ::quanLyCamera.isInitialized
+        ) {
+
+            cameraDangBat =
+                false
+
+            nhanDienNghiengDau.datLai()
+
+            quanLyCamera.tatCamera()
+
+            Log.d(
+                TAG_BAN_GIAO_CAMERA,
+                "Activity onStop -> da nha Camera"
+            )
+
+            yeuCauBatCameraNen()
+        }
+
+        super.onStop()
+    }
+
+
+    // =========================================================
     // DESTROY
     // =========================================================
 
@@ -1183,6 +1513,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
             xuLyKhuonMat.dong()
         }
 
+        huyDangKyBoNhanBanGiaoCamera()
+
         super.onDestroy()
     }
 
@@ -1207,5 +1539,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_DICH_VU =
             "DichVuTheoDoi"
+
+        private const val TAG_BAN_GIAO_CAMERA =
+            "BanGiaoCamera"
     }
 }

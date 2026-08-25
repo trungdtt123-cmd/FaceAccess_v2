@@ -14,24 +14,58 @@ import java.util.concurrent.Executors
 class QuanLyCamera(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
-    private val previewView: PreviewView,
+
+    /*
+     * Activity:
+     * truyền PreviewView để hiển thị Camera.
+     *
+     * Foreground Service:
+     * có thể truyền null vì không cần giao diện Preview.
+     */
+    private val previewView: PreviewView? = null,
+
     private val boPhanTichKhungHinh: ImageAnalysis.Analyzer
 ) {
+
+    // =========================================================
+    // EXECUTOR
+    // =========================================================
 
     private val cameraExecutor: ExecutorService =
         Executors.newSingleThreadExecutor()
 
-    private var cameraProvider: ProcessCameraProvider? = null
 
-    private var imageAnalysis: ImageAnalysis? = null
+    // =========================================================
+    // CAMERA STATE
+    // =========================================================
+
+    private var cameraProvider:
+            ProcessCameraProvider? = null
+
+    private var imageAnalysis:
+            ImageAnalysis? = null
+
+
+    // =========================================================
+    // BẬT CAMERA
+    // =========================================================
 
     /**
-     * Bật camera trước.
+     * Bật Camera trước.
      *
-     * Camera sẽ chạy đồng thời:
+     * Nếu có PreviewView:
      *
-     * 1. Preview cho người dùng nhìn thấy.
-     * 2. ImageAnalysis để gửi frame sang MediaPipe.
+     * Camera
+     * ├── Preview
+     * └── ImageAnalysis
+     *
+     * Nếu không có PreviewView:
+     *
+     * Camera
+     * └── ImageAnalysis
+     *
+     * Trường hợp không Preview được dùng cho
+     * Foreground Service chạy nền.
      */
     fun batCamera(
         khiThanhCong: () -> Unit,
@@ -39,7 +73,8 @@ class QuanLyCamera(
     ) {
 
         val cameraProviderFuture =
-            ProcessCameraProvider.getInstance(context)
+            ProcessCameraProvider
+                .getInstance(context)
 
         cameraProviderFuture.addListener({
 
@@ -48,117 +83,194 @@ class QuanLyCamera(
                 val provider =
                     cameraProviderFuture.get()
 
-                cameraProvider = provider
+                cameraProvider =
+                    provider
 
-                /**
-                 * Preview CameraX.
-                 */
-                val preview =
-                    Preview.Builder()
-                        .build()
-                        .also { cameraPreview ->
 
-                            cameraPreview.surfaceProvider =
-                                previewView.surfaceProvider
-                        }
+                // =================================================
+                // IMAGE ANALYSIS
+                // =================================================
 
-                /**
-                 * ImageAnalysis dùng để gửi từng frame
-                 * sang MediaPipe.
-                 */
                 val phanTichAnh =
                     ImageAnalysis.Builder()
 
-                        // Không tích hàng đợi frame cũ.
-                        // Nếu xử lý chưa kịp thì giữ frame mới nhất.
+                        /*
+                         * Không tích các frame cũ.
+                         *
+                         * Nếu MediaPipe đang xử lý chưa xong,
+                         * CameraX chỉ giữ frame mới nhất.
+                         */
                         .setBackpressureStrategy(
-                            ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+                            ImageAnalysis
+                                .STRATEGY_KEEP_ONLY_LATEST
                         )
 
-                        // PhanTichKhungHinhKhuonMat đang đọc
-                        // dữ liệu RGBA từ plane đầu tiên.
+                        /*
+                         * PhanTichKhungHinhKhuonMat
+                         * hiện đang xử lý RGBA_8888.
+                         */
                         .setOutputImageFormat(
-                            ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888
+                            ImageAnalysis
+                                .OUTPUT_IMAGE_FORMAT_RGBA_8888
                         )
 
                         .build()
+
 
                 phanTichAnh.setAnalyzer(
                     cameraExecutor,
                     boPhanTichKhungHinh
                 )
 
+
                 imageAnalysis =
                     phanTichAnh
 
-                /**
-                 * FaceAccess hiện chỉ sử dụng camera trước.
-                 */
-                val cameraSelector =
-                    CameraSelector.DEFAULT_FRONT_CAMERA
 
-                /**
-                 * Bỏ binding cũ trước khi binding mới.
-                 */
+                // =================================================
+                // CAMERA TRƯỚC
+                // =================================================
+
+                val cameraSelector =
+                    CameraSelector
+                        .DEFAULT_FRONT_CAMERA
+
+
+                // =================================================
+                // HỦY BINDING CŨ
+                // =================================================
+
                 provider.unbindAll()
 
-                /**
-                 * Bind đồng thời:
-                 *
-                 * Preview
-                 * +
-                 * ImageAnalysis
-                 */
-                provider.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    phanTichAnh
-                )
 
-                /**
-                 * Chỉ báo thành công sau khi bind camera
-                 * thực sự thành công.
-                 */
+                // =================================================
+                // BIND CAMERA
+                // =================================================
+
+                val previewViewHienTai =
+                    previewView
+
+
+                if (previewViewHienTai != null) {
+
+                    /*
+                     * Trường hợp Activity:
+                     *
+                     * Preview + ImageAnalysis
+                     */
+
+                    val preview =
+                        Preview.Builder()
+                            .build()
+                            .also { cameraPreview ->
+
+                                cameraPreview.surfaceProvider =
+                                    previewViewHienTai
+                                        .surfaceProvider
+                            }
+
+
+                    provider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        phanTichAnh
+                    )
+
+                } else {
+
+                    /*
+                     * Trường hợp Foreground Service:
+                     *
+                     * Không tạo Preview.
+                     * Chỉ cần ImageAnalysis để MediaPipe
+                     * tiếp tục nhận frame.
+                     */
+
+                    provider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        phanTichAnh
+                    )
+                }
+
+
+                // =================================================
+                // THÀNH CÔNG
+                // =================================================
+
                 khiThanhCong()
 
             } catch (exception: Exception) {
 
-                imageAnalysis?.clearAnalyzer()
-                imageAnalysis = null
+                imageAnalysis
+                    ?.clearAnalyzer()
 
-                khiLoi(exception)
+                imageAnalysis =
+                    null
+
+                khiLoi(
+                    exception
+                )
             }
 
         }, ContextCompat.getMainExecutor(context))
     }
 
+
+    // =========================================================
+    // DỪNG CAMERA
+    // =========================================================
+
     /**
-     * Dừng camera và dừng gửi frame
-     * sang bộ phân tích.
+     * Dừng Camera và ngừng đưa frame
+     * sang ImageAnalysis.
+     *
+     * Có thể gọi khi người dùng bấm
+     * DỪNG THEO DÕI.
      */
     fun tatCamera() {
 
-        imageAnalysis?.clearAnalyzer()
+        imageAnalysis
+            ?.clearAnalyzer()
 
-        imageAnalysis = null
+        imageAnalysis =
+            null
 
-        cameraProvider?.unbindAll()
+        cameraProvider
+            ?.unbindAll()
     }
 
+
+    // =========================================================
+    // GIẢI PHÓNG
+    // =========================================================
+
     /**
-     * Giải phóng tài nguyên khi Activity bị hủy.
+     * Giải phóng hoàn toàn tài nguyên Camera.
+     *
+     * Sau khi gọi dong(), đối tượng QuanLyCamera
+     * không nên được sử dụng lại.
      */
     fun dong() {
 
-        imageAnalysis?.clearAnalyzer()
+        imageAnalysis
+            ?.clearAnalyzer()
 
-        imageAnalysis = null
+        imageAnalysis =
+            null
 
-        cameraProvider?.unbindAll()
+        cameraProvider
+            ?.unbindAll()
 
-        cameraProvider = null
+        cameraProvider =
+            null
 
-        cameraExecutor.shutdown()
+
+        if (!cameraExecutor.isShutdown) {
+
+            cameraExecutor
+                .shutdown()
+        }
     }
 }
