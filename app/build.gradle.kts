@@ -48,6 +48,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.6.1")
     implementation("androidx.camera:camera-view:1.6.1")
 
+    implementation("com.google.mediapipe:tasks-vision:1.0.0")
+
     // Test
     testImplementation(libs.junit)
 
