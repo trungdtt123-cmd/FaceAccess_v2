@@ -1,7 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Quyền sử dụng Camera -->
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!--
+        Khai báo phần cứng Camera.
+
+        required=false giúp Android/Play Store không tự loại thiết bị
+        chỉ vì khai báo quyền CAMERA.
+        Trong app, chúng ta vẫn tự kiểm tra Camera trước khi sử dụng.
+    -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-feature
+        android:name="android.hardware.camera.front"
+        android:required="false" />
+
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,17 +31,48 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FaceAccess_v2">
 
+
+        <!-- ================================================= -->
+        <!-- MÀN HÌNH CHÍNH -->
+        <!-- ================================================= -->
+
         <activity
             android:name=".ManHinhChinhActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
 
             <intent-filter>
+
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
+
             </intent-filter>
 
         </activity>
+
+
+        <!-- ================================================= -->
+        <!-- ACCESSIBILITY SERVICE -->
+        <!-- ================================================= -->
+
+        <service
+            android:name=".truycap.DichVuTruyCapFaceAccess"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+
+            <intent-filter>
+
+                <action
+                    android:name="android.accessibilityservice.AccessibilityService" />
+
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/cau_hinh_truy_cap" />
+
+        </service>
 
     </application>
 

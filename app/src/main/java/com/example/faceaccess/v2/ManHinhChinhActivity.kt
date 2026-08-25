@@ -24,6 +24,7 @@ import com.example.faceaccess.v2.khuonmat.DuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.XuLyKhuonMat
+import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
 import java.util.Locale
 
@@ -303,16 +304,40 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                     LenhToanCuc.HOME -> {
 
-                        /*
-                         * HOME thật CHƯA được thực hiện.
-                         *
-                         * Bước tiếp theo mới nối
-                         * AccessibilityService.
-                         */
                         Log.d(
                             TAG_LENH,
                             "LENH HOME"
                         )
+
+                        /*
+                         * Callback cử chỉ có thể chạy ngoài main thread.
+                         * Đưa thao tác Accessibility về main thread để
+                         * thực thi HOME ổn định và cập nhật UI an toàn.
+                         */
+                        runOnUiThread {
+
+                            val thanhCong =
+                                DichVuTruyCapFaceAccess
+                                    .thucThiHome()
+
+                            if (thanhCong) {
+
+                                Log.d(
+                                    TAG_LENH,
+                                    "HOME Android: THANH_CONG"
+                                )
+
+                            } else {
+
+                                Log.e(
+                                    TAG_LENH,
+                                    "HOME Android: THAT_BAI - AccessibilityService chua san sang"
+                                )
+
+                                txtTrangThaiHeThong.text =
+                                    "● Hãy bật dịch vụ trợ năng FaceAccess"
+                            }
+                        }
                     }
 
 
