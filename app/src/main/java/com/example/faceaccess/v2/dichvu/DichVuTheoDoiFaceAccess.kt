@@ -14,6 +14,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.camera.QuanLyCamera
+import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
+import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
+import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
 import com.example.faceaccess.v2.khuonmat.XuLyKhuonMat
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
@@ -45,6 +48,12 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var quanLyCamera:
             QuanLyCamera
+
+    private lateinit var trichXuatDuLieuKhuonMat:
+            TrichXuatDuLieuKhuonMat
+
+    private lateinit var nhanDienNghiengDau:
+            NhanDienNghiengDau
 
     /**
      * true khi Camera nền đã bind thành công và Service
@@ -114,6 +123,8 @@ class DichVuTheoDoiFaceAccess :
          * Camera nền chỉ bật khi Activity đã nhả Camera
          * và gửi HANH_DONG_BAT_CAMERA_NEN.
          */
+        khoiTaoNhanDienCuChiNen()
+
         khoiTaoXuLyKhuonMatNen()
 
         khoiTaoCameraNen()
@@ -180,6 +191,40 @@ class DichVuTheoDoiFaceAccess :
 
 
     // =========================================================
+    // NHẬN DIỆN CỬ CHỈ NỀN
+    // =========================================================
+
+    private fun khoiTaoNhanDienCuChiNen() {
+
+        trichXuatDuLieuKhuonMat =
+            TrichXuatDuLieuKhuonMat()
+
+        nhanDienNghiengDau =
+            NhanDienNghiengDau { huong ->
+
+                when (huong) {
+
+                    HuongNghiengDau.TRAI -> {
+
+                        Log.d(
+                            TAG_CU_CHI_NEN,
+                            "NEN: NGHIENG TRAI"
+                        )
+                    }
+
+                    HuongNghiengDau.PHAI -> {
+
+                        Log.d(
+                            TAG_CU_CHI_NEN,
+                            "NEN: NGHIENG PHAI"
+                        )
+                    }
+                }
+            }
+    }
+
+
+    // =========================================================
     // KHỞI TẠO MEDIAPIPE NỀN
     // =========================================================
 
@@ -211,13 +256,24 @@ class DichVuTheoDoiFaceAccess :
                                 return
                             }
 
+                            val hienTai =
+                                SystemClock.uptimeMillis()
+
+                            val duLieu =
+                                trichXuatDuLieuKhuonMat
+                                    .trichXuat(result)
+
+                            nhanDienNghiengDau.capNhat(
+                                roll = duLieu.roll,
+                                yaw = duLieu.yaw,
+                                pitch = duLieu.pitch,
+                                thoiGianMs = hienTai
+                            )
+
                             /*
                              * Chỉ log tối đa 1 lần/giây để kiểm tra
                              * pipeline nền mà không spam Logcat.
                              */
-                            val hienTai =
-                                SystemClock.uptimeMillis()
-
                             if (
                                 hienTai -
                                 thoiGianLogGanNhat >=
@@ -240,6 +296,8 @@ class DichVuTheoDoiFaceAccess :
                             if (!cameraNenDangBat) {
                                 return
                             }
+
+                            nhanDienNghiengDau.datLai()
 
                             val hienTai =
                                 SystemClock.uptimeMillis()
@@ -346,6 +404,8 @@ class DichVuTheoDoiFaceAccess :
 
                 cameraNenDangBat =
                     true
+
+                nhanDienNghiengDau.datLai()
 
                 Log.d(
                     TAG_CAMERA_NEN,
@@ -465,6 +525,8 @@ class DichVuTheoDoiFaceAccess :
         cameraNenDangBat =
             false
 
+        nhanDienNghiengDau.datLai()
+
         quanLyCamera.tatCamera()
 
         Log.d(
@@ -559,6 +621,10 @@ class DichVuTheoDoiFaceAccess :
     // =========================================================
 
     override fun onDestroy() {
+
+        if (::nhanDienNghiengDau.isInitialized) {
+            nhanDienNghiengDau.datLai()
+        }
 
         cameraNenDangBat =
             false
@@ -687,6 +753,9 @@ class DichVuTheoDoiFaceAccess :
 
         private const val TAG_BAN_GIAO_CAMERA =
             "BanGiaoCamera"
+
+        private const val TAG_CU_CHI_NEN =
+            "CuChiNen"
 
         const val HANH_DONG_BAT_CAMERA_NEN =
             "com.example.faceaccess.v2.BAT_CAMERA_NEN"
