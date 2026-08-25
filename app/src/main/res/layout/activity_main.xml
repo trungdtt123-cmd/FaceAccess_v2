@@ -1,19 +1,347 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="@color/nen_man_hinh"
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="40dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- HEADER -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FaceAccess"
+            android:textColor="@color/chu_chinh"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Điều khiển Android bằng cử chỉ khuôn mặt"
+            android:textColor="@color/chu_phu"
+            android:textSize="15sp" />
+
+        <!-- TRẠNG THÁI HỆ THỐNG -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/nen_the"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trạng thái hệ thống"
+                android:textColor="@color/chu_chinh"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtTrangThaiHeThong"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="● Chưa bắt đầu theo dõi"
+                android:textColor="@color/do_trang_thai"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btnBatDauTheoDoi"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:backgroundTint="@color/xanh_chinh"
+                android:text="BẮT ĐẦU THEO DÕI"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- CAMERA -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="Camera"
+            android:textColor="@color/chu_chinh"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/khungCameraContainer"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/nen_the">
+
+            <!-- CameraX Preview -->
+            <androidx.camera.view.PreviewView
+                android:id="@+id/khungCamera"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <!-- Placeholder khi camera chưa chạy -->
+            <TextView
+                android:id="@+id/txtTrangThaiCamera"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:text="CAMERA&#10;Chưa khởi động"
+                android:textColor="@color/chu_phu"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </FrameLayout>
+
+        <!-- CHẾ ĐỘ HIỆN TẠI -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="Chế độ hiện tại"
+            android:textColor="@color/chu_chinh"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtCheDoHienTai"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/nen_che_do_dang_chon"
+            android:gravity="center"
+            android:padding="18dp"
+            android:text="ĐIỀU HƯỚNG"
+            android:textColor="@color/xanh_chinh"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- 4 CHẾ ĐỘ -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="Các chế độ điều khiển"
+            android:textColor="@color/chu_chinh"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/cardDieuHuong"
+                android:layout_width="0dp"
+                android:layout_height="90dp"
+                android:layout_weight="1"
+                android:background="@drawable/nen_che_do_dang_chon"
+                android:gravity="center"
+                android:text="ĐIỀU HƯỚNG"
+                android:textColor="@color/xanh_chinh"
+                android:textStyle="bold" />
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="1dp" />
+
+            <TextView
+                android:id="@+id/cardMedia"
+                android:layout_width="0dp"
+                android:layout_height="90dp"
+                android:layout_weight="1"
+                android:background="@drawable/nen_che_do_thuong"
+                android:gravity="center"
+                android:text="MEDIA"
+                android:textColor="@color/chu_chinh"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/cardHoTro"
+                android:layout_width="0dp"
+                android:layout_height="90dp"
+                android:layout_weight="1"
+                android:background="@drawable/nen_che_do_thuong"
+                android:gravity="center"
+                android:text="HỖ TRỢ"
+                android:textColor="@color/chu_chinh"
+                android:textStyle="bold" />
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="1dp" />
+
+            <TextView
+                android:id="@+id/cardConTro"
+                android:layout_width="0dp"
+                android:layout_height="90dp"
+                android:layout_weight="1"
+                android:background="@drawable/nen_che_do_thuong"
+                android:gravity="center"
+                android:text="CON TRỎ"
+                android:textColor="@color/chu_chinh"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- CỬ CHỈ TOÀN CỤC -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="Cử chỉ toàn cục"
+            android:textColor="@color/chu_chinh"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/nen_the"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nghiêng đầu trái  →  HOME"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Nghiêng đầu phải  →  ĐỔI CHẾ ĐỘ"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Mở miệng chủ đích  →  BACK"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <!-- THÔNG TIN NHẬN DIỆN -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="Thông tin nhận diện"
+            android:textColor="@color/chu_chinh"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/nen_the"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:id="@+id/txtRoll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="ROLL : --"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/txtYaw"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="YAW : --"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/txtPitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="PITCH : --"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/txtTrangThaiMat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="MẮT : --"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/txtTrangThaiMieng"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="MIỆNG : --"
+                android:textColor="@color/chu_chinh"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <!-- HIỆU CHỈNH -->
+
+        <Button
+            android:id="@+id/btnHieuChinh"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="28dp"
+            android:text="HIỆU CHỈNH" />
+
+        <!-- CÀI ĐẶT -->
+
+        <Button
+            android:id="@+id/btnCaiDat"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="12dp"
+            android:text="CÀI ĐẶT" />
+
+    </LinearLayout>
+
+</ScrollView>

@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+
+    <color name="xanh_chinh">#0866FF</color>
+    <color name="xanh_nhat">#EAF2FF</color>
+
+    <color name="nen_man_hinh">#F6F8FC</color>
+    <color name="nen_the">#FFFFFF</color>
+
+    <color name="chu_chinh">#171A21</color>
+    <color name="chu_phu">#6B7280</color>
+
+    <color name="xanh_trang_thai">#22C55E</color>
+    <color name="do_trang_thai">#EF4444</color>
+
+    <color name="vien_the">#E5E7EB</color>
+
 </resources>
