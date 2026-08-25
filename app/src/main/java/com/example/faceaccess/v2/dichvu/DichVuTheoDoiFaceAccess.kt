@@ -256,92 +256,114 @@ class DichVuTheoDoiFaceAccess :
     private fun khoiTaoDieuPhoiCuChiNen() {
 
         dieuPhoiCuChi =
-            DieuPhoiCuChi { lenh ->
+            DieuPhoiCuChi(
+                layCheDoHienTai = {
 
-                when (lenh) {
+                    boDinhTuyenCheDo
+                        .layCheDoHienTai()
+                },
+                khiCoHuongTheoCheDo = {
+                        cheDo,
+                        huong ->
 
-                    LenhToanCuc.HOME -> {
+                    /*
+                     * CHECKPOINT ROUTING NỀN:
+                     *
+                     * Chỉ log mode + hướng.
+                     * Chưa thực hiện hành động theo mode.
+                     */
+                    Log.d(
+                        TAG_CU_CHI_THEO_CHE_DO,
+                        "NEN: MODE=$cheDo | HUONG=$huong"
+                    )
+                },
+                khiCoLenh = { lenh ->
 
-                        Log.d(
-                            TAG_CU_CHI_NEN,
-                            "NEN: LENH HOME"
-                        )
+                    when (lenh) {
 
-                        /*
-                         * Đưa performGlobalAction về main thread
-                         * của process để thao tác Accessibility ổn định.
-                         */
-                        mainHandler.post {
+                        LenhToanCuc.HOME -> {
 
-                            val thanhCong =
-                                DichVuTruyCapFaceAccess
-                                    .thucThiHome()
+                            Log.d(
+                                TAG_CU_CHI_NEN,
+                                "NEN: LENH HOME"
+                            )
 
-                            if (thanhCong) {
+                            /*
+                             * Đưa performGlobalAction về main thread
+                             * của process để thao tác Accessibility ổn định.
+                             */
+                            mainHandler.post {
 
-                                Log.d(
-                                    TAG_CU_CHI_NEN,
-                                    "NEN: HOME Android THANH_CONG"
-                                )
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiHome()
 
-                            } else {
+                                if (thanhCong) {
 
-                                Log.e(
-                                    TAG_CU_CHI_NEN,
-                                    "NEN: HOME Android THAT_BAI - AccessibilityService chua san sang"
-                                )
+                                    Log.d(
+                                        TAG_CU_CHI_NEN,
+                                        "NEN: HOME Android THANH_CONG"
+                                    )
+
+                                } else {
+
+                                    Log.e(
+                                        TAG_CU_CHI_NEN,
+                                        "NEN: HOME Android THAT_BAI - AccessibilityService chua san sang"
+                                    )
+                                }
                             }
                         }
-                    }
 
 
-                    LenhToanCuc.DOI_CHE_DO -> {
+                        LenhToanCuc.DOI_CHE_DO -> {
 
-                        Log.d(
-                            TAG_CU_CHI_NEN,
-                            "NEN: LENH DOI_CHE_DO"
-                        )
+                            Log.d(
+                                TAG_CU_CHI_NEN,
+                                "NEN: LENH DOI_CHE_DO"
+                            )
 
-                        /*
-                         * Thay đổi đúng nguồn state mode đang được
-                         * Activity sử dụng.
-                         */
-                        boDinhTuyenCheDo
-                            .chuyenCheDoTiepTheo()
-                    }
+                            /*
+                             * Thay đổi đúng nguồn state mode đang được
+                             * Activity sử dụng.
+                             */
+                            boDinhTuyenCheDo
+                                .chuyenCheDoTiepTheo()
+                        }
 
 
-                    LenhToanCuc.BACK -> {
+                        LenhToanCuc.BACK -> {
 
-                        Log.d(
-                            TAG_CU_CHI_MIENG,
-                            "NEN: LENH BACK"
-                        )
+                            Log.d(
+                                TAG_CU_CHI_MIENG,
+                                "NEN: LENH BACK"
+                            )
 
-                        mainHandler.post {
+                            mainHandler.post {
 
-                            val thanhCong =
-                                DichVuTruyCapFaceAccess
-                                    .thucThiBack()
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiBack()
 
-                            if (thanhCong) {
+                                if (thanhCong) {
 
-                                Log.d(
-                                    TAG_CU_CHI_MIENG,
-                                    "NEN: BACK Android THANH_CONG"
-                                )
+                                    Log.d(
+                                        TAG_CU_CHI_MIENG,
+                                        "NEN: BACK Android THANH_CONG"
+                                    )
 
-                            } else {
+                                } else {
 
-                                Log.e(
-                                    TAG_CU_CHI_MIENG,
-                                    "NEN: BACK Android THAT_BAI - AccessibilityService chua san sang"
-                                )
+                                    Log.e(
+                                        TAG_CU_CHI_MIENG,
+                                        "NEN: BACK Android THAT_BAI - AccessibilityService chua san sang"
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
+            )
     }
 
 
@@ -447,6 +469,16 @@ class DichVuTheoDoiFaceAccess :
                 Log.d(
                     TAG_CU_CHI_HUONG_DAU,
                     "NEN: HUONG $tenHuong"
+                )
+
+                /*
+                 * Detector nền chỉ mô tả hướng.
+                 * DieuPhoiCuChi đọc mode dùng chung và route.
+                 */
+                dieuPhoiCuChi.xuLy(
+                    SuKienCuChi.DieuHuongDau(
+                        huong = huong
+                    )
                 )
             }
     }
@@ -1024,6 +1056,9 @@ class DichVuTheoDoiFaceAccess :
 
         private const val TAG_CU_CHI_HUONG_DAU =
             "CuChiHuongDau"
+
+        private const val TAG_CU_CHI_THEO_CHE_DO =
+            "CuChiTheoCheDo"
 
         const val HANH_DONG_BAT_CAMERA_NEN =
             "com.example.faceaccess.v2.BAT_CAMERA_NEN"

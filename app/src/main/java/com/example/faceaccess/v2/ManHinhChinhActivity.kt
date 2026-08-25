@@ -132,6 +132,17 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     TAG_CU_CHI_HUONG_DAU,
                     "APP: HUONG $tenHuong"
                 )
+
+                /*
+                 * Detector chỉ mô tả hướng.
+                 * DieuPhoiCuChi mới quyết định event này
+                 * đang thuộc mode nào.
+                 */
+                dieuPhoiCuChi.xuLy(
+                    SuKienCuChi.DieuHuongDau(
+                        huong = huong
+                    )
+                )
             }
     }
 
@@ -648,99 +659,121 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private fun khoiTaoDieuPhoiCuChi() {
 
         dieuPhoiCuChi =
-            DieuPhoiCuChi { lenh ->
+            DieuPhoiCuChi(
+                layCheDoHienTai = {
 
-                when (lenh) {
+                    boDinhTuyenCheDo
+                        .layCheDoHienTai()
+                },
+                khiCoHuongTheoCheDo = {
+                        cheDo,
+                        huong ->
 
-                    LenhToanCuc.HOME -> {
+                    /*
+                     * CHECKPOINT ROUTING:
+                     *
+                     * Chỉ log mode + hướng.
+                     * Chưa thực hiện hành động theo mode.
+                     */
+                    Log.d(
+                        TAG_CU_CHI_THEO_CHE_DO,
+                        "APP: MODE=$cheDo | HUONG=$huong"
+                    )
+                },
+                khiCoLenh = { lenh ->
 
-                        Log.d(
-                            TAG_LENH,
-                            "LENH HOME"
-                        )
+                    when (lenh) {
 
-                        /*
-                         * Callback cử chỉ có thể chạy ngoài main thread.
-                         * Đưa thao tác Accessibility về main thread để
-                         * thực thi HOME ổn định và cập nhật UI an toàn.
-                         */
-                        runOnUiThread {
+                        LenhToanCuc.HOME -> {
 
-                            val thanhCong =
-                                DichVuTruyCapFaceAccess
-                                    .thucThiHome()
+                            Log.d(
+                                TAG_LENH,
+                                "LENH HOME"
+                            )
 
-                            if (thanhCong) {
+                            /*
+                             * Callback cử chỉ có thể chạy ngoài main thread.
+                             * Đưa thao tác Accessibility về main thread để
+                             * thực thi HOME ổn định và cập nhật UI an toàn.
+                             */
+                            runOnUiThread {
 
-                                Log.d(
-                                    TAG_LENH,
-                                    "HOME Android: THANH_CONG"
-                                )
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiHome()
 
-                            } else {
+                                if (thanhCong) {
 
-                                Log.e(
-                                    TAG_LENH,
-                                    "HOME Android: THAT_BAI - AccessibilityService chua san sang"
-                                )
+                                    Log.d(
+                                        TAG_LENH,
+                                        "HOME Android: THANH_CONG"
+                                    )
 
-                                txtTrangThaiHeThong.text =
-                                    "● Hãy bật dịch vụ trợ năng FaceAccess"
+                                } else {
+
+                                    Log.e(
+                                        TAG_LENH,
+                                        "HOME Android: THAT_BAI - AccessibilityService chua san sang"
+                                    )
+
+                                    txtTrangThaiHeThong.text =
+                                        "● Hãy bật dịch vụ trợ năng FaceAccess"
+                                }
                             }
                         }
-                    }
 
 
-                    LenhToanCuc.DOI_CHE_DO -> {
+                        LenhToanCuc.DOI_CHE_DO -> {
 
-                        Log.d(
-                            TAG_LENH,
-                            "LENH DOI_CHE_DO"
-                        )
+                            Log.d(
+                                TAG_LENH,
+                                "LENH DOI_CHE_DO"
+                            )
 
-                        /*
-                         * Đây là nơi duy nhất hiện tại
-                         * xử lý yêu cầu đổi chế độ.
-                         */
-                        boDinhTuyenCheDo
-                            .chuyenCheDoTiepTheo()
-                    }
+                            /*
+                             * Đây là nơi duy nhất hiện tại
+                             * xử lý yêu cầu đổi chế độ.
+                             */
+                            boDinhTuyenCheDo
+                                .chuyenCheDoTiepTheo()
+                        }
 
 
-                    LenhToanCuc.BACK -> {
+                        LenhToanCuc.BACK -> {
 
-                        Log.d(
-                            TAG_LENH,
-                            "LENH BACK"
-                        )
+                            Log.d(
+                                TAG_LENH,
+                                "LENH BACK"
+                            )
 
-                        runOnUiThread {
+                            runOnUiThread {
 
-                            val thanhCong =
-                                DichVuTruyCapFaceAccess
-                                    .thucThiBack()
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiBack()
 
-                            if (thanhCong) {
+                                if (thanhCong) {
 
-                                Log.d(
-                                    TAG_LENH,
-                                    "BACK Android: THANH_CONG"
-                                )
+                                    Log.d(
+                                        TAG_LENH,
+                                        "BACK Android: THANH_CONG"
+                                    )
 
-                            } else {
+                                } else {
 
-                                Log.e(
-                                    TAG_LENH,
-                                    "BACK Android: THAT_BAI - AccessibilityService chua san sang"
-                                )
+                                    Log.e(
+                                        TAG_LENH,
+                                        "BACK Android: THAT_BAI - AccessibilityService chua san sang"
+                                    )
 
-                                txtTrangThaiHeThong.text =
-                                    "● Hãy bật dịch vụ trợ năng FaceAccess"
+                                    txtTrangThaiHeThong.text =
+                                        "● Hãy bật dịch vụ trợ năng FaceAccess"
+                                }
                             }
                         }
                     }
                 }
-            }
+            )
     }
 
 
@@ -1727,5 +1760,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_CU_CHI_HUONG_DAU =
             "CuChiHuongDau"
+
+        private const val TAG_CU_CHI_THEO_CHE_DO =
+            "CuChiTheoCheDo"
     }
 }

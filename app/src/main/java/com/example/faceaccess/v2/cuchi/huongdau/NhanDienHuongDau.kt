@@ -481,25 +481,25 @@ class NhanDienHuongDau(
          * Dữ liệu runtime trước đó cho thấy xoay rõ
          * thường vượt khoảng 30 độ.
          *
-         * Dùng 22 độ để detector đủ nhạy nhưng vẫn có
+         * Dùng 19 độ để thao tác tự nhiên hơn nhưng vẫn có
          * khoảng cách với chuyển động đầu nhỏ.
          */
         private const val NGUONG_YAW =
-            22f
+            19f
 
         /**
          * PITCH thường có biên độ tự nhiên nhỏ hơn YAW,
          * vì vậy dùng ngưỡng thấp hơn một chút.
          */
         private const val NGUONG_PITCH =
-            16f
+            14f
 
         /**
          * Một trục chỉ được nhận nếu nó thực sự chi phối
          * hai trục còn lại.
          */
         private const val TY_LE_CHI_PHOI =
-            1.15f
+            1.10f
 
         /**
          * Neutral window để re-arm.
@@ -508,28 +508,28 @@ class NhanDienHuongDau(
             8f
 
         private const val NGUONG_YAW_TRUNG_TINH =
-            9f
+            11f
 
         private const val NGUONG_PITCH_TRUNG_TINH =
-            7f
+            9f
 
         /**
          * Người dùng phải giữ hướng đủ lâu để coi là
          * cử chỉ chủ ý, không phải chuyển động thoáng qua.
          */
         private const val THOI_GIAN_GIU_MS =
-            240L
+            180L
 
         /**
          * Cho phép một vài frame nhiễu trong lúc giữ.
          */
         private const val THOI_GIAN_GRACE_MS =
-            180L
+            220L
 
         /**
          * Phải trở lại neutral ổn định trước gesture mới.
          */
         private const val THOI_GIAN_TRUNG_TINH_MS =
-            140L
+            100L
     }
 }
