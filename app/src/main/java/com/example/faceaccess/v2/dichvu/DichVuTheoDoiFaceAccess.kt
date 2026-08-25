@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
@@ -16,6 +18,11 @@ import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.camera.QuanLyCamera
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
+import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
+import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
+import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
+import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
+import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
 import com.example.faceaccess.v2.khuonmat.XuLyKhuonMat
@@ -54,6 +61,17 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var nhanDienNghiengDau:
             NhanDienNghiengDau
+
+    private lateinit var dieuPhoiCuChi:
+            DieuPhoiCuChi
+
+    private lateinit var boDinhTuyenCheDo:
+            BoDinhTuyenCheDo
+
+    private val mainHandler =
+        Handler(
+            Looper.getMainLooper()
+        )
 
     /**
      * true khi Camera nền đã bind thành công và Service
@@ -123,6 +141,13 @@ class DichVuTheoDoiFaceAccess :
          * Camera nền chỉ bật khi Activity đã nhả Camera
          * và gửi HANH_DONG_BAT_CAMERA_NEN.
          */
+        /*
+         * Mode + dispatcher phải sẵn sàng trước detector.
+         */
+        khoiTaoBoDinhTuyenCheDoNen()
+
+        khoiTaoDieuPhoiCuChiNen()
+
         khoiTaoNhanDienCuChiNen()
 
         khoiTaoXuLyKhuonMatNen()
@@ -191,6 +216,92 @@ class DichVuTheoDoiFaceAccess :
 
 
     // =========================================================
+    // MODE TOÀN CỤC TRONG SERVICE
+    // =========================================================
+
+    /**
+     * BoDinhTuyenCheDo không còn giữ state riêng.
+     * Nó dùng cùng TrangThaiCheDoToanCuc với Activity.
+     */
+    private fun khoiTaoBoDinhTuyenCheDoNen() {
+
+        boDinhTuyenCheDo =
+            BoDinhTuyenCheDo { cheDoMoi ->
+
+                Log.d(
+                    TAG_CU_CHI_NEN,
+                    "NEN: CHE DO MOI = $cheDoMoi"
+                )
+            }
+    }
+
+
+    // =========================================================
+    // ĐIỀU PHỐI CỬ CHỈ NỀN
+    // =========================================================
+
+    private fun khoiTaoDieuPhoiCuChiNen() {
+
+        dieuPhoiCuChi =
+            DieuPhoiCuChi { lenh ->
+
+                when (lenh) {
+
+                    LenhToanCuc.HOME -> {
+
+                        Log.d(
+                            TAG_CU_CHI_NEN,
+                            "NEN: LENH HOME"
+                        )
+
+                        /*
+                         * Đưa performGlobalAction về main thread
+                         * của process để thao tác Accessibility ổn định.
+                         */
+                        mainHandler.post {
+
+                            val thanhCong =
+                                DichVuTruyCapFaceAccess
+                                    .thucThiHome()
+
+                            if (thanhCong) {
+
+                                Log.d(
+                                    TAG_CU_CHI_NEN,
+                                    "NEN: HOME Android THANH_CONG"
+                                )
+
+                            } else {
+
+                                Log.e(
+                                    TAG_CU_CHI_NEN,
+                                    "NEN: HOME Android THAT_BAI - AccessibilityService chua san sang"
+                                )
+                            }
+                        }
+                    }
+
+
+                    LenhToanCuc.DOI_CHE_DO -> {
+
+                        Log.d(
+                            TAG_CU_CHI_NEN,
+                            "NEN: LENH DOI_CHE_DO"
+                        )
+
+                        /*
+                         * Thay đổi đúng nguồn state mode đang được
+                         * Activity sử dụng.
+                         */
+                        boDinhTuyenCheDo
+                            .chuyenCheDoTiepTheo()
+                    }
+                }
+            }
+    }
+
+
+    // =========================================================
     // NHẬN DIỆN CỬ CHỈ NỀN
     // =========================================================
 
@@ -210,13 +321,22 @@ class DichVuTheoDoiFaceAccess :
                             TAG_CU_CHI_NEN,
                             "NEN: NGHIENG TRAI"
                         )
+
+                        dieuPhoiCuChi.xuLy(
+                            SuKienCuChi.NghiengTrai
+                        )
                     }
+
 
                     HuongNghiengDau.PHAI -> {
 
                         Log.d(
                             TAG_CU_CHI_NEN,
                             "NEN: NGHIENG PHAI"
+                        )
+
+                        dieuPhoiCuChi.xuLy(
+                            SuKienCuChi.NghiengPhai
                         )
                     }
                 }

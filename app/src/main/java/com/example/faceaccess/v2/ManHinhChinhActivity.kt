@@ -1434,6 +1434,21 @@ class ManHinhChinhActivity : AppCompatActivity() {
         super.onStart()
 
         /*
+         * Đồng bộ UI với nguồn trạng thái mode duy nhất.
+         *
+         * Nếu Service đã đổi mode khi FaceAccess ở background,
+         * khi Activity quay lại card/nhãn mode phải hiển thị
+         * đúng trạng thái mới.
+         */
+        if (::boDinhTuyenCheDo.isInitialized) {
+
+            capNhatGiaoDienCheDo(
+                boDinhTuyenCheDo
+                    .layCheDoHienTai()
+            )
+        }
+
+        /*
          * Nếu phiên theo dõi vẫn còn hoạt động nhưng Camera
          * đang thuộc Service, yêu cầu Service nhả Camera.
          *
