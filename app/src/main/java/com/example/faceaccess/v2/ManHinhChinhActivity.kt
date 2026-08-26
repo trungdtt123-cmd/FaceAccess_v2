@@ -737,13 +737,43 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         }
 
 
-                        LenhDieuHuong.CUON_LEN,
+                        LenhDieuHuong.CUON_LEN -> {
+
+                            runOnUiThread {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiCuonLen()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "APP: CUON_LEN Accessibility THANH_CONG"
+                                    } else {
+                                        "APP: CUON_LEN Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
+
+
                         LenhDieuHuong.CUON_XUONG -> {
 
-                            Log.d(
-                                TAG_LENH_DIEU_HUONG,
-                                "APP: SCROLL CHUA THUC THI - $lenhDieuHuong"
-                            )
+                            runOnUiThread {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiCuonXuong()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "APP: CUON_XUONG Accessibility THANH_CONG"
+                                    } else {
+                                        "APP: CUON_XUONG Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
                         }
                     }
                 },

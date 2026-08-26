@@ -42,7 +42,7 @@ class NhanDienHuongDau(
 
 
     private var trangThai =
-        TrangThai.SAN_SANG
+        TrangThai.CHO_TRUNG_TINH
 
     private var huongDangGiu:
             HuongDau? = null
@@ -189,9 +189,15 @@ class NhanDienHuongDau(
                                 thoiDiemBatDauGiu
 
 
+                    val thoiGianGiuCanThiet =
+                        layThoiGianGiuCanThiet(
+                            huongDangGiu
+                        )
+
+
                     if (
                         thoiGianDaGiu >=
-                        THOI_GIAN_GIU_MS
+                        thoiGianGiuCanThiet
                     ) {
 
                         val huongPhat =
@@ -301,9 +307,9 @@ class NhanDienHuongDau(
         val yawChiPhoi =
             absYaw >= NGUONG_YAW &&
                     absYaw >=
-                    absPitch * TY_LE_CHI_PHOI &&
+                    absPitch * TY_LE_CHI_PHOI_YAW &&
                     absYaw >=
-                    absRoll * TY_LE_CHI_PHOI
+                    absRoll * TY_LE_CHI_PHOI_YAW
 
 
         if (yawChiPhoi) {
@@ -331,9 +337,9 @@ class NhanDienHuongDau(
         val pitchChiPhoi =
             absPitch >= NGUONG_PITCH &&
                     absPitch >=
-                    absYaw * TY_LE_CHI_PHOI &&
+                    absYaw * TY_LE_CHI_PHOI_PITCH &&
                     absPitch >=
-                    absRoll * TY_LE_CHI_PHOI
+                    absRoll * TY_LE_CHI_PHOI_PITCH
 
 
         if (pitchChiPhoi) {
@@ -356,6 +362,30 @@ class NhanDienHuongDau(
 
 
         return null
+    }
+
+
+    // =========================================================
+    // THỜI GIAN GIỮ THEO HƯỚNG
+    // =========================================================
+
+    private fun layThoiGianGiuCanThiet(
+        huong: HuongDau?
+    ): Long {
+
+        return when (huong) {
+
+            HuongDau.LEN,
+            HuongDau.XUONG ->
+                THOI_GIAN_GIU_PITCH_MS
+
+            HuongDau.TRAI,
+            HuongDau.PHAI ->
+                THOI_GIAN_GIU_YAW_MS
+
+            null ->
+                THOI_GIAN_GIU_YAW_MS
+        }
     }
 
 
@@ -465,7 +495,14 @@ class NhanDienHuongDau(
 
     fun datLai() {
 
-        datLaiVeSanSang()
+        /*
+         * Sau camera handoff / tracking loss không cho nhận
+         * gesture ngay từ frame đầu tiên vì head pose có thể
+         * còn dao động.
+         *
+         * Yêu cầu một khoảng neutral rất ngắn trước khi re-arm.
+         */
+        chuyenSangChoTrungTinh()
     }
 
 
@@ -488,18 +525,26 @@ class NhanDienHuongDau(
             19f
 
         /**
-         * PITCH thường có biên độ tự nhiên nhỏ hơn YAW,
-         * vì vậy dùng ngưỡng thấp hơn một chút.
+         * PITCH có biên độ tự nhiên nhỏ hơn YAW.
+         *
+         * Giảm từ 14 xuống 11 độ để ngẩng/cúi nhẹ
+         * cũng được nhận tự nhiên hơn.
          */
         private const val NGUONG_PITCH =
-            14f
+            11f
 
         /**
-         * Một trục chỉ được nhận nếu nó thực sự chi phối
-         * hai trục còn lại.
+         * Giữ YAW chặt hơn để không ăn vào ROLL.
          */
-        private const val TY_LE_CHI_PHOI =
+        private const val TY_LE_CHI_PHOI_YAW =
             1.10f
+
+        /**
+         * PITCH được nới nhẹ dominance để thao tác
+         * ngẩng/cúi không cần quá "thẳng trục".
+         */
+        private const val TY_LE_CHI_PHOI_PITCH =
+            1.05f
 
         /**
          * Neutral window để re-arm.
@@ -514,22 +559,30 @@ class NhanDienHuongDau(
             9f
 
         /**
-         * Người dùng phải giữ hướng đủ lâu để coi là
-         * cử chỉ chủ ý, không phải chuyển động thoáng qua.
+         * YAW đã khá ổn nên chỉ giảm hold vừa phải
+         * để phản hồi nhanh hơn mà không quá nhạy.
          */
-        private const val THOI_GIAN_GIU_MS =
-            180L
+        private const val THOI_GIAN_GIU_YAW_MS =
+            140L
 
         /**
-         * Cho phép một vài frame nhiễu trong lúc giữ.
+         * PITCH cần cảm giác nhanh và tự nhiên hơn.
+         */
+        private const val THOI_GIAN_GIU_PITCH_MS =
+            120L
+
+        /**
+         * Vẫn giữ grace đủ lớn để không mất candidate
+         * chỉ vì 1-2 frame MediaPipe nhiễu.
          */
         private const val THOI_GIAN_GRACE_MS =
-            220L
+            200L
 
         /**
-         * Phải trở lại neutral ổn định trước gesture mới.
+         * Neutral ổn định ngắn hơn để re-arm nhanh,
+         * đồng thời giúp startup/handoff sẵn sàng sớm.
          */
         private const val THOI_GIAN_TRUNG_TINH_MS =
-            100L
+            80L
     }
 }

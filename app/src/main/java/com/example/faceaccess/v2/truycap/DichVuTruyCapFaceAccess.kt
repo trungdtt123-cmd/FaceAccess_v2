@@ -451,6 +451,349 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     }
 
 
+    // =========================================================
+    // VERTICAL SCROLL NAVIGATION
+    // =========================================================
+
+    private fun thucThiCuonLenNoiBo(): Boolean {
+
+        return thucThiCuonDoc(
+            cuonXuong = false
+        )
+    }
+
+
+    private fun thucThiCuonXuongNoiBo(): Boolean {
+
+        return thucThiCuonDoc(
+            cuonXuong = true
+        )
+    }
+
+
+    /**
+     * Cuộn theo trục dọc bằng AccessibilityNodeInfo.
+     *
+     * Ưu tiên:
+     * 1. Scroll container là cha của node đang focus.
+     * 2. Nếu chưa có, tìm scroll container phù hợp trong root.
+     *
+     * Với PITCH:
+     * - LEN   -> scroll UP / BACKWARD
+     * - XUONG -> scroll DOWN / FORWARD
+     */
+    private fun thucThiCuonDoc(
+        cuonXuong: Boolean
+    ): Boolean {
+
+        val root =
+            rootInActiveWindow
+
+        if (root == null) {
+
+            Log.e(
+                TAG_SCROLL,
+                "THAT_BAI: rootInActiveWindow = null"
+            )
+
+            return false
+        }
+
+
+        val actionDoc =
+            if (cuonXuong) {
+
+                AccessibilityNodeInfo
+                    .AccessibilityAction
+                    .ACTION_SCROLL_DOWN
+                    .id
+
+            } else {
+
+                AccessibilityNodeInfo
+                    .AccessibilityAction
+                    .ACTION_SCROLL_UP
+                    .id
+            }
+
+
+        val actionFallback =
+            if (cuonXuong) {
+
+                AccessibilityNodeInfo
+                    .ACTION_SCROLL_FORWARD
+
+            } else {
+
+                AccessibilityNodeInfo
+                    .ACTION_SCROLL_BACKWARD
+            }
+
+
+        val tenHuong =
+            if (cuonXuong) {
+                "DOWN"
+            } else {
+                "UP"
+            }
+
+
+        val accessibilityFocus =
+            root.findFocus(
+                AccessibilityNodeInfo.FOCUS_ACCESSIBILITY
+            )
+
+        val inputFocus =
+            root.findFocus(
+                AccessibilityNodeInfo.FOCUS_INPUT
+            )
+
+        val nodeDangFocus =
+            accessibilityFocus
+                ?: inputFocus
+
+
+        val nodeCuonTuFocus =
+            timNodeCuonTuNodeDangFocus(
+                nodeBatDau = nodeDangFocus,
+                actionDoc = actionDoc,
+                actionFallback = actionFallback
+            )
+
+
+        val nodeCuon =
+            nodeCuonTuFocus
+                ?: timNodeCuonTrongCay(
+                    node = root,
+                    actionDoc = actionDoc,
+                    actionFallback = actionFallback
+                )
+
+
+        if (nodeCuon == null) {
+
+            Log.e(
+                TAG_SCROLL,
+                "THAT_BAI[$tenHuong]: khong tim thay scroll container phu hop"
+            )
+
+            return false
+        }
+
+
+        Log.d(
+            TAG_SCROLL,
+            "NODE_CUON[$tenHuong] | " +
+                    "class=${nodeCuon.className} | " +
+                    "scrollable=${nodeCuon.isScrollable} | " +
+                    "tuFocus=${nodeCuonTuFocus != null}"
+        )
+
+
+        /*
+         * Ưu tiên action có hướng dọc rõ ràng.
+         * Nếu ROM/widget không hỗ trợ thì fallback về
+         * ACTION_SCROLL_FORWARD / ACTION_SCROLL_BACKWARD.
+         */
+        if (
+            hoTroHanhDong(
+                node = nodeCuon,
+                action = actionDoc
+            )
+        ) {
+
+            val thanhCong =
+                nodeCuon.performAction(
+                    actionDoc
+                )
+
+            if (thanhCong) {
+
+                Log.d(
+                    TAG_SCROLL,
+                    "THANH_CONG[$tenHuong]: ACTION_SCROLL_DOC"
+                )
+
+                return true
+            }
+
+
+            Log.d(
+                TAG_SCROLL,
+                "FALLBACK[$tenHuong]: ACTION_SCROLL_DOC=false"
+            )
+        }
+
+
+        if (
+            hoTroHanhDong(
+                node = nodeCuon,
+                action = actionFallback
+            )
+        ) {
+
+            val thanhCong =
+                nodeCuon.performAction(
+                    actionFallback
+                )
+
+            if (thanhCong) {
+
+                Log.d(
+                    TAG_SCROLL,
+                    "THANH_CONG[$tenHuong]: ACTION_SCROLL_FALLBACK"
+                )
+
+            } else {
+
+                Log.e(
+                    TAG_SCROLL,
+                    "THAT_BAI[$tenHuong]: performAction scroll tra ve false"
+                )
+            }
+
+
+            return thanhCong
+        }
+
+
+        Log.e(
+            TAG_SCROLL,
+            "THAT_BAI[$tenHuong]: node khong ho tro action cuon can thiet"
+        )
+
+        return false
+    }
+
+
+    /**
+     * Đi từ node đang focus lên các parent để tìm container cuộn.
+     * Cách này ưu tiên đúng danh sách mà người dùng đang thao tác.
+     */
+    private fun timNodeCuonTuNodeDangFocus(
+        nodeBatDau: AccessibilityNodeInfo?,
+        actionDoc: Int,
+        actionFallback: Int
+    ): AccessibilityNodeInfo? {
+
+        var nodeHienTai =
+            nodeBatDau
+
+
+        while (nodeHienTai != null) {
+
+            if (
+                nodeHienTai.isVisibleToUser &&
+                coTheCuonTheoHuong(
+                    node = nodeHienTai,
+                    actionDoc = actionDoc,
+                    actionFallback = actionFallback
+                )
+            ) {
+
+                return nodeHienTai
+            }
+
+
+            nodeHienTai =
+                nodeHienTai.parent
+        }
+
+
+        return null
+    }
+
+
+    /**
+     * Fallback: duyệt cây để tìm scroll container đang hiển thị.
+     */
+    private fun timNodeCuonTrongCay(
+        node: AccessibilityNodeInfo,
+        actionDoc: Int,
+        actionFallback: Int
+    ): AccessibilityNodeInfo? {
+
+        if (!node.isVisibleToUser) {
+            return null
+        }
+
+
+        if (
+            coTheCuonTheoHuong(
+                node = node,
+                actionDoc = actionDoc,
+                actionFallback = actionFallback
+            )
+        ) {
+
+            return node
+        }
+
+
+        for (
+        index in 0 until
+                node.childCount
+        ) {
+
+            val child =
+                node.getChild(
+                    index
+                )
+                    ?: continue
+
+
+            val ketQua =
+                timNodeCuonTrongCay(
+                    node = child,
+                    actionDoc = actionDoc,
+                    actionFallback = actionFallback
+                )
+
+
+            if (ketQua != null) {
+                return ketQua
+            }
+        }
+
+
+        return null
+    }
+
+
+    private fun coTheCuonTheoHuong(
+        node: AccessibilityNodeInfo,
+        actionDoc: Int,
+        actionFallback: Int
+    ): Boolean {
+
+        return node.isScrollable &&
+                (
+                        hoTroHanhDong(
+                            node = node,
+                            action = actionDoc
+                        ) ||
+                                hoTroHanhDong(
+                                    node = node,
+                                    action = actionFallback
+                                )
+                        )
+    }
+
+
+    private fun hoTroHanhDong(
+        node: AccessibilityNodeInfo,
+        action: Int
+    ): Boolean {
+
+        return node.actionList.any {
+                accessibilityAction ->
+
+            accessibilityAction.id ==
+                    action
+        }
+    }
+
+
     companion object {
 
         private const val TAG =
@@ -458,6 +801,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         private const val TAG_FOCUS =
             "FocusNavigation"
+
+        private const val TAG_SCROLL =
+            "ScrollNavigation"
 
         @Volatile
         private var phienBanDangHoatDong:
@@ -511,6 +857,28 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
             return dichVu
                 .thucThiTruocNoiBo()
+        }
+
+
+        fun thucThiCuonLen(): Boolean {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .thucThiCuonLenNoiBo()
+        }
+
+
+        fun thucThiCuonXuong(): Boolean {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .thucThiCuonXuongNoiBo()
         }
     }
 }

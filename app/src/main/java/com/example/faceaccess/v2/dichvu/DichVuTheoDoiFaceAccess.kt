@@ -334,13 +334,43 @@ class DichVuTheoDoiFaceAccess :
                         }
 
 
-                        LenhDieuHuong.CUON_LEN,
+                        LenhDieuHuong.CUON_LEN -> {
+
+                            mainHandler.post {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiCuonLen()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "NEN: CUON_LEN Accessibility THANH_CONG"
+                                    } else {
+                                        "NEN: CUON_LEN Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
+
+
                         LenhDieuHuong.CUON_XUONG -> {
 
-                            Log.d(
-                                TAG_LENH_DIEU_HUONG,
-                                "NEN: SCROLL CHUA THUC THI - $lenhDieuHuong"
-                            )
+                            mainHandler.post {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiCuonXuong()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "NEN: CUON_XUONG Accessibility THANH_CONG"
+                                    } else {
+                                        "NEN: CUON_XUONG Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
                         }
                     }
                 },
