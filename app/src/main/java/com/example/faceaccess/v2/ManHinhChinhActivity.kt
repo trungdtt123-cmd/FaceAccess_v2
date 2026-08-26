@@ -39,6 +39,7 @@ import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.XuLyKhuonMat
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
+import com.example.faceaccess.v2.dieuphoi.hotro.DanhSachLienHeHoTroActivity
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
 import java.util.Locale
 
@@ -1173,6 +1174,23 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 kiemTraVaBatCamera()
             }
+        }
+
+
+        /*
+         * Card HỖ TRỢ đồng thời là lối vào khu vực
+         * quản lý danh sách liên hệ hỗ trợ.
+         *
+         * Việc đổi mode bằng ROLL phải vẫn giữ nguyên.
+         */
+        cardHoTro.setOnClickListener {
+
+            startActivity(
+                Intent(
+                    this,
+                    DanhSachLienHeHoTroActivity::class.java
+                )
+            )
         }
     }
 

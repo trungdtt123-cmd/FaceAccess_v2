@@ -88,12 +88,33 @@
 
 
         <!-- ================================================= -->
+        <!-- QUẢN LÝ LIÊN HỆ HỖ TRỢ -->
+        <!-- ================================================= -->
+
+        <activity
+            android:name=".dieuphoi.hotro.DanhSachLienHeHoTroActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".dieuphoi.hotro.ThemLienHeHoTroActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+
+        <activity
+            android:name=".dieuphoi.hotro.ChiTietLienHeHoTroActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+
+        <!-- ================================================= -->
         <!-- ACCESSIBILITY SERVICE -->
         <!-- ================================================= -->
 
         <!--
             Dùng để thực hiện các thao tác Android toàn cục:
-            HOME, sau này BACK...
+            HOME, BACK, điều hướng, cuộn...
         -->
         <service
             android:name=".truycap.DichVuTruyCapFaceAccess"
@@ -119,11 +140,8 @@
         <!-- ================================================= -->
 
         <!--
-            Service này sẽ chịu trách nhiệm chạy theo dõi
-            khuôn mặt kể cả khi Activity xuống background.
-
-            Hiện tại mới tạo khung Foreground Service.
-            Bước sau mới chuyển CameraX + MediaPipe vào đây.
+            Service này chịu trách nhiệm theo dõi khuôn mặt
+            khi Activity chuyển xuống background.
         -->
         <service
             android:name=".dichvu.DichVuTheoDoiFaceAccess"
