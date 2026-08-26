@@ -32,6 +32,7 @@ import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
 import com.example.faceaccess.v2.dieuphoi.media.BoDieuKhienMedia
+import com.example.faceaccess.v2.dieuphoi.hotro.LenhHoTro
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.khuonmat.DuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
@@ -828,6 +829,19 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             }
                         )
                     }
+                },
+
+                khiCoLenhHoTro = { lenhHoTro ->
+
+                    /*
+                     * Checkpoint HỖ TRỢ 1:
+                     * chỉ xác nhận routing foreground.
+                     * Chưa thực hiện liên hệ thật.
+                     */
+                    Log.d(
+                        TAG_LENH_HO_TRO,
+                        "APP: LENH_HO_TRO=$lenhHoTro"
+                    )
                 },
 
                 khiCoLenh = { lenh ->
@@ -1919,5 +1933,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_LENH_MEDIA =
             "LenhMedia"
+
+        private const val TAG_LENH_HO_TRO =
+            "LenhHoTro"
     }
 }

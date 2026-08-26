@@ -5,6 +5,7 @@ import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
+import com.example.faceaccess.v2.dieuphoi.hotro.LenhHoTro
 
 class DieuPhoiCuChi(
 
@@ -46,6 +47,16 @@ class DieuPhoiCuChi(
      */
     private val khiCoLenhMedia:
         (LenhMedia) -> Unit =
+        { _ -> },
+
+    /**
+     * Chỉ dùng khi mode hiện tại là HO_TRO.
+     *
+     * Checkpoint này chỉ route semantic command.
+     * Chưa thực hiện cuộc gọi / tin nhắn thật.
+     */
+    private val khiCoLenhHoTro:
+        (LenhHoTro) -> Unit =
         { _ -> },
 
     /**
@@ -217,7 +228,37 @@ class DieuPhoiCuChi(
                     }
 
 
-                    CheDoDieuKhien.HO_TRO,
+                    CheDoDieuKhien.HO_TRO -> {
+
+                        val lenhHoTro =
+                            when (suKien.huong) {
+
+                                HuongDau.TRAI ->
+                                    LenhHoTro.NGUOI_TRUOC
+
+                                HuongDau.PHAI ->
+                                    LenhHoTro.NGUOI_TIEP_THEO
+
+                                HuongDau.LEN ->
+                                    LenhHoTro.XAC_NHAN_LIEN_HE
+
+                                HuongDau.XUONG ->
+                                    LenhHoTro.HUY_LIEN_HE
+                            }
+
+
+                        Log.d(
+                            TAG,
+                            "HO_TRO: ${suKien.huong} -> $lenhHoTro"
+                        )
+
+
+                        khiCoLenhHoTro(
+                            lenhHoTro
+                        )
+                    }
+
+
                     CheDoDieuKhien.CON_TRO -> {
                         /*
                          * Chưa có command riêng ở checkpoint này.
