@@ -1,12 +1,25 @@
 package com.example.faceaccess.v2.truycap
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
+import android.graphics.Path
 import android.util.Log
 import android.view.View
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
 class DichVuTruyCapFaceAccess : AccessibilityService() {
+
+    /**
+     * Chặn hai animation scroll chồng lên nhau.
+     *
+     * Detector PITCH đã one-shot + neutral re-arm, nhưng guard này
+     * vẫn cần để bảo vệ khi người dùng re-arm rất nhanh hoặc khi
+     * callback từ foreground/background đến gần nhau.
+     */
+    @Volatile
+    private var dangCuonBangCuChi =
+        false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -472,17 +485,272 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
 
     /**
-     * Cuộn theo trục dọc bằng AccessibilityNodeInfo.
+     * Scroll mới:
      *
-     * Ưu tiên:
-     * 1. Scroll container là cha của node đang focus.
-     * 2. Nếu chưa có, tìm scroll container phù hợp trong root.
+     * 1. Ưu tiên dispatchGesture() để mô phỏng một cú vuốt ngắn,
+     *    nhờ vậy UI cuộn có animation tự nhiên hơn.
      *
-     * Với PITCH:
-     * - LEN   -> scroll UP / BACKWARD
-     * - XUONG -> scroll DOWN / FORWARD
+     * 2. Nếu Android từ chối gesture ngay từ đầu, fallback về
+     *    AccessibilityNodeInfo ACTION_SCROLL_* đang hoạt động ổn.
+     *
+     * PITCH:
+     * - LEN   -> vuốt xuống -> nội dung cuộn lên.
+     * - XUONG -> vuốt lên   -> nội dung cuộn xuống.
      */
     private fun thucThiCuonDoc(
+        cuonXuong: Boolean
+    ): Boolean {
+
+        val tenHuong =
+            if (cuonXuong) {
+                "DOWN"
+            } else {
+                "UP"
+            }
+
+
+        /*
+         * Một gesture scroll đang chạy thì không nhận thêm
+         * animation mới chồng lên nó.
+         */
+        if (dangCuonBangCuChi) {
+
+            Log.d(
+                TAG_SCROLL,
+                "BO_QUA[$tenHuong]: animation scroll dang chay"
+            )
+
+            /*
+             * Request được consume để Activity/Service không
+             * fallback hoặc phát thêm thao tác khác.
+             */
+            return true
+        }
+
+
+        val gestureDaNhan =
+            thucThiCuonBangCuChi(
+                cuonXuong = cuonXuong
+            )
+
+
+        if (gestureDaNhan) {
+
+            return true
+        }
+
+
+        /*
+         * Fallback cho ROM/app không nhận dispatchGesture().
+         */
+        Log.d(
+            TAG_SCROLL,
+            "FALLBACK[$tenHuong]: dispatchGesture=false -> ACTION_SCROLL"
+        )
+
+
+        return thucThiCuonBangNode(
+            cuonXuong = cuonXuong
+        )
+    }
+
+
+    /**
+     * Tạo một cú vuốt ngắn ở giữa màn hình.
+     *
+     * Khoảng di chuyển khoảng 30% chiều cao và duration 300ms,
+     * đủ mượt nhưng không chậm, không nhảy thẳng cả trang.
+     */
+    private fun thucThiCuonBangCuChi(
+        cuonXuong: Boolean
+    ): Boolean {
+
+        val metrics =
+            resources.displayMetrics
+
+        val chieuRong =
+            metrics.widthPixels.toFloat()
+
+        val chieuCao =
+            metrics.heightPixels.toFloat()
+
+
+        if (
+            chieuRong <= 0f ||
+            chieuCao <= 0f
+        ) {
+
+            Log.e(
+                TAG_SCROLL,
+                "THAT_BAI_GESTURE: kich thuoc man hinh khong hop le"
+            )
+
+            return false
+        }
+
+
+        val x =
+            chieuRong * 0.50f
+
+
+        /*
+         * Nội dung cuộn XUỐNG:
+         * ngón tay phải vuốt từ dưới lên.
+         *
+         * Nội dung cuộn LÊN:
+         * ngón tay phải vuốt từ trên xuống.
+         */
+        val yBatDau =
+            if (cuonXuong) {
+
+                chieuCao *
+                        TY_LE_Y_BAT_DAU_CUON_XUONG
+
+            } else {
+
+                chieuCao *
+                        TY_LE_Y_KET_THUC_CUON_XUONG
+            }
+
+
+        val yKetThuc =
+            if (cuonXuong) {
+
+                chieuCao *
+                        TY_LE_Y_KET_THUC_CUON_XUONG
+
+            } else {
+
+                chieuCao *
+                        TY_LE_Y_BAT_DAU_CUON_XUONG
+            }
+
+
+        val path =
+            Path().apply {
+
+                moveTo(
+                    x,
+                    yBatDau
+                )
+
+                lineTo(
+                    x,
+                    yKetThuc
+                )
+            }
+
+
+        val stroke =
+            GestureDescription
+                .StrokeDescription(
+                    path,
+                    0L,
+                    THOI_GIAN_CUON_MUOT_MS
+                )
+
+
+        val gesture =
+            GestureDescription
+                .Builder()
+                .addStroke(
+                    stroke
+                )
+                .build()
+
+
+        val tenHuong =
+            if (cuonXuong) {
+                "DOWN"
+            } else {
+                "UP"
+            }
+
+
+        dangCuonBangCuChi =
+            true
+
+
+        val daNhan =
+            dispatchGesture(
+                gesture,
+                object :
+                    GestureResultCallback() {
+
+                    override fun onCompleted(
+                        gestureDescription:
+                        GestureDescription?
+                    ) {
+
+                        dangCuonBangCuChi =
+                            false
+
+                        Log.d(
+                            TAG_SCROLL,
+                            "THANH_CONG[$tenHuong]: SMOOTH_GESTURE_COMPLETED"
+                        )
+                    }
+
+
+                    override fun onCancelled(
+                        gestureDescription:
+                        GestureDescription?
+                    ) {
+
+                        dangCuonBangCuChi =
+                            false
+
+                        Log.e(
+                            TAG_SCROLL,
+                            "CANCEL[$tenHuong]: smooth gesture bi huy -> thu ACTION_SCROLL"
+                        )
+
+
+                        /*
+                         * Gesture đã được hệ thống nhận nhưng bị hủy
+                         * giữa chừng. Fallback về node scroll.
+                         */
+                        thucThiCuonBangNode(
+                            cuonXuong = cuonXuong
+                        )
+                    }
+                },
+                null
+            )
+
+
+        if (!daNhan) {
+
+            dangCuonBangCuChi =
+                false
+
+            Log.e(
+                TAG_SCROLL,
+                "THAT_BAI[$tenHuong]: dispatchGesture() tra ve false"
+            )
+        } else {
+
+            Log.d(
+                TAG_SCROLL,
+                "BAT_DAU[$tenHuong]: SMOOTH_GESTURE " +
+                        "y=$yBatDau -> $yKetThuc | " +
+                        "duration=${THOI_GIAN_CUON_MUOT_MS}ms"
+            )
+        }
+
+
+        return daNhan
+    }
+
+
+    /**
+     * Fallback AccessibilityNodeInfo.
+     *
+     * Đây là thuật toán scroll cũ đang chạy ổn:
+     * ưu tiên scroll container là parent của node đang focus,
+     * sau đó mới duyệt toàn bộ cây UI.
+     */
+    private fun thucThiCuonBangNode(
         cuonXuong: Boolean
     ): Boolean {
 
@@ -493,7 +761,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
             Log.e(
                 TAG_SCROLL,
-                "THAT_BAI: rootInActiveWindow = null"
+                "THAT_BAI_NODE: rootInActiveWindow = null"
             )
 
             return false
@@ -590,11 +858,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
 
 
-        /*
-         * Ưu tiên action có hướng dọc rõ ràng.
-         * Nếu ROM/widget không hỗ trợ thì fallback về
-         * ACTION_SCROLL_FORWARD / ACTION_SCROLL_BACKWARD.
-         */
         if (
             hoTroHanhDong(
                 node = nodeCuon,
@@ -606,6 +869,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 nodeCuon.performAction(
                     actionDoc
                 )
+
 
             if (thanhCong) {
 
@@ -636,6 +900,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 nodeCuon.performAction(
                     actionFallback
                 )
+
 
             if (thanhCong) {
 
@@ -668,7 +933,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
     /**
      * Đi từ node đang focus lên các parent để tìm container cuộn.
-     * Cách này ưu tiên đúng danh sách mà người dùng đang thao tác.
      */
     private fun timNodeCuonTuNodeDangFocus(
         nodeBatDau: AccessibilityNodeInfo?,
@@ -804,6 +1068,22 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         private const val TAG_SCROLL =
             "ScrollNavigation"
+
+        /**
+         * Khoảng vuốt nằm trong vùng giữa màn hình để tránh
+         * status bar / navigation bar và giữ cảm giác tự nhiên.
+         */
+        private const val TY_LE_Y_BAT_DAU_CUON_XUONG =
+            0.68f
+
+        private const val TY_LE_Y_KET_THUC_CUON_XUONG =
+            0.38f
+
+        /**
+         * 300ms đủ mượt nhưng vẫn phản hồi nhanh.
+         */
+        private const val THOI_GIAN_CUON_MUOT_MS =
+            300L
 
         @Volatile
         private var phienBanDangHoatDong:
