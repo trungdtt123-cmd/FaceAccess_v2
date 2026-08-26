@@ -25,6 +25,7 @@ import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
+import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
@@ -374,6 +375,19 @@ class DichVuTheoDoiFaceAccess :
                         }
                     }
                 },
+                khiCoLenhMedia = { lenhMedia ->
+
+                    /*
+                     * Checkpoint MEDIA 1:
+                     * chỉ xác nhận routing khi app chạy nền.
+                     * Chưa gửi media key / volume action.
+                     */
+                    Log.d(
+                        "LenhMedia",
+                        "NEN: LENH_MEDIA=$lenhMedia"
+                    )
+                },
+
                 khiCoLenh = { lenh ->
 
                     when (lenh) {

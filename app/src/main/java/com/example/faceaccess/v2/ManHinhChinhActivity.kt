@@ -30,6 +30,7 @@ import com.example.faceaccess.v2.dichvu.DichVuTheoDoiFaceAccess
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
+import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.khuonmat.DuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
@@ -777,6 +778,19 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         }
                     }
                 },
+                khiCoLenhMedia = { lenhMedia ->
+
+                    /*
+                     * Checkpoint MEDIA 1:
+                     * chỉ xác nhận routing foreground.
+                     * Chưa gửi media key / volume action.
+                     */
+                    Log.d(
+                        "LenhMedia",
+                        "APP: LENH_MEDIA=$lenhMedia"
+                    )
+                },
+
                 khiCoLenh = { lenh ->
 
                     when (lenh) {

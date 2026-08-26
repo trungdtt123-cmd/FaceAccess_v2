@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
+import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
 
 class DieuPhoiCuChi(
 
@@ -35,6 +36,16 @@ class DieuPhoiCuChi(
      */
     private val khiCoLenhDieuHuong:
         (LenhDieuHuong) -> Unit =
+        { _ -> },
+
+    /**
+     * Chỉ dùng khi mode hiện tại là MEDIA.
+     *
+     * Checkpoint này mới route semantic command.
+     * Chưa thực thi Android media action thật.
+     */
+    private val khiCoLenhMedia:
+        (LenhMedia) -> Unit =
         { _ -> },
 
     /**
@@ -126,41 +137,92 @@ class DieuPhoiCuChi(
 
 
                 /*
-                 * Chỉ mode DIEU_HUONG mới ánh xạ sang LenhDieuHuong.
+                 * YAW / PITCH được ánh xạ theo mode hiện tại.
                  *
-                 * MEDIA / HO_TRO / CON_TRO hiện chưa có hành động thật.
+                 * DIEU_HUONG:
+                 * TRAI  -> TRUOC
+                 * PHAI  -> TIEP_THEO
+                 * LEN   -> CUON_LEN
+                 * XUONG -> CUON_XUONG
+                 *
+                 * MEDIA:
+                 * TRAI  -> media trước
+                 * PHAI  -> media tiếp theo
+                 * LEN   -> tăng âm lượng
+                 * XUONG -> giảm âm lượng
+                 *
+                 * HO_TRO / CON_TRO chưa xử lý ở checkpoint này.
                  */
-                if (
-                    cheDoHienTai ==
-                    CheDoDieuKhien.DIEU_HUONG
-                ) {
+                when (cheDoHienTai) {
 
-                    val lenhDieuHuong =
-                        when (suKien.huong) {
+                    CheDoDieuKhien.DIEU_HUONG -> {
 
-                            HuongDau.TRAI ->
-                                LenhDieuHuong.TRUOC
+                        val lenhDieuHuong =
+                            when (suKien.huong) {
 
-                            HuongDau.PHAI ->
-                                LenhDieuHuong.TIEP_THEO
+                                HuongDau.TRAI ->
+                                    LenhDieuHuong.TRUOC
 
-                            HuongDau.LEN ->
-                                LenhDieuHuong.CUON_LEN
+                                HuongDau.PHAI ->
+                                    LenhDieuHuong.TIEP_THEO
 
-                            HuongDau.XUONG ->
-                                LenhDieuHuong.CUON_XUONG
-                        }
+                                HuongDau.LEN ->
+                                    LenhDieuHuong.CUON_LEN
 
-
-                    Log.d(
-                        TAG,
-                        "DIEU_HUONG: ${suKien.huong} -> $lenhDieuHuong"
-                    )
+                                HuongDau.XUONG ->
+                                    LenhDieuHuong.CUON_XUONG
+                            }
 
 
-                    khiCoLenhDieuHuong(
-                        lenhDieuHuong
-                    )
+                        Log.d(
+                            TAG,
+                            "DIEU_HUONG: ${suKien.huong} -> $lenhDieuHuong"
+                        )
+
+
+                        khiCoLenhDieuHuong(
+                            lenhDieuHuong
+                        )
+                    }
+
+
+                    CheDoDieuKhien.MEDIA -> {
+
+                        val lenhMedia =
+                            when (suKien.huong) {
+
+                                HuongDau.TRAI ->
+                                    LenhMedia.TRUOC
+
+                                HuongDau.PHAI ->
+                                    LenhMedia.TIEP_THEO
+
+                                HuongDau.LEN ->
+                                    LenhMedia.TANG_AM_LUONG
+
+                                HuongDau.XUONG ->
+                                    LenhMedia.GIAM_AM_LUONG
+                            }
+
+
+                        Log.d(
+                            TAG,
+                            "MEDIA: ${suKien.huong} -> $lenhMedia"
+                        )
+
+
+                        khiCoLenhMedia(
+                            lenhMedia
+                        )
+                    }
+
+
+                    CheDoDieuKhien.HO_TRO,
+                    CheDoDieuKhien.CON_TRO -> {
+                        /*
+                         * Chưa có command riêng ở checkpoint này.
+                         */
+                    }
                 }
             }
         }
