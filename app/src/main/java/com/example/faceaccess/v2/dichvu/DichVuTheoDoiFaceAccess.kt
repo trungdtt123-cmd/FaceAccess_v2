@@ -26,6 +26,7 @@ import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
+import com.example.faceaccess.v2.dieuphoi.media.BoDieuKhienMedia
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
@@ -75,6 +76,9 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var dieuPhoiCuChi:
             DieuPhoiCuChi
+
+    private lateinit var boDieuKhienMedia:
+            BoDieuKhienMedia
 
     private lateinit var boDinhTuyenCheDo:
             BoDinhTuyenCheDo
@@ -156,6 +160,8 @@ class DichVuTheoDoiFaceAccess :
          * Mode + dispatcher phải sẵn sàng trước detector.
          */
         khoiTaoBoDinhTuyenCheDoNen()
+
+        khoiTaoBoDieuKhienMediaNen()
 
         khoiTaoDieuPhoiCuChiNen()
 
@@ -248,6 +254,19 @@ class DichVuTheoDoiFaceAccess :
                     "NEN: CHE DO MOI = $cheDoMoi"
                 )
             }
+    }
+
+
+    // =========================================================
+    // BỘ ĐIỀU KHIỂN MEDIA NỀN
+    // =========================================================
+
+    private fun khoiTaoBoDieuKhienMediaNen() {
+
+        boDieuKhienMedia =
+            BoDieuKhienMedia(
+                applicationContext
+            )
     }
 
 
@@ -377,15 +396,30 @@ class DichVuTheoDoiFaceAccess :
                 },
                 khiCoLenhMedia = { lenhMedia ->
 
-                    /*
-                     * Checkpoint MEDIA 1:
-                     * chỉ xác nhận routing khi app chạy nền.
-                     * Chưa gửi media key / volume action.
-                     */
                     Log.d(
-                        "LenhMedia",
+                        TAG_LENH_MEDIA,
                         "NEN: LENH_MEDIA=$lenhMedia"
                     )
+
+
+                    mainHandler.post {
+
+                        val thanhCong =
+                            boDieuKhienMedia
+                                .thucThi(
+                                    lenhMedia
+                                )
+
+
+                        Log.d(
+                            TAG_LENH_MEDIA,
+                            if (thanhCong) {
+                                "NEN: MEDIA_ACTION=$lenhMedia THANH_CONG"
+                            } else {
+                                "NEN: MEDIA_ACTION=$lenhMedia THAT_BAI"
+                            }
+                        )
+                    }
                 },
 
                 khiCoLenh = { lenh ->
@@ -1173,6 +1207,9 @@ class DichVuTheoDoiFaceAccess :
 
         private const val TAG_LENH_DIEU_HUONG =
             "LenhDieuHuong"
+
+        private const val TAG_LENH_MEDIA =
+            "LenhMedia"
 
         const val HANH_DONG_BAT_CAMERA_NEN =
             "com.example.faceaccess.v2.BAT_CAMERA_NEN"

@@ -31,6 +31,7 @@ import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
+import com.example.faceaccess.v2.dieuphoi.media.BoDieuKhienMedia
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.khuonmat.DuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
@@ -182,6 +183,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var dieuPhoiCuChi:
             DieuPhoiCuChi
+
+    private lateinit var boDieuKhienMedia:
+            BoDieuKhienMedia
 
 
     // =========================================================
@@ -534,6 +538,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
          */
         khoiTaoBoDinhTuyenCheDo()
 
+        khoiTaoBoDieuKhienMedia()
+
         khoiTaoDieuPhoiCuChi()
 
         khoiTaoNhanDienNghiengDau()
@@ -651,6 +657,19 @@ class ManHinhChinhActivity : AppCompatActivity() {
             boDinhTuyenCheDo
                 .layCheDoHienTai()
         )
+    }
+
+
+    // =========================================================
+    // BỘ ĐIỀU KHIỂN MEDIA
+    // =========================================================
+
+    private fun khoiTaoBoDieuKhienMedia() {
+
+        boDieuKhienMedia =
+            BoDieuKhienMedia(
+                applicationContext
+            )
     }
 
 
@@ -780,15 +799,35 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 },
                 khiCoLenhMedia = { lenhMedia ->
 
-                    /*
-                     * Checkpoint MEDIA 1:
-                     * chỉ xác nhận routing foreground.
-                     * Chưa gửi media key / volume action.
-                     */
                     Log.d(
-                        "LenhMedia",
+                        TAG_LENH_MEDIA,
                         "APP: LENH_MEDIA=$lenhMedia"
                     )
+
+
+                    /*
+                     * Callback detector có thể chạy ngoài main thread.
+                     * Đưa media action về main thread để hành vi
+                     * foreground/background nhất quán.
+                     */
+                    runOnUiThread {
+
+                        val thanhCong =
+                            boDieuKhienMedia
+                                .thucThi(
+                                    lenhMedia
+                                )
+
+
+                        Log.d(
+                            TAG_LENH_MEDIA,
+                            if (thanhCong) {
+                                "APP: MEDIA_ACTION=$lenhMedia THANH_CONG"
+                            } else {
+                                "APP: MEDIA_ACTION=$lenhMedia THAT_BAI"
+                            }
+                        )
+                    }
                 },
 
                 khiCoLenh = { lenh ->
@@ -1877,5 +1916,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_LENH_DIEU_HUONG =
             "LenhDieuHuong"
+
+        private const val TAG_LENH_MEDIA =
+            "LenhMedia"
     }
 }
