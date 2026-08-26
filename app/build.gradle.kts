@@ -48,7 +48,11 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.6.1")
     implementation("androidx.camera:camera-view:1.6.1")
 
+    // MediaPipe
     implementation("com.google.mediapipe:tasks-vision:1.0.0")
+
+    // Crop ảnh đại diện
+    implementation("com.github.yalantis:ucrop:2.2.11")
 
     // Test
     testImplementation(libs.junit)

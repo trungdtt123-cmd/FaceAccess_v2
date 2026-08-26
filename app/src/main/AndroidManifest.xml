@@ -13,21 +13,12 @@
     <!-- QUYỀN FOREGROUND SERVICE -->
     <!-- ================================================= -->
 
-    <!-- Cho phép chạy Foreground Service -->
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!--
-        Android 14+ yêu cầu quyền riêng cho
-        Foreground Service sử dụng Camera.
-    -->
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
 
-    <!--
-        Android 13+ dùng cho notification của
-        Foreground Service.
-    -->
     <uses-permission
         android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -36,11 +27,6 @@
     <!-- PHẦN CỨNG CAMERA -->
     <!-- ================================================= -->
 
-    <!--
-        required=false:
-        Không bắt Play Store loại thiết bị chỉ vì
-        thiết bị không khai báo camera tương ứng.
-    -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -101,7 +87,6 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-
         <activity
             android:name=".dieuphoi.hotro.ChiTietLienHeHoTroActivity"
             android:exported="false"
@@ -109,13 +94,24 @@
 
 
         <!-- ================================================= -->
-        <!-- ACCESSIBILITY SERVICE -->
+        <!-- CĂN CHỈNH ẢNH ĐẠI DIỆN -->
         <!-- ================================================= -->
 
         <!--
-            Dùng để thực hiện các thao tác Android toàn cục:
-            HOME, BACK, điều hướng, cuộn...
+            Activity riêng của FaceAccess kế thừa UCropActivity.
+            Có UI tối đồng bộ và nút XÁC NHẬN ẢNH rõ ràng.
         -->
+        <activity
+            android:name=".dieuphoi.hotro.CanChinhAnhLienHeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
+
+        <!-- ================================================= -->
+        <!-- ACCESSIBILITY SERVICE -->
+        <!-- ================================================= -->
+
         <service
             android:name=".truycap.DichVuTruyCapFaceAccess"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -139,10 +135,6 @@
         <!-- FOREGROUND TRACKING SERVICE -->
         <!-- ================================================= -->
 
-        <!--
-            Service này chịu trách nhiệm theo dõi khuôn mặt
-            khi Activity chuyển xuống background.
-        -->
         <service
             android:name=".dichvu.DichVuTheoDoiFaceAccess"
             android:exported="false"

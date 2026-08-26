@@ -16,6 +16,8 @@
         android:paddingEnd="20dp"
         android:paddingBottom="36dp">
 
+        <!-- HEADER -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -41,23 +43,78 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/txtAvatarChiTietLienHeHoTro"
+
+        <!-- AVATAR: ẢNH THẬT HOẶC CHỮ CÁI ĐẦU -->
+
+        <FrameLayout
             android:layout_width="112dp"
             android:layout_height="112dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="28dp"
-            android:background="@drawable/nen_avatar_lien_he"
-            android:gravity="center"
-            android:text="?"
-            android:textColor="@android:color/white"
-            android:textSize="42sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="28dp">
+
+            <ImageView
+                android:id="@+id/imgAvatarChiTietLienHeHoTro"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/nen_avatar_lien_he"
+                android:clipToOutline="true"
+                android:contentDescription="Ảnh đại diện liên hệ hỗ trợ"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/txtAvatarChiTietLienHeHoTro"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/nen_avatar_lien_he"
+                android:gravity="center"
+                android:text="?"
+                android:textColor="@android:color/white"
+                android:textSize="42sp"
+                android:textStyle="bold" />
+
+        </FrameLayout>
+
+
+        <!-- HÀNH ĐỘNG NHANH -->
+
+
+        <!-- TÊN -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="49dp"
+            android:layout_marginTop="18dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnChonAnhLienHeHoTro"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/xanh_chinh"
+                android:text="CHỌN ẢNH"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnGoiLienHeHoTro"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/xanh_chinh"
+                android:text="GỌI"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+        </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="28dp"
             android:text="Tên"
             android:textColor="@color/chu_chinh"
             android:textSize="15sp"
@@ -76,6 +133,9 @@
             android:singleLine="true"
             android:textColor="@color/chu_chinh"
             android:textColorHint="@color/chu_phu" />
+
+
+        <!-- SỐ ĐIỆN THOẠI -->
 
         <TextView
             android:layout_width="match_parent"
@@ -100,6 +160,9 @@
             android:textColor="@color/chu_chinh"
             android:textColorHint="@color/chu_phu" />
 
+
+        <!-- MÔ TẢ -->
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -122,6 +185,9 @@
             android:textColor="@color/chu_chinh"
             android:textColorHint="@color/chu_phu" />
 
+
+        <!-- CẬP NHẬT -->
+
         <Button
             android:id="@+id/btnCapNhatLienHeHoTro"
             android:layout_width="match_parent"
@@ -131,6 +197,9 @@
             android:text="CẬP NHẬT"
             android:textColor="@android:color/white"
             android:textStyle="bold" />
+
+
+        <!-- XÓA -->
 
         <Button
             android:id="@+id/btnXoaMotLienHeHoTro"

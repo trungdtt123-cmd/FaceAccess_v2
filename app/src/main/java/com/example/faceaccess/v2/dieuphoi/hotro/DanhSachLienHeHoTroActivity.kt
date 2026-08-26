@@ -2,6 +2,7 @@ package com.example.faceaccess.v2.dieuphoi.hotro
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,6 +12,8 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -33,9 +36,11 @@ import java.util.Locale
  * - nhấn liên hệ -> mở màn hình chi tiết;
  * - cập nhật tên/số điện thoại/mô tả ở màn hình chi tiết.
  *
+ * Đã nối thêm:
+ * - ảnh đại diện thật được hiển thị ngay trong danh sách;
+ * - nếu không có ảnh hoặc URI lỗi thì fallback về chữ cái đầu.
+ *
  * Checkpoint sau:
- * - ảnh đại diện thật;
- * - gọi;
  * - kết nối danh sách này với gesture HO_TRO.
  */
 class DanhSachLienHeHoTroActivity :
@@ -363,7 +368,48 @@ class DanhSachLienHeHoTroActivity :
             }
 
 
-        val avatar =
+        val kichThuocAvatar =
+            (52 * scale).toInt()
+
+
+        val khungAvatar =
+            FrameLayout(this).apply {
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        kichThuocAvatar,
+                        kichThuocAvatar
+                    )
+            }
+
+
+        val imgAvatar =
+            ImageView(this).apply {
+
+                layoutParams =
+                    FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+
+                background =
+                    ContextCompat.getDrawable(
+                        this@DanhSachLienHeHoTroActivity,
+                        R.drawable.nen_avatar_lien_he
+                    )
+
+                scaleType =
+                    ImageView.ScaleType.CENTER_CROP
+
+                clipToOutline =
+                    true
+
+                visibility =
+                    View.GONE
+            }
+
+
+        val txtAvatar =
             TextView(this).apply {
 
                 val chuDau =
@@ -398,11 +444,58 @@ class DanhSachLienHeHoTroActivity :
                     )
 
                 layoutParams =
-                    LinearLayout.LayoutParams(
-                        (52 * scale).toInt(),
-                        (52 * scale).toInt()
+                    FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
                     )
             }
+
+
+        /**
+         * Nếu liên hệ có ảnh thật thì ưu tiên ảnh.
+         * Nếu URI hỏng/mất thì giữ avatar chữ cái đầu.
+         */
+        if (!nguoi.anhUri.isNullOrBlank()) {
+
+            try {
+
+                imgAvatar.setImageURI(
+                    Uri.parse(
+                        nguoi.anhUri
+                    )
+                )
+
+
+                if (
+                    imgAvatar.drawable !=
+                    null
+                ) {
+
+                    imgAvatar.visibility =
+                        View.VISIBLE
+
+                    txtAvatar.visibility =
+                        View.GONE
+                }
+
+            } catch (_: Exception) {
+
+                imgAvatar.visibility =
+                    View.GONE
+
+                txtAvatar.visibility =
+                    View.VISIBLE
+            }
+        }
+
+
+        khungAvatar.addView(
+            imgAvatar
+        )
+
+        khungAvatar.addView(
+            txtAvatar
+        )
 
 
         val thongTin =
@@ -506,7 +599,7 @@ class DanhSachLienHeHoTroActivity :
 
 
         row.addView(
-            avatar
+            khungAvatar
         )
 
         row.addView(
