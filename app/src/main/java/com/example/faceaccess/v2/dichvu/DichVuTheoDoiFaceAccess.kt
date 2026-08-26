@@ -22,14 +22,17 @@ import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
 import com.example.faceaccess.v2.cuchi.huongdau.NhanDienHuongDau
 import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
 import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
+import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
 import com.example.faceaccess.v2.dieuphoi.media.BoDieuKhienMedia
 import com.example.faceaccess.v2.dieuphoi.hotro.LenhHoTro
+import com.example.faceaccess.v2.dieuphoi.hotro.BoDieuKhienLienHeHoTro
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
+import com.example.faceaccess.v2.thongbao.ThongBaoFaceAccess
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
 import com.example.faceaccess.v2.khuonmat.XuLyKhuonMat
@@ -80,6 +83,9 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var boDieuKhienMedia:
             BoDieuKhienMedia
+
+    private lateinit var boDieuKhienLienHeHoTro:
+            BoDieuKhienLienHeHoTro
 
     private lateinit var boDinhTuyenCheDo:
             BoDinhTuyenCheDo
@@ -163,6 +169,8 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoBoDinhTuyenCheDoNen()
 
         khoiTaoBoDieuKhienMediaNen()
+
+        khoiTaoBoDieuKhienLienHeHoTroNen()
 
         khoiTaoDieuPhoiCuChiNen()
 
@@ -254,6 +262,21 @@ class DichVuTheoDoiFaceAccess :
                     TAG_CU_CHI_NEN,
                     "NEN: CHE DO MOI = $cheDoMoi"
                 )
+
+                /*
+                 * Rời HỖ TRỢ phải dọn state contact cũ.
+                 * Guard isInitialized vì mode router được khởi tạo
+                 * trước controller trong lifecycle Service hiện tại.
+                 */
+                if (
+                    cheDoMoi !=
+                    CheDoDieuKhien.HO_TRO &&
+                    ::boDieuKhienLienHeHoTro.isInitialized
+                ) {
+
+                    boDieuKhienLienHeHoTro
+                        .datLaiPhien()
+                }
             }
     }
 
@@ -266,6 +289,19 @@ class DichVuTheoDoiFaceAccess :
 
         boDieuKhienMedia =
             BoDieuKhienMedia(
+                applicationContext
+            )
+    }
+
+
+    // =========================================================
+    // BỘ ĐIỀU KHIỂN LIÊN HỆ HỖ TRỢ NỀN
+    // =========================================================
+
+    private fun khoiTaoBoDieuKhienLienHeHoTroNen() {
+
+        boDieuKhienLienHeHoTro =
+            BoDieuKhienLienHeHoTro(
                 applicationContext
             )
     }
@@ -425,15 +461,34 @@ class DichVuTheoDoiFaceAccess :
 
                 khiCoLenhHoTro = { lenhHoTro ->
 
-                    /*
-                     * Checkpoint HỖ TRỢ 1:
-                     * chỉ xác nhận routing background.
-                     * Chưa thực hiện liên hệ thật.
-                     */
                     Log.d(
                         TAG_LENH_HO_TRO,
                         "NEN: LENH_HO_TRO=$lenhHoTro"
                     )
+
+
+                    mainHandler.post {
+
+                        val ketQua =
+                            boDieuKhienLienHeHoTro
+                                .thucThi(
+                                    lenhHoTro
+                                )
+
+
+                        Log.d(
+                            TAG_LENH_HO_TRO,
+                            "NEN: HO_TRO_ACTION=$lenhHoTro | " +
+                                    "THANH_CONG=${ketQua.thanhCong} | " +
+                                    "THONG_BAO=${ketQua.thongBao}"
+                        )
+
+
+                        ThongBaoFaceAccess.hienThi(
+                            context = applicationContext,
+                            noiDung = ketQua.thongBao
+                        )
+                    }
                 },
 
                 khiCoLenh = { lenh ->
@@ -733,10 +788,6 @@ class DichVuTheoDoiFaceAccess :
                             nhanDienNghiengDau.datLai()
 
                             nhanDienMoMieng.datLai()
-
-                            nhanDienHuongDau.datLai()
-
-                            nhanDienHuongDau.datLai()
 
                             nhanDienHuongDau.datLai()
 

@@ -33,12 +33,14 @@ import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.media.LenhMedia
 import com.example.faceaccess.v2.dieuphoi.media.BoDieuKhienMedia
 import com.example.faceaccess.v2.dieuphoi.hotro.LenhHoTro
+import com.example.faceaccess.v2.dieuphoi.hotro.BoDieuKhienLienHeHoTro
 import com.example.faceaccess.v2.dieuphoi.SuKienCuChi
 import com.example.faceaccess.v2.khuonmat.DuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.PhanTichKhungHinhKhuonMat
 import com.example.faceaccess.v2.khuonmat.TrichXuatDuLieuKhuonMat
 import com.example.faceaccess.v2.khuonmat.XuLyKhuonMat
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
+import com.example.faceaccess.v2.thongbao.ThongBaoFaceAccess
 import com.example.faceaccess.v2.dieuphoi.hotro.DanhSachLienHeHoTroActivity
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
 import java.util.Locale
@@ -188,6 +190,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var boDieuKhienMedia:
             BoDieuKhienMedia
+
+    private lateinit var boDieuKhienLienHeHoTro:
+            BoDieuKhienLienHeHoTro
 
 
     // =========================================================
@@ -542,6 +547,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         khoiTaoBoDieuKhienMedia()
 
+        khoiTaoBoDieuKhienLienHeHoTro()
+
         khoiTaoDieuPhoiCuChi()
 
         khoiTaoNhanDienNghiengDau()
@@ -646,6 +653,22 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     "Che do moi: $cheDoMoi"
                 )
 
+                /*
+                 * State HỖ TRỢ chỉ có ý nghĩa trong đúng mode HỖ TRỢ.
+                 *
+                 * Rời mode phải xóa contact/session cũ để khi quay lại
+                 * người dùng bắt buộc YAW chọn lại có chủ đích.
+                 */
+                if (
+                    cheDoMoi !=
+                    CheDoDieuKhien.HO_TRO &&
+                    ::boDieuKhienLienHeHoTro.isInitialized
+                ) {
+
+                    boDieuKhienLienHeHoTro
+                        .datLaiPhien()
+                }
+
                 capNhatGiaoDienCheDo(
                     cheDoMoi
                 )
@@ -670,6 +693,19 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         boDieuKhienMedia =
             BoDieuKhienMedia(
+                applicationContext
+            )
+    }
+
+
+    // =========================================================
+    // BỘ ĐIỀU KHIỂN LIÊN HỆ HỖ TRỢ
+    // =========================================================
+
+    private fun khoiTaoBoDieuKhienLienHeHoTro() {
+
+        boDieuKhienLienHeHoTro =
+            BoDieuKhienLienHeHoTro(
                 applicationContext
             )
     }
@@ -834,15 +870,40 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 khiCoLenhHoTro = { lenhHoTro ->
 
-                    /*
-                     * Checkpoint HỖ TRỢ 1:
-                     * chỉ xác nhận routing foreground.
-                     * Chưa thực hiện liên hệ thật.
-                     */
                     Log.d(
                         TAG_LENH_HO_TRO,
                         "APP: LENH_HO_TRO=$lenhHoTro"
                     )
+
+
+                    /*
+                     * Detector có thể callback ngoài main thread.
+                     *
+                     * Mọi feedback UI + ACTION_DIAL được đưa về
+                     * main thread để hành vi ổn định.
+                     */
+                    runOnUiThread {
+
+                        val ketQua =
+                            boDieuKhienLienHeHoTro
+                                .thucThi(
+                                    lenhHoTro
+                                )
+
+
+                        Log.d(
+                            TAG_LENH_HO_TRO,
+                            "APP: HO_TRO_ACTION=$lenhHoTro | " +
+                                    "THANH_CONG=${ketQua.thanhCong} | " +
+                                    "THONG_BAO=${ketQua.thongBao}"
+                        )
+
+
+                        ThongBaoFaceAccess.hienThi(
+                            context = this,
+                            noiDung = ketQua.thongBao
+                        )
+                    }
                 },
 
                 khiCoLenh = { lenh ->
@@ -1085,14 +1146,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             nhanDienNghiengDau.datLai()
 
                             nhanDienMoMieng.datLai()
-
-                            nhanDienHuongDau.datLai()
-
-                            nhanDienHuongDau.datLai()
-
-                            nhanDienHuongDau.datLai()
-
-                            nhanDienHuongDau.datLai()
 
                             nhanDienHuongDau.datLai()
 
@@ -1427,6 +1480,18 @@ class ManHinhChinhActivity : AppCompatActivity() {
          */
         theoDoiDangHoatDong =
             false
+
+        /*
+         * Người dùng chủ động dừng tracking = kết thúc phiên điều khiển.
+         * Không được giữ contact HỖ TRỢ cũ cho lần bật sau.
+         */
+        if (
+            ::boDieuKhienLienHeHoTro.isInitialized
+        ) {
+
+            boDieuKhienLienHeHoTro
+                .datLaiPhien()
+        }
 
         dangChoCameraNenNhaQuyen =
             false

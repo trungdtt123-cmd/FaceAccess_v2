@@ -3,10 +3,19 @@ package com.example.faceaccess.v2.truycap
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.view.Gravity
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import com.example.faceaccess.v2.R
 
 class DichVuTruyCapFaceAccess : AccessibilityService() {
 
@@ -20,6 +29,29 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     @Volatile
     private var dangCuonBangCuChi =
         false
+
+    // =========================================================
+    // SYSTEM FEEDBACK OVERLAY
+    // =========================================================
+
+    private val mainHandlerThongBao =
+        Handler(
+            Looper.getMainLooper()
+        )
+
+    private var viewThongBaoHeThong:
+            TextView? =
+        null
+
+    private var windowManagerThongBao:
+            WindowManager? =
+        null
+
+    private val anThongBaoRunnable =
+        Runnable {
+
+            anThongBaoHeThongNoiBo()
+        }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -53,6 +85,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
     override fun onDestroy() {
 
+        mainHandlerThongBao.removeCallbacks(
+            anThongBaoRunnable
+        )
+
+        anThongBaoHeThongNoiBo()
+
         if (phienBanDangHoatDong === this) {
             phienBanDangHoatDong = null
         }
@@ -63,6 +101,313 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
 
         super.onDestroy()
+    }
+
+
+    // =========================================================
+    // FEEDBACK OVERLAY - KHÔNG DÙNG TOAST
+    // =========================================================
+
+    /**
+     * Hiển thị banner hệ thống của FaceAccess trên mọi ứng dụng.
+     *
+     * TYPE_ACCESSIBILITY_OVERLAY:
+     * - không cần SYSTEM_ALERT_WINDOW;
+     * - chỉ hoạt động khi AccessibilityService FaceAccess đang bật;
+     * - không nhận touch/focus nên không chặn người dùng.
+     *
+     * Mỗi command mới cập nhật text NGAY LẬP TỨC và reset thời gian ẩn.
+     * Vì vậy YAW:
+     *
+     * Mẹ -> Bố -> Anh
+     *
+     * sẽ lần lượt cập nhật:
+     *
+     * Đã chuyển sang số của Mẹ
+     * Đã chuyển sang số của Bố
+     * Đã chuyển sang số của Anh
+     *
+     * Không phụ thuộc queue/rate-limit của Android Toast.
+     */
+    private fun hienThiThongBaoHeThongNoiBo(
+        noiDung: String
+    ): Boolean {
+
+        if (
+            noiDung.isBlank()
+        ) {
+            return false
+        }
+
+
+        if (
+            Looper.myLooper() !=
+            Looper.getMainLooper()
+        ) {
+
+            mainHandlerThongBao.post {
+
+                hienThiThongBaoHeThongNoiBo(
+                    noiDung
+                )
+            }
+
+            return true
+        }
+
+
+        val windowManager =
+            windowManagerThongBao
+                ?: (
+                        getSystemService(
+                            WINDOW_SERVICE
+                        ) as? WindowManager
+                        )
+                    ?.also {
+
+                        windowManagerThongBao =
+                            it
+                    }
+                ?: return false
+
+
+        val textView =
+            viewThongBaoHeThong
+                ?: taoViewThongBaoHeThong()
+                    .also {
+                        viewThongBaoHeThong =
+                            it
+                    }
+
+
+        textView.text =
+            noiDung
+
+
+        /*
+         * Nếu banner đang hiện, chỉ update nội dung.
+         * Nếu chưa hiện, add vào accessibility overlay.
+         */
+        if (
+            !textView.isAttachedToWindow
+        ) {
+
+            val params =
+                WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    android.graphics.PixelFormat.TRANSLUCENT
+                ).apply {
+
+                    gravity =
+                        Gravity.TOP or
+                                Gravity.CENTER_HORIZONTAL
+
+                    y =
+                        dp(
+                            72
+                        )
+                }
+
+
+            try {
+
+                windowManager.addView(
+                    textView,
+                    params
+                )
+
+            } catch (
+                exception: Exception
+            ) {
+
+                Log.e(
+                    TAG_THONG_BAO,
+                    "Khong the hien thi accessibility overlay",
+                    exception
+                )
+
+                viewThongBaoHeThong =
+                    null
+
+                return false
+            }
+        }
+
+
+        /*
+         * Mỗi event mới phải được nhìn thấy ngay.
+         * Không xếp hàng như Toast.
+         */
+        textView.alpha =
+            1f
+
+        mainHandlerThongBao.removeCallbacks(
+            anThongBaoRunnable
+        )
+
+        mainHandlerThongBao.postDelayed(
+            anThongBaoRunnable,
+            THOI_GIAN_HIEN_THONG_BAO_MS
+        )
+
+
+        Log.d(
+            TAG_THONG_BAO,
+            "HIEN_THI: $noiDung"
+        )
+
+
+        return true
+    }
+
+
+    private fun taoViewThongBaoHeThong():
+            TextView {
+
+        val nen =
+            GradientDrawable().apply {
+
+                shape =
+                    GradientDrawable.RECTANGLE
+
+                cornerRadius =
+                    dp(
+                        16
+                    ).toFloat()
+
+                setColor(
+                    ContextCompat.getColor(
+                        this@DichVuTruyCapFaceAccess,
+                        R.color.nen_man_hinh
+                    )
+                )
+
+                setStroke(
+                    dp(
+                        2
+                    ),
+                    ContextCompat.getColor(
+                        this@DichVuTruyCapFaceAccess,
+                        R.color.xanh_chinh
+                    )
+                )
+            }
+
+
+        return TextView(
+            this
+        ).apply {
+
+            setTextColor(
+                ContextCompat.getColor(
+                    this@DichVuTruyCapFaceAccess,
+                    R.color.chu_chinh
+                )
+            )
+
+            textSize =
+                15f
+
+            gravity =
+                Gravity.CENTER
+
+            maxLines =
+                2
+
+            setPadding(
+                dp(
+                    20
+                ),
+                dp(
+                    12
+                ),
+                dp(
+                    20
+                ),
+                dp(
+                    12
+                )
+            )
+
+            background =
+                nen
+
+            elevation =
+                dp(
+                    8
+                ).toFloat()
+        }
+    }
+
+
+    private fun anThongBaoHeThongNoiBo() {
+
+        if (
+            Looper.myLooper() !=
+            Looper.getMainLooper()
+        ) {
+
+            mainHandlerThongBao.post {
+
+                anThongBaoHeThongNoiBo()
+            }
+
+            return
+        }
+
+
+        val textView =
+            viewThongBaoHeThong
+                ?: return
+
+        val windowManager =
+            windowManagerThongBao
+
+
+        if (
+            textView.isAttachedToWindow &&
+            windowManager !=
+            null
+        ) {
+
+            try {
+
+                windowManager.removeView(
+                    textView
+                )
+
+            } catch (
+                exception: Exception
+            ) {
+
+                Log.w(
+                    TAG_THONG_BAO,
+                    "Khong the remove overlay",
+                    exception
+                )
+            }
+        }
+
+
+        viewThongBaoHeThong =
+            null
+    }
+
+
+    private fun dp(
+        giaTri: Int
+    ): Int {
+
+        return (
+                giaTri *
+                        resources.displayMetrics.density
+                )
+            .toInt()
     }
 
 
@@ -83,6 +428,645 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         return performGlobalAction(
             GLOBAL_ACTION_BACK
         )
+    }
+
+
+    // =========================================================
+    // DIALER - XÓA SỐ NHƯNG GIỮ APP ĐIỆN THOẠI
+    // =========================================================
+
+    private fun xoaSoTrinhQuaySoNoiBo(
+        packageDialerMongDoi: String?,
+        soDienThoai: String
+    ): Boolean {
+
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+
+        val packageDangHoatDong =
+            root.packageName
+                ?.toString()
+
+
+        /*
+         * Không bao giờ thao tác node của app khác.
+         */
+        if (
+            !packageDialerMongDoi.isNullOrBlank() &&
+            packageDangHoatDong !=
+            packageDialerMongDoi
+        ) {
+
+            Log.e(
+                TAG_DIALER,
+                "CHAN_XOA_SO | active=$packageDangHoatDong | expected=$packageDialerMongDoi"
+            )
+
+            return false
+        }
+
+
+        val soMongDoi =
+            chiLayChuSo(
+                soDienThoai
+            )
+
+
+        if (
+            soMongDoi.isBlank()
+        ) {
+            return false
+        }
+
+
+        /*
+         * CÁCH 1:
+         * Tìm field số hỗ trợ ACTION_SET_TEXT và set = "".
+         */
+        val nodeSetText =
+            mutableListOf<AccessibilityNodeInfo>()
+
+
+        thuThapNodeSetText(
+            node = root,
+            ketQua = nodeSetText
+        )
+
+
+        val nodeTheoDiem =
+            nodeSetText
+                .sortedByDescending {
+                        node ->
+
+                    diemNodeSo(
+                        node = node,
+                        soMongDoi =
+                            soMongDoi
+                    )
+                }
+
+
+        for (
+        node in nodeTheoDiem
+        ) {
+
+            val chuSoNode =
+                chiLayChuSo(
+                    node.text
+                        ?.toString()
+                        .orEmpty()
+                )
+
+
+            /*
+             * Nếu field đang có một số khác hẳn thì không chạm vào nó.
+             */
+            if (
+                chuSoNode.isNotBlank() &&
+                !haiSoKhopNhau(
+                    a = chuSoNode,
+                    b = soMongDoi
+                )
+            ) {
+                continue
+            }
+
+
+            val arguments =
+                Bundle().apply {
+
+                    putCharSequence(
+                        AccessibilityNodeInfo
+                            .ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                        ""
+                    )
+                }
+
+
+            val daSet =
+                node.performAction(
+                    AccessibilityNodeInfo.ACTION_SET_TEXT,
+                    arguments
+                )
+
+
+            if (
+                daSet
+            ) {
+
+                Log.d(
+                    TAG_DIALER,
+                    "XOA_SO: ACTION_SET_TEXT da duoc chap nhan"
+                )
+
+                return true
+            }
+        }
+
+
+        /*
+         * CÁCH 2:
+         * Chỉ tìm Backspace/Delete sau khi xác nhận đúng số đang xuất hiện
+         * trong cây Accessibility của Dialer.
+         */
+        if (
+            !cayDangHienThiSo(
+                node = root,
+                soMongDoi =
+                    soMongDoi
+            )
+        ) {
+
+            Log.e(
+                TAG_DIALER,
+                "XOA_SO: khong xac minh duoc so hien tai tren Dialer"
+            )
+
+            return false
+        }
+
+
+        val nutXoa =
+            timNutXoaSo(
+                root
+            )
+                ?: return false
+
+
+        /*
+         * Nhiều Dialer, trong đó có các bản Samsung,
+         * dùng nhấn giữ Backspace để xóa toàn bộ.
+         */
+        val coLongClick =
+            nutXoa.isLongClickable ||
+                    nutXoa.actionList.any {
+                            action ->
+
+                        action.id ==
+                                AccessibilityNodeInfo.ACTION_LONG_CLICK
+                    }
+
+
+        if (
+            coLongClick &&
+            nutXoa.performAction(
+                AccessibilityNodeInfo.ACTION_LONG_CLICK
+            )
+        ) {
+
+            Log.d(
+                TAG_DIALER,
+                "XOA_SO: LONG_CLICK Backspace"
+            )
+
+            return true
+        }
+
+
+        /*
+         * Fallback:
+         * click Backspace đúng số chữ số.
+         *
+         * Re-fetch node mỗi lần để tránh stale AccessibilityNodeInfo.
+         */
+        val soLanCanXoa =
+            soMongDoi.length
+                .coerceIn(
+                    1,
+                    20
+                )
+
+        var soLanThanhCong =
+            0
+
+
+        repeat(
+            soLanCanXoa
+        ) {
+
+            val rootMoi =
+                rootInActiveWindow
+                    ?: return@repeat
+
+
+            val packageMoi =
+                rootMoi.packageName
+                    ?.toString()
+
+
+            if (
+                !packageDialerMongDoi.isNullOrBlank() &&
+                packageMoi !=
+                packageDialerMongDoi
+            ) {
+
+                return@repeat
+            }
+
+
+            val nutXoaMoi =
+                timNutXoaSo(
+                    rootMoi
+                )
+                    ?: return@repeat
+
+
+            if (
+                nutXoaMoi.performAction(
+                    AccessibilityNodeInfo.ACTION_CLICK
+                )
+            ) {
+
+                soLanThanhCong +=
+                    1
+            }
+        }
+
+
+        Log.d(
+            TAG_DIALER,
+            "XOA_SO: BACKSPACE $soLanThanhCong/$soLanCanXoa"
+        )
+
+
+        return soLanThanhCong >
+                0
+    }
+
+
+    private fun thuThapNodeSetText(
+        node: AccessibilityNodeInfo,
+        ketQua: MutableList<AccessibilityNodeInfo>
+    ) {
+
+        if (
+            !node.isVisibleToUser
+        ) {
+            return
+        }
+
+
+        val hoTroSetText =
+            node.actionList.any {
+                    action ->
+
+                action.id ==
+                        AccessibilityNodeInfo.ACTION_SET_TEXT
+            }
+
+
+        if (
+            node.isEditable ||
+            hoTroSetText
+        ) {
+
+            ketQua.add(
+                node
+            )
+        }
+
+
+        for (
+        index in 0 until
+                node.childCount
+        ) {
+
+            val child =
+                node.getChild(
+                    index
+                )
+                    ?: continue
+
+
+            thuThapNodeSetText(
+                node = child,
+                ketQua = ketQua
+            )
+        }
+    }
+
+
+    private fun diemNodeSo(
+        node: AccessibilityNodeInfo,
+        soMongDoi: String
+    ): Int {
+
+        var diem =
+            0
+
+
+        val text =
+            node.text
+                ?.toString()
+                .orEmpty()
+
+        val chuSo =
+            chiLayChuSo(
+                text
+            )
+
+
+        if (
+            chuSo.isNotBlank() &&
+            haiSoKhopNhau(
+                a = chuSo,
+                b = soMongDoi
+            )
+        ) {
+
+            diem +=
+                100
+        }
+
+
+        val id =
+            node.viewIdResourceName
+                ?.lowercase()
+                .orEmpty()
+
+
+        if (
+            id.contains(
+                "digit"
+            ) ||
+            id.contains(
+                "number"
+            ) ||
+            id.contains(
+                "phone"
+            ) ||
+            id.contains(
+                "dial"
+            )
+        ) {
+
+            diem +=
+                40
+        }
+
+
+        if (
+            node.isEditable
+        ) {
+
+            diem +=
+                20
+        }
+
+
+        if (
+            node.actionList.any {
+                    action ->
+
+                action.id ==
+                        AccessibilityNodeInfo.ACTION_SET_TEXT
+            }
+        ) {
+
+            diem +=
+                20
+        }
+
+
+        return diem
+    }
+
+
+    private fun cayDangHienThiSo(
+        node: AccessibilityNodeInfo,
+        soMongDoi: String
+    ): Boolean {
+
+        if (
+            !node.isVisibleToUser
+        ) {
+            return false
+        }
+
+
+        val textSo =
+            chiLayChuSo(
+                node.text
+                    ?.toString()
+                    .orEmpty()
+            )
+
+
+        if (
+            textSo.isNotBlank() &&
+            haiSoKhopNhau(
+                a = textSo,
+                b = soMongDoi
+            )
+        ) {
+
+            return true
+        }
+
+
+        val descSo =
+            chiLayChuSo(
+                node.contentDescription
+                    ?.toString()
+                    .orEmpty()
+            )
+
+
+        if (
+            descSo.isNotBlank() &&
+            haiSoKhopNhau(
+                a = descSo,
+                b = soMongDoi
+            )
+        ) {
+
+            return true
+        }
+
+
+        for (
+        index in 0 until
+                node.childCount
+        ) {
+
+            val child =
+                node.getChild(
+                    index
+                )
+                    ?: continue
+
+
+            if (
+                cayDangHienThiSo(
+                    node = child,
+                    soMongDoi =
+                        soMongDoi
+                )
+            ) {
+
+                return true
+            }
+        }
+
+
+        return false
+    }
+
+
+    private fun timNutXoaSo(
+        node: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo? {
+
+        if (
+            !node.isVisibleToUser
+        ) {
+            return null
+        }
+
+
+        val nhan =
+            listOfNotNull(
+                node.text
+                    ?.toString(),
+                node.contentDescription
+                    ?.toString()
+            )
+                .joinToString(
+                    separator = " "
+                )
+                .trim()
+                .lowercase()
+
+
+        val id =
+            node.viewIdResourceName
+                ?.lowercase()
+                .orEmpty()
+
+
+        val nhanHopLe =
+            nhan ==
+                    "xóa" ||
+                    nhan ==
+                    "xoá" ||
+                    nhan ==
+                    "delete" ||
+                    nhan ==
+                    "backspace" ||
+                    nhan.contains(
+                        "xóa số"
+                    ) ||
+                    nhan.contains(
+                        "xoá số"
+                    ) ||
+                    nhan.contains(
+                        "delete digit"
+                    ) ||
+                    nhan.contains(
+                        "delete number"
+                    )
+
+
+        val idHopLe =
+            id.contains(
+                "backspace"
+            ) ||
+                    id.contains(
+                        "delete"
+                    )
+
+
+        val coTheBam =
+            node.isClickable ||
+                    node.isLongClickable ||
+                    node.actionList.any {
+                            action ->
+
+                        action.id ==
+                                AccessibilityNodeInfo.ACTION_CLICK ||
+                                action.id ==
+                                AccessibilityNodeInfo.ACTION_LONG_CLICK
+                    }
+
+
+        if (
+            coTheBam &&
+            (
+                    nhanHopLe ||
+                            idHopLe
+                    )
+        ) {
+
+            return node
+        }
+
+
+        for (
+        index in 0 until
+                node.childCount
+        ) {
+
+            val child =
+                node.getChild(
+                    index
+                )
+                    ?: continue
+
+
+            val ketQua =
+                timNutXoaSo(
+                    child
+                )
+
+
+            if (
+                ketQua !=
+                null
+            ) {
+
+                return ketQua
+            }
+        }
+
+
+        return null
+    }
+
+
+    private fun chiLayChuSo(
+        giaTri: String
+    ): String {
+
+        return giaTri
+            .filter {
+                it.isDigit()
+            }
+    }
+
+
+    private fun haiSoKhopNhau(
+        a: String,
+        b: String
+    ): Boolean {
+
+        if (
+            a.isBlank() ||
+            b.isBlank()
+        ) {
+            return false
+        }
+
+
+        return a ==
+                b ||
+                a.endsWith(
+                    b
+                ) ||
+                b.endsWith(
+                    a
+                )
     }
 
 
@@ -1069,6 +2053,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         private const val TAG_SCROLL =
             "ScrollNavigation"
 
+        private const val TAG_DIALER =
+            "SupportDialer"
+
+        private const val TAG_THONG_BAO =
+            "FaceAccessFeedback"
+
+        private const val THOI_GIAN_HIEN_THONG_BAO_MS =
+            1400L
+
         /**
          * Khoảng vuốt nằm trong vùng giữa màn hình để tránh
          * status bar / navigation bar và giữ cảm giác tự nhiên.
@@ -1093,6 +2086,62 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         fun dangHoatDong(): Boolean {
 
             return phienBanDangHoatDong != null
+        }
+
+
+        /**
+         * Feedback chính thức của FaceAccess khi Accessibility đang chạy.
+         *
+         * Trả true nếu request đã được nhận.
+         */
+        fun hienThiThongBaoHeThong(
+            noiDung: String
+        ): Boolean {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+
+            return dichVu
+                .hienThiThongBaoHeThongNoiBo(
+                    noiDung
+                )
+        }
+
+
+        fun layPackageDangHoatDong():
+                String? {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return null
+
+
+            return dichVu
+                .rootInActiveWindow
+                ?.packageName
+                ?.toString()
+        }
+
+
+        fun thucThiXoaSoTrinhQuaySo(
+            packageDialerMongDoi: String?,
+            soDienThoai: String
+        ): Boolean {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+
+            return dichVu
+                .xoaSoTrinhQuaySoNoiBo(
+                    packageDialerMongDoi =
+                        packageDialerMongDoi,
+                    soDienThoai =
+                        soDienThoai
+                )
         }
 
 
