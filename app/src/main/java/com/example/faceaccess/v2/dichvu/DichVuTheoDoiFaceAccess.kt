@@ -278,14 +278,71 @@ class DichVuTheoDoiFaceAccess :
                 },
                 khiCoLenhDieuHuong = { lenhDieuHuong ->
 
-                    /*
-                     * CHECKPOINT HIỆN TẠI:
-                     * chỉ Logcat, chưa gọi Accessibility.
-                     */
                     Log.d(
                         TAG_LENH_DIEU_HUONG,
                         "NEN: LENH_DIEU_HUONG=$lenhDieuHuong"
                     )
+
+
+                    /*
+                     * Checkpoint này chỉ thực thi:
+                     *
+                     * TRUOC
+                     * TIEP_THEO
+                     *
+                     * CUON_LEN / CUON_XUONG vẫn chỉ log.
+                     */
+                    when (lenhDieuHuong) {
+
+                        LenhDieuHuong.TRUOC -> {
+
+                            mainHandler.post {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiTruoc()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "NEN: TRUOC Accessibility THANH_CONG"
+                                    } else {
+                                        "NEN: TRUOC Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
+
+
+                        LenhDieuHuong.TIEP_THEO -> {
+
+                            mainHandler.post {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiTiepTheo()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "NEN: TIEP_THEO Accessibility THANH_CONG"
+                                    } else {
+                                        "NEN: TIEP_THEO Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
+
+
+                        LenhDieuHuong.CUON_LEN,
+                        LenhDieuHuong.CUON_XUONG -> {
+
+                            Log.d(
+                                TAG_LENH_DIEU_HUONG,
+                                "NEN: SCROLL CHUA THUC THI - $lenhDieuHuong"
+                            )
+                        }
+                    }
                 },
                 khiCoLenh = { lenh ->
 

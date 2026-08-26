@@ -681,14 +681,71 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 },
                 khiCoLenhDieuHuong = { lenhDieuHuong ->
 
-                    /*
-                     * CHECKPOINT HIỆN TẠI:
-                     * chỉ Logcat, chưa gọi Accessibility.
-                     */
                     Log.d(
                         TAG_LENH_DIEU_HUONG,
                         "APP: LENH_DIEU_HUONG=$lenhDieuHuong"
                     )
+
+
+                    /*
+                     * Checkpoint này chỉ thực thi:
+                     *
+                     * TRUOC
+                     * TIEP_THEO
+                     *
+                     * CUON_LEN / CUON_XUONG vẫn chỉ log.
+                     */
+                    when (lenhDieuHuong) {
+
+                        LenhDieuHuong.TRUOC -> {
+
+                            runOnUiThread {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiTruoc()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "APP: TRUOC Accessibility THANH_CONG"
+                                    } else {
+                                        "APP: TRUOC Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
+
+
+                        LenhDieuHuong.TIEP_THEO -> {
+
+                            runOnUiThread {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiTiepTheo()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "APP: TIEP_THEO Accessibility THANH_CONG"
+                                    } else {
+                                        "APP: TIEP_THEO Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
+
+
+                        LenhDieuHuong.CUON_LEN,
+                        LenhDieuHuong.CUON_XUONG -> {
+
+                            Log.d(
+                                TAG_LENH_DIEU_HUONG,
+                                "APP: SCROLL CHUA THUC THI - $lenhDieuHuong"
+                            )
+                        }
+                    }
                 },
                 khiCoLenh = { lenh ->
 
