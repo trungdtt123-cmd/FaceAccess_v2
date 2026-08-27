@@ -6,17 +6,6 @@ import android.os.Looper
 import android.widget.Toast
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
 
-/**
- * Cổng feedback duy nhất của FaceAccess.
- *
- * Ưu tiên:
- * 1. Accessibility overlay của FaceAccess.
- * 2. Toast chỉ là fallback khi Accessibility chưa hoạt động.
- *
- * Không dùng Toast làm cơ chế chính vì Android có thể rate-limit
- * hoặc gộp/bỏ bớt Toast khi app đang chạy nền hoặc khi thông báo
- * xuất hiện liên tục.
- */
 object ThongBaoFaceAccess {
 
     private val mainHandler =
@@ -25,59 +14,50 @@ object ThongBaoFaceAccess {
         )
 
     @Volatile
-    private var toastFallback:
-            Toast? =
+    private var toastFallback: Toast? =
         null
 
-
     fun hienThi(
-        context: Context,
         noiDung: String
-    ) {
+    ): Boolean {
 
-        if (
-            noiDung.isBlank()
-        ) {
-            return
+        if (noiDung.isBlank()) {
+            return false
         }
 
-
-        /*
-         * Accessibility overlay là đường chính.
-         *
-         * Khi YAW liên tục:
-         * mỗi message mới update trực tiếp banner hiện tại,
-         * không đi qua hàng đợi Toast.
-         */
         val overlayDaNhan =
             DichVuTruyCapFaceAccess
                 .hienThiThongBaoHeThong(
                     noiDung
                 )
 
-
-        if (
-            overlayDaNhan
-        ) {
-
+        if (overlayDaNhan) {
             huyToastFallback()
+        }
 
+        return overlayDaNhan
+    }
+
+    fun hienThi(
+        context: Context,
+        noiDung: String
+    ) {
+
+        if (noiDung.isBlank()) {
             return
         }
 
+        if (hienThi(noiDung)) {
+            return
+        }
 
-        /*
-         * Fallback duy nhất nếu Accessibility chưa sẵn sàng.
-         */
         val appContext =
             context.applicationContext
-
 
         mainHandler.post {
 
             toastFallback
                 ?.cancel()
-
 
             toastFallback =
                 Toast.makeText(
@@ -90,12 +70,9 @@ object ThongBaoFaceAccess {
         }
     }
 
-
     fun huy() {
-
         huyToastFallback()
     }
-
 
     private fun huyToastFallback() {
 

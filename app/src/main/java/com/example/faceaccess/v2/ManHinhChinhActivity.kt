@@ -429,8 +429,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     "CAMERA\nChưa được cấp quyền"
                 )
 
-                txtTrangThaiHeThong.text =
+                capNhatTrangThaiHeThong(
                     "● Chưa được cấp quyền Camera"
+                )
             }
         }
 
@@ -586,6 +587,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     "Che do moi: $cheDoMoi"
                 )
 
+                DichVuTruyCapFaceAccess
+                    .capNhatCheDoTrangThaiOverlay(
+                        cheDoMoi
+                    )
+
                 if (
                     cheDoMoi !=
                     CheDoDieuKhien.HO_TRO &&
@@ -611,6 +617,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
         val cheDoBanDau =
             boDinhTuyenCheDo
                 .layCheDoHienTai()
+
+        DichVuTruyCapFaceAccess
+            .capNhatCheDoTrangThaiOverlay(
+                cheDoBanDau
+            )
 
         capNhatTrangThaiConTroTheoCheDo(
             cheDoBanDau
@@ -909,8 +920,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                         "HOME Android: THAT_BAI - AccessibilityService chua san sang"
                                     )
 
-                                    txtTrangThaiHeThong.text =
+                                    capNhatTrangThaiHeThong(
                                         "● Hãy bật dịch vụ trợ năng FaceAccess"
+                                    )
                                 }
                             }
                         }
@@ -953,8 +965,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                         "BACK Android: THAT_BAI - AccessibilityService chua san sang"
                                     )
 
-                                    txtTrangThaiHeThong.text =
+                                    capNhatTrangThaiHeThong(
                                         "● Hãy bật dịch vụ trợ năng FaceAccess"
+                                    )
                                 }
                             }
                         }
@@ -1153,12 +1166,18 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 thongBao
                             )
 
+                            DichVuTruyCapFaceAccess
+                                .capNhatKhuonMatTrangThaiOverlay(
+                                    false
+                                )
+
                             runOnUiThread {
 
                                 if (cameraDangBat) {
 
-                                    txtTrangThaiHeThong.text =
+                                    capNhatTrangThaiHeThong(
                                         "● Lỗi MediaPipe: $thongBao"
+                                    )
                                 }
                             }
                         }
@@ -1245,8 +1264,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
         khungCamera.visibility =
             View.VISIBLE
 
-        txtTrangThaiHeThong.text =
+        capNhatTrangThaiHeThong(
             "● Đang khởi động Camera..."
+        )
 
         btnBatDauTheoDoi.isEnabled =
             false
@@ -1286,8 +1306,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 datLaiNhanDienMat()
 
-                txtTrangThaiHeThong.text =
+                capNhatTrangThaiHeThong(
                     "● Camera đang hoạt động - đang tìm khuôn mặt"
+                )
 
                 btnBatDauTheoDoi.text =
                     "DỪNG THEO DÕI"
@@ -1299,6 +1320,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
             khiLoi = { exception ->
 
                 tatDichVuTheoDoi()
+
+                DichVuTruyCapFaceAccess
+                    .tatTrangThaiOverlay()
 
                 cameraDangBat =
                     false
@@ -1322,11 +1346,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 datLaiThongTinNhanDien()
 
-                txtTrangThaiHeThong.text =
+                capNhatTrangThaiHeThong(
                     "● Lỗi Camera: ${
                         exception.message
                             ?: "Không xác định"
                     }"
+                )
 
                 btnBatDauTheoDoi.text =
                     "BẮT ĐẦU THEO DÕI"
@@ -1385,8 +1410,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     txtTrangThaiCamera.visibility =
                         View.GONE
 
-                    txtTrangThaiHeThong.text =
+                    capNhatTrangThaiHeThong(
                         "● Camera đang hoạt động - đang tìm khuôn mặt"
+                    )
 
                     btnBatDauTheoDoi.text =
                         "DỪNG THEO DÕI"
@@ -1414,11 +1440,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 runOnUiThread {
 
-                    txtTrangThaiHeThong.text =
+                    capNhatTrangThaiHeThong(
                         "● Không thể nhận lại Camera: ${
                             exception.message
                                 ?: "Không xác định"
                         }"
+                    )
                 }
             }
         )
@@ -1433,6 +1460,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         DichVuTruyCapFaceAccess
             .tatConTro()
+
+        DichVuTruyCapFaceAccess
+            .tatTrangThaiOverlay()
 
         if (
             ::boDieuKhienLienHeHoTro.isInitialized
@@ -1470,8 +1500,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         datLaiThongTinNhanDien()
 
-        txtTrangThaiHeThong.text =
+        capNhatTrangThaiHeThong(
             "● Đã dừng theo dõi"
+        )
 
         btnBatDauTheoDoi.text =
             "BẮT ĐẦU THEO DÕI"
@@ -1578,6 +1609,24 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     // TRẠNG THÁI KHUÔN MẶT
 
+    private fun capNhatTrangThaiHeThong(
+        noiDung: String,
+        mauChu: Int = R.color.do_trang_thai
+    ) {
+        val mauTrangThai =
+            ContextCompat.getColor(
+                this,
+                mauChu
+            )
+
+        txtTrangThaiHeThong.text =
+            noiDung
+
+        txtTrangThaiHeThong.setTextColor(
+            mauTrangThai
+        )
+    }
+
     private fun capNhatTrangThaiKhuonMat(
         coKhuonMat: Boolean
     ) {
@@ -1596,6 +1645,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
         dangThayKhuonMat =
             coKhuonMat
 
+        DichVuTruyCapFaceAccess
+            .capNhatKhuonMatTrangThaiOverlay(
+                coKhuonMat
+            )
+
         runOnUiThread {
 
             if (!cameraDangBat) {
@@ -1604,13 +1658,16 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             if (coKhuonMat) {
 
-                txtTrangThaiHeThong.text =
-                    "● Đã phát hiện khuôn mặt"
+                capNhatTrangThaiHeThong(
+                    noiDung = "● Đã phát hiện khuôn mặt",
+                    mauChu = R.color.xanh_trang_thai
+                )
 
             } else {
 
-                txtTrangThaiHeThong.text =
+                capNhatTrangThaiHeThong(
                     "● Không thấy khuôn mặt"
+                )
             }
         }
     }

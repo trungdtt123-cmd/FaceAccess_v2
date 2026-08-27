@@ -1,22 +1,12 @@
 package com.example.faceaccess.v2.chedo
 
-/**
- * Tầng điều khiển việc chuyển chế độ.
- *
- * Class này KHÔNG tự giữ state nữa.
- *
- * State thật nằm duy nhất tại:
- * TrangThaiCheDoToanCuc
- */
+import com.example.faceaccess.v2.thongbao.ThongBaoFaceAccess
+
 class BoDinhTuyenCheDo(
     private val khiCheDoThayDoi:
         (CheDoDieuKhien) -> Unit
 ) {
 
-    /**
-     * Trả về chế độ hiện tại từ
-     * nguồn trạng thái toàn cục.
-     */
     fun layCheDoHienTai():
             CheDoDieuKhien {
 
@@ -24,28 +14,21 @@ class BoDinhTuyenCheDo(
             .layCheDoHienTai()
     }
 
-
-    /**
-     * Chuyển sang chế độ kế tiếp.
-     *
-     * Việc thay đổi state thật được thực hiện
-     * trong TrangThaiCheDoToanCuc.
-     */
     fun chuyenCheDoTiepTheo() {
 
         val cheDoMoi =
             TrangThaiCheDoToanCuc
                 .chuyenCheDoTiepTheo()
 
+        hienThiThongBaoCheDo(
+            cheDoMoi
+        )
+
         khiCheDoThayDoi(
             cheDoMoi
         )
     }
 
-
-    /**
-     * Đặt lại về Điều hướng.
-     */
     fun datLai() {
 
         val cheDoMoi =
@@ -54,6 +37,31 @@ class BoDinhTuyenCheDo(
 
         khiCheDoThayDoi(
             cheDoMoi
+        )
+    }
+
+    private fun hienThiThongBaoCheDo(
+        cheDo: CheDoDieuKhien
+    ) {
+
+        val noiDung =
+            when (cheDo) {
+
+                CheDoDieuKhien.DIEU_HUONG ->
+                    "Đã chuyển sang chế độ Điều hướng"
+
+                CheDoDieuKhien.MEDIA ->
+                    "Đã chuyển sang chế độ Media"
+
+                CheDoDieuKhien.HO_TRO ->
+                    "Đã chuyển sang chế độ Hỗ trợ"
+
+                CheDoDieuKhien.CON_TRO ->
+                    "Đã chuyển sang chế độ Con trỏ"
+            }
+
+        ThongBaoFaceAccess.hienThi(
+            noiDung
         )
     }
 }

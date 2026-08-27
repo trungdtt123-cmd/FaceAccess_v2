@@ -118,6 +118,9 @@ class DichVuTheoDoiFaceAccess :
     private var thoiGianLogGanNhat =
         0L
 
+    private var dangThayKhuonMatNen: Boolean? =
+        null
+
     // SERVICE CREATE
 
     override fun onCreate() {
@@ -136,6 +139,12 @@ class DichVuTheoDoiFaceAccess :
         batForeground()
 
         khoiTaoBoDinhTuyenCheDoNen()
+
+        DichVuTruyCapFaceAccess
+            .batTrangThaiOverlay(
+                boDinhTuyenCheDo
+                    .layCheDoHienTai()
+            )
 
         khoiTaoBoDieuKhienMediaNen()
 
@@ -225,6 +234,11 @@ class DichVuTheoDoiFaceAccess :
                     "NEN: CHE DO MOI = $cheDoMoi"
                 )
 
+                DichVuTruyCapFaceAccess
+                    .capNhatCheDoTrangThaiOverlay(
+                        cheDoMoi
+                    )
+
                 if (
                     cheDoMoi !=
                     CheDoDieuKhien.HO_TRO &&
@@ -243,9 +257,17 @@ class DichVuTheoDoiFaceAccess :
                 )
             }
 
-        capNhatTrangThaiConTroTheoCheDoNen(
+        val cheDoBanDau =
             boDinhTuyenCheDo
                 .layCheDoHienTai()
+
+        DichVuTruyCapFaceAccess
+            .capNhatCheDoTrangThaiOverlay(
+                cheDoBanDau
+            )
+
+        capNhatTrangThaiConTroTheoCheDoNen(
+            cheDoBanDau
         )
     }
 
@@ -775,6 +797,9 @@ class DichVuTheoDoiFaceAccess :
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
 
+                            capNhatTrangThaiKhuonMatOverlayNen(
+                                true
+                            )
 
                             nhanDienNghiengDau.capNhat(
                                 roll = duLieu.roll,
@@ -872,6 +897,10 @@ class DichVuTheoDoiFaceAccess :
 
                             datLaiNhanDienMat()
 
+                            capNhatTrangThaiKhuonMatOverlayNen(
+                                false
+                            )
+
                             val hienTai =
                                 SystemClock.uptimeMillis()
 
@@ -895,6 +924,10 @@ class DichVuTheoDoiFaceAccess :
                             thongBao: String
                         ) {
 
+                            capNhatTrangThaiKhuonMatOverlayNen(
+                                false
+                            )
+
                             Log.e(
                                 TAG_CAMERA_NEN,
                                 "Loi MediaPipe nen: $thongBao"
@@ -910,6 +943,22 @@ class DichVuTheoDoiFaceAccess :
 
                 laCameraTruoc =
                     true
+            )
+    }
+
+    private fun capNhatTrangThaiKhuonMatOverlayNen(
+        coKhuonMat: Boolean
+    ) {
+        if (dangThayKhuonMatNen == coKhuonMat) {
+            return
+        }
+
+        dangThayKhuonMatNen =
+            coKhuonMat
+
+        DichVuTruyCapFaceAccess
+            .capNhatKhuonMatTrangThaiOverlay(
+                coKhuonMat
             )
     }
 
@@ -960,6 +1009,9 @@ class DichVuTheoDoiFaceAccess :
         thoiGianLogGanNhat =
             0L
 
+        dangThayKhuonMatNen =
+            null
+
         quanLyCamera.batCamera(
 
             khiThanhCong = {
@@ -1006,6 +1058,10 @@ class DichVuTheoDoiFaceAccess :
 
                 cameraNenDangBat =
                     false
+
+                capNhatTrangThaiKhuonMatOverlayNen(
+                    false
+                )
 
                 val dangChoTat =
                     yeuCauTatSauKhiKhoiDong
@@ -1145,6 +1201,9 @@ class DichVuTheoDoiFaceAccess :
 
         DichVuTruyCapFaceAccess
             .tatConTro()
+
+        DichVuTruyCapFaceAccess
+            .tatTrangThaiOverlay()
 
         if (::nhanDienNghiengDau.isInitialized) {
             nhanDienNghiengDau.datLai()

@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.contro.BoQuanLyConTroOverlay
 import com.example.faceaccess.v2.contro.BoChonMucTieuConTro
+import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.dieuphoi.contro.LenhConTro
 import kotlin.math.abs
 
@@ -29,6 +30,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         false
 
     // SYSTEM FEEDBACK OVERLAY
+
+    private lateinit var boQuanLyTrangThaiOverlay:
+            BoQuanLyTrangThaiOverlay
 
     // CURSOR OVERLAY
 
@@ -81,6 +85,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 BoQuanLyConTroOverlay(this)
         }
 
+        if (
+            !::boQuanLyTrangThaiOverlay.isInitialized
+        ) {
+            boQuanLyTrangThaiOverlay =
+                BoQuanLyTrangThaiOverlay(this)
+        }
+
+        dongBoTrangThaiOverlayNoiBo()
+
         Log.d(
             TAG,
             "Dich vu truy cap da ket noi"
@@ -113,6 +126,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             ::boQuanLyConTroOverlay.isInitialized
         ) {
             boQuanLyConTroOverlay.dong()
+        }
+
+        if (
+            ::boQuanLyTrangThaiOverlay.isInitialized
+        ) {
+            boQuanLyTrangThaiOverlay.dong()
         }
 
         if (phienBanDangHoatDong === this) {
@@ -750,6 +769,24 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
 
         return daNhan
+    }
+
+    private fun dongBoTrangThaiOverlayNoiBo(): Boolean {
+        if (
+            !::boQuanLyTrangThaiOverlay.isInitialized
+        ) {
+            boQuanLyTrangThaiOverlay =
+                BoQuanLyTrangThaiOverlay(this)
+        }
+
+        if (!trangThaiOverlayDangBat) {
+            return boQuanLyTrangThaiOverlay.an()
+        }
+
+        return boQuanLyTrangThaiOverlay.hienThi(
+            cheDo = trangThaiOverlayCheDo,
+            coKhuonMat = trangThaiOverlayCoKhuonMat
+        )
     }
 
     // FEEDBACK OVERLAY - KHÔNG DÙNG TOAST
@@ -2730,9 +2767,92 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         private var phienBanDangHoatDong:
                 DichVuTruyCapFaceAccess? = null
 
+        @Volatile
+        private var trangThaiOverlayDangBat =
+            false
+
+        @Volatile
+        private var trangThaiOverlayCoKhuonMat =
+            false
+
+        @Volatile
+        private var trangThaiOverlayCheDo =
+            CheDoDieuKhien.DIEU_HUONG
+
         fun dangHoatDong(): Boolean {
 
             return phienBanDangHoatDong != null
+        }
+
+        fun batTrangThaiOverlay(
+            cheDo: CheDoDieuKhien
+        ): Boolean {
+            trangThaiOverlayDangBat =
+                true
+
+            trangThaiOverlayCheDo =
+                cheDo
+
+            trangThaiOverlayCoKhuonMat =
+                false
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .dongBoTrangThaiOverlayNoiBo()
+        }
+
+        fun tatTrangThaiOverlay(): Boolean {
+            trangThaiOverlayDangBat =
+                false
+
+            trangThaiOverlayCoKhuonMat =
+                false
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return true
+
+            return dichVu
+                .dongBoTrangThaiOverlayNoiBo()
+        }
+
+        fun capNhatKhuonMatTrangThaiOverlay(
+            coKhuonMat: Boolean
+        ): Boolean {
+            trangThaiOverlayCoKhuonMat =
+                coKhuonMat
+
+            if (!trangThaiOverlayDangBat) {
+                return true
+            }
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .dongBoTrangThaiOverlayNoiBo()
+        }
+
+        fun capNhatCheDoTrangThaiOverlay(
+            cheDo: CheDoDieuKhien
+        ): Boolean {
+            trangThaiOverlayCheDo =
+                cheDo
+
+            if (!trangThaiOverlayDangBat) {
+                return true
+            }
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .dongBoTrangThaiOverlayNoiBo()
         }
 
         fun batConTro(): Boolean {
