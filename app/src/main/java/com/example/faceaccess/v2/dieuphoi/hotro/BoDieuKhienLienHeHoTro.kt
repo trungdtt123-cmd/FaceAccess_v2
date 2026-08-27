@@ -8,28 +8,6 @@ import android.os.Looper
 import android.os.SystemClock
 import com.example.faceaccess.v2.truycap.DichVuTruyCapFaceAccess
 
-/**
- * Bộ điều khiển nghiệp vụ của chế độ HỖ TRỢ.
- *
- * Quy tắc UX:
- *
- * NGOÀI ứng dụng Điện thoại:
- * - YAW trái/phải: chỉ chọn liên hệ.
- * - PITCH lên: mở Dialer với liên hệ đã chọn.
- * - PITCH xuống: hủy lựa chọn.
- *
- * ĐANG ở ứng dụng Điện thoại:
- * - YAW trái/phải: đổi liên hệ và cập nhật số NGAY, không cần PITCH lên lại.
- * - PITCH lên: không mở lặp; chỉ thông báo cuộc gọi hiện tại đã sẵn sàng.
- * - PITCH xuống: hủy liên hệ, xóa số khỏi Dialer nhưng giữ ứng dụng Điện thoại mở.
- *
- * Sau khi PITCH xuống:
- * - FaceAccess xóa selected contact ngay lập tức.
- * - PITCH lên khi chưa YAW lại tuyệt đối không được mở số cũ.
- * - Nếu vẫn đang ở Dialer trống, YAW sẽ chọn người mới và mở số ngay.
- *
- * State phiên không persist qua process death để tránh phục hồi contact cũ.
- */
 class BoDieuKhienLienHeHoTro(
     context: Context
 ) {
@@ -90,6 +68,19 @@ class BoDieuKhienLienHeHoTro(
 
             dongBoLienHeDangChonNeuCan()
 
+            if (
+                lenh !=
+                LenhHoTro.GOI_HOAC_KET_THUC &&
+                DichVuTruyCapFaceAccess
+                    .dangCoCuocGoiDangHienThi()
+            ) {
+                return KetQua(
+                    thanhCong = false,
+                    thongBao =
+                        "Cuộc gọi đang diễn ra. Hãy nhắm hai mắt để kết thúc.",
+                    lienHe = lienHeDangChon
+                )
+            }
 
             return when (lenh) {
 
@@ -114,6 +105,10 @@ class BoDieuKhienLienHeHoTro(
 
                 LenhHoTro.HUY_LIEN_HE -> {
                     xuLyPitchXuong()
+                }
+
+                LenhHoTro.GOI_HOAC_KET_THUC -> {
+                    xuLyGoiHoacKetThuc()
                 }
             }
         }
@@ -165,15 +160,6 @@ class BoDieuKhienLienHeHoTro(
     // YAW
     // =========================================================
 
-    /**
-     * YAW luôn đổi selected contact.
-     *
-     * Nếu đang ở Dialer:
-     * -> cập nhật số ngay.
-     *
-     * Nếu không ở Dialer:
-     * -> chỉ chọn contact, chờ PITCH lên.
-     */
     private fun xuLyYaw(
         buoc: Int
     ): KetQua {
@@ -269,10 +255,6 @@ class BoDieuKhienLienHeHoTro(
         }
 
 
-        /*
-         * Đang ở ứng dụng Điện thoại:
-         * YAW phải cập nhật số ngay, không yêu cầu PITCH lên lần nữa.
-         */
         val ketQuaMo =
             moSoLienHeTrenDialer(
                 lienHe = lienHeMoi,
@@ -304,10 +286,6 @@ class BoDieuKhienLienHeHoTro(
         }
 
 
-        /*
-         * Contact vẫn được chọn, nhưng Dialer update thất bại.
-         * PITCH lên có thể thử lại.
-         */
         trangThaiPhien =
             TrangThaiPhien.DA_CHON
 
@@ -364,10 +342,6 @@ class BoDieuKhienLienHeHoTro(
             dangOTrongDialer()
 
 
-        /*
-         * PITCH lên lặp lại khi số đã nằm trên Dialer:
-         * KHÔNG startActivity lại, KHÔNG đổi số.
-         */
         if (
             dangTrongDialer &&
             trangThaiPhien ==
@@ -475,10 +449,6 @@ class BoDieuKhienLienHeHoTro(
             dangOTrongDialer()
 
 
-        /*
-         * Nếu chỉ đang chọn contact ngoài Dialer:
-         * hủy selection, không mở app Điện thoại.
-         */
         if (
             !dangTrongDialer
         ) {
@@ -504,14 +474,6 @@ class BoDieuKhienLienHeHoTro(
             )
 
 
-        /*
-         * SAFETY:
-         *
-         * Xóa state FaceAccess TRƯỚC khi can thiệp Dialer.
-         * Kể từ dòng này, PITCH lên tiếp theo không thể lấy số cũ.
-         *
-         * Giữ package Dialer để YAW tiếp theo có thể mở số mới ngay.
-         */
         packageDialerGanNhat =
             packageDialerHienTai
                 ?: packageDialerGanNhat
@@ -548,14 +510,6 @@ class BoDieuKhienLienHeHoTro(
         }
 
 
-        /*
-         * Fallback cho ROM/Dialer không expose field số:
-         *
-         * 1. BACK khỏi màn hình số hiện tại.
-         * 2. Sau một khoảng rất ngắn, mở lại Dialer KHÔNG kèm số.
-         *
-         * Kết quả cuối vẫn là app Điện thoại đang mở với vùng số trống.
-         */
         val fallbackDaNhan =
             dongVaMoLaiDialerTrong(
                 packageDialer =
@@ -595,6 +549,84 @@ class BoDieuKhienLienHeHoTro(
     // =========================================================
     // DIALER
     // =========================================================
+
+    private fun xuLyGoiHoacKetThuc(): KetQua {
+        if (
+            DichVuTruyCapFaceAccess
+                .thucThiKetThucCuocGoiNeuDangCo()
+        ) {
+            if (lienHeDangChon != null) {
+                trangThaiPhien =
+                    TrangThaiPhien.DA_CHON
+            } else {
+                trangThaiPhien =
+                    TrangThaiPhien.CHUA_CHON
+            }
+
+            return KetQua(
+                thanhCong = true,
+                thongBao =
+                    "Đã kết thúc cuộc gọi.",
+                lienHe = lienHeDangChon
+            )
+        }
+
+        val lienHe =
+            lienHeDangChon
+
+        if (
+            lienHe == null ||
+            trangThaiPhien !=
+            TrangThaiPhien.DIALER_CO_SO
+        ) {
+            return KetQua(
+                thanhCong = false,
+                thongBao =
+                    "Chưa có cuộc gọi sẵn sàng. " +
+                            "Hãy chọn liên hệ và ngẩng đầu để chuẩn bị số."
+            )
+        }
+
+        val (
+            dangTrongDialer,
+            packageDialerHienTai
+        ) =
+            dangOTrongDialer()
+
+        if (!dangTrongDialer) {
+            return KetQua(
+                thanhCong = false,
+                thongBao =
+                    "Chưa ở màn hình quay số. " +
+                            "Hãy ngẩng đầu để chuẩn bị lại cuộc gọi.",
+                lienHe = lienHe
+            )
+        }
+
+        val thanhCong =
+            DichVuTruyCapFaceAccess
+                .thucThiBatDauCuocGoiTrenDialer(
+                    packageDialerMongDoi =
+                        packageDialerHienTai
+                            ?: packageDialerGanNhat
+                )
+
+        return if (thanhCong) {
+            KetQua(
+                thanhCong = true,
+                thongBao =
+                    "Đang gọi ${tenHienThi(lienHe)}.",
+                lienHe = lienHe
+            )
+        } else {
+            KetQua(
+                thanhCong = false,
+                thongBao =
+                    "Không thể bắt đầu cuộc gọi tới ${tenHienThi(lienHe)}.",
+                lienHe = lienHe
+            )
+        }
+    }
 
     private fun moSoLienHeTrenDialer(
         lienHe: NguoiHoTro,
@@ -718,11 +750,6 @@ class BoDieuKhienLienHeHoTro(
     }
 
 
-    /**
-     * Trả về:
-     * - first  = có đang ở app Điện thoại hay không.
-     * - second = package Dialer đang active.
-     */
     private fun dangOTrongDialer():
             Pair<Boolean, String?> {
 
@@ -782,10 +809,6 @@ class BoDieuKhienLienHeHoTro(
     }
 
 
-    /**
-     * Fallback cuối:
-     * đóng màn hình số hiện tại rồi mở lại Dialer không truyền số.
-     */
     private fun dongVaMoLaiDialerTrong(
         packageDialer: String?
     ): Boolean {
@@ -799,9 +822,6 @@ class BoDieuKhienLienHeHoTro(
             !backDaNhan
         ) {
 
-            /*
-             * Vẫn thử mở Dialer trống trực tiếp.
-             */
             return moDialerTrongNgay(
                 packageDialer
             )
@@ -915,9 +935,6 @@ class BoDieuKhienLienHeHoTro(
 
     private fun dongBoLienHeDangChonNeuCan() {
 
-        /*
-         * Khi số đang hiển thị trên Dialer, snapshot contact phải ổn định.
-         */
         if (
             trangThaiPhien !=
             TrangThaiPhien.DA_CHON
@@ -1070,10 +1087,6 @@ class BoDieuKhienLienHeHoTro(
                 NguoiHoTro? =
             null
 
-        /**
-         * Package Dialer gần nhất FaceAccess đã xác nhận.
-         * Giữ lại sau thao tác HỦY khi người dùng vẫn đang ở app Điện thoại.
-         */
         @Volatile
         private var packageDialerGanNhat:
                 String? =
@@ -1088,6 +1101,9 @@ class BoDieuKhienLienHeHoTro(
         private var thoiDiemLenhGanNhat =
             0L
 
+
+        const val THOI_GIAN_NHAM_XAC_NHAN_MS =
+            600L
 
         private const val CUA_SO_CHONG_LENH_TRUNG_MS =
             120L

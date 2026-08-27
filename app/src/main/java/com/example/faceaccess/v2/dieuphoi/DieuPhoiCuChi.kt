@@ -26,6 +26,9 @@ class DieuPhoiCuChi(
     private val khiCoLenhConTro:
         (LenhConTro) -> Unit =
         { _ -> },
+    private val khiCoXacNhanConTro:
+        () -> Unit =
+        {},
     private val khiCoLenh:
         (LenhToanCuc) -> Unit
 ) {
@@ -41,9 +44,60 @@ class DieuPhoiCuChi(
             SuKienCuChi.MoMieng ->
                 khiCoLenh(LenhToanCuc.BACK)
 
+            SuKienCuChi.NhamHaiMat ->
+                xuLyNhamHaiMat()
+
+            SuKienCuChi.MoMiengHaiLan ->
+                xuLyMoMiengHaiLan()
+
             is SuKienCuChi.DieuHuongDau ->
                 xuLyHuongDau(suKien.huong)
         }
+    }
+
+    private fun xuLyNhamHaiMat() {
+        val cheDo =
+            layCheDoHienTai()
+
+        when (cheDo) {
+            CheDoDieuKhien.MEDIA ->
+                khiCoLenhMedia(
+                    LenhMedia.PHAT_TAM_DUNG
+                )
+
+            CheDoDieuKhien.HO_TRO ->
+                khiCoLenhHoTro(
+                    LenhHoTro.GOI_HOAC_KET_THUC
+                )
+
+            CheDoDieuKhien.CON_TRO ->
+                khiCoXacNhanConTro()
+
+            CheDoDieuKhien.DIEU_HUONG ->
+                khiCoLenhDieuHuong(
+                    LenhDieuHuong.XAC_NHAN
+                )
+        }
+
+        Log.d(
+            TAG,
+            "MODE=$cheDo | NHAM_HAI_MAT"
+        )
+    }
+
+    private fun xuLyMoMiengHaiLan() {
+        val cheDo = layCheDoHienTai()
+
+        if (cheDo == CheDoDieuKhien.CON_TRO) {
+            khiCoLenh(
+                LenhToanCuc.DOI_KHOA_CON_TRO
+            )
+        }
+
+        Log.d(
+            TAG,
+            "MODE=$cheDo | MO_MIENG_HAI_LAN"
+        )
     }
 
     private fun xuLyHuongDau(huong: HuongDau) {
@@ -86,8 +140,8 @@ class DieuPhoiCuChi(
         return when (this) {
             HuongDau.TRAI -> LenhDieuHuong.TRUOC
             HuongDau.PHAI -> LenhDieuHuong.TIEP_THEO
-            HuongDau.LEN -> LenhDieuHuong.CUON_LEN
-            HuongDau.XUONG -> LenhDieuHuong.CUON_XUONG
+            HuongDau.LEN -> LenhDieuHuong.CUON_XUONG
+            HuongDau.XUONG -> LenhDieuHuong.CUON_LEN
         }
     }
 

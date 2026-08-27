@@ -26,7 +26,9 @@ class NhanDienNhamHaiMat(
     fun capNhat(
         doNhamMatTrai: Float?,
         doNhamMatPhai: Float?,
-        thoiGianMs: Long
+        thoiGianMs: Long,
+        thoiGianXacNhanMs: Long =
+            THOI_GIAN_NHAM_XAC_NHAN_MS
     ) {
         if (
             doNhamMatTrai == null ||
@@ -75,7 +77,10 @@ class NhanDienNhamHaiMat(
                     caHaiDong = caHaiDong,
                     caHaiMo = caHaiMo,
                     coMatMo = traiMo || phaiMo,
-                    thoiGianMs = thoiGianMs
+                    thoiGianMs = thoiGianMs,
+                    thoiGianXacNhanMs =
+                        thoiGianXacNhanMs
+                            .coerceAtLeast(1L)
                 )
 
             TrangThai.DA_KICH_HOAT ->
@@ -160,7 +165,8 @@ class NhanDienNhamHaiMat(
         caHaiDong: Boolean,
         caHaiMo: Boolean,
         coMatMo: Boolean,
-        thoiGianMs: Long
+        thoiGianMs: Long,
+        thoiGianXacNhanMs: Long
     ) {
         if (caHaiDong) {
             batDauNhieuMs =
@@ -177,7 +183,7 @@ class NhanDienNhamHaiMat(
             if (
                 thoiGianMs -
                 batDau >=
-                THOI_GIAN_NHAM_XAC_NHAN_MS
+                thoiGianXacNhanMs
             ) {
                 trangThai =
                     TrangThai.DA_KICH_HOAT

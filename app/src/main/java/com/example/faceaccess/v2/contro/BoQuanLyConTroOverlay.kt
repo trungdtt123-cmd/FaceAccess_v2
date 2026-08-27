@@ -55,6 +55,9 @@ class BoQuanLyConTroOverlay(
     @Volatile
     private var dangAnimationClick = false
 
+    @Volatile
+    private var dangKhoa = false
+
     fun bat(): Boolean {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             mainHandler.post { batNoiBo() }
@@ -122,6 +125,26 @@ class BoQuanLyConTroOverlay(
         return phanHoiClickThanhCongNoiBo()
     }
 
+    fun datKhoa(
+        khoa: Boolean
+    ): Boolean {
+        if (
+            Looper.myLooper() !=
+            Looper.getMainLooper()
+        ) {
+            mainHandler.post {
+                datKhoaNoiBo(
+                    khoa
+                )
+            }
+            return true
+        }
+
+        return datKhoaNoiBo(
+            khoa
+        )
+    }
+
     fun anMucTieu(): Boolean {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             mainHandler.post {
@@ -163,6 +186,9 @@ class BoQuanLyConTroOverlay(
         if (viewHienTai != null) {
             xoaViewAnToan(viewHienTai)
         }
+
+        dangKhoa =
+            false
 
         huyAnimation()
         phienConTroId += 1L
@@ -237,6 +263,7 @@ class BoQuanLyConTroOverlay(
         if (
             !dangBat ||
             !view.isAttachedToWindow ||
+            dangKhoa ||
             dangDiChuyen ||
             dangAnimationClick
         ) {
@@ -563,6 +590,7 @@ class BoQuanLyConTroOverlay(
     private fun tatNoiBo(): Boolean {
         phienConTroId += 1L
         dangBat = false
+        dangKhoa = false
 
         huyAnimation()
 
@@ -617,6 +645,45 @@ class BoQuanLyConTroOverlay(
             false
     }
 
+    private fun datKhoaNoiBo(
+        khoa: Boolean
+    ): Boolean {
+        val view =
+            viewConTro
+                ?: return false
+
+        if (
+            !dangBat ||
+            !view.isAttachedToWindow
+        ) {
+            return false
+        }
+
+        huyAnimation()
+
+        dangKhoa =
+            khoa
+
+        anMucTieuNoiBo()
+
+        if (khoa) {
+            datMauConTroKhoa(
+                view
+            )
+        } else {
+            datMauConTroMacDinh(
+                view
+            )
+        }
+
+        Log.d(
+            TAG,
+            "KHOA=$khoa"
+        )
+
+        return true
+    }
+
     private fun phanHoiClickThanhCongNoiBo(): Boolean {
         val view =
             viewConTro
@@ -625,6 +692,7 @@ class BoQuanLyConTroOverlay(
         if (
             !dangBat ||
             !view.isAttachedToWindow ||
+            dangKhoa ||
             dangAnimationClick
         ) {
             return false
@@ -696,15 +764,45 @@ class BoQuanLyConTroOverlay(
     private fun datMauConTroMacDinh(
         view: View
     ) {
+        if (dangKhoa) {
+            datMauConTroKhoa(
+                view
+            )
+            return
+        }
+
         val nen =
             view.background as?
                     GradientDrawable
                 ?: return
 
+        view.alpha =
+            ALPHA_CON_TRO
+
         nen.setColor(
             ContextCompat.getColor(
                 accessibilityService,
                 R.color.xanh_chinh
+            )
+        )
+    }
+
+    private fun datMauConTroKhoa(
+        view: View
+    ) {
+        val nen =
+            view.background as?
+                    GradientDrawable
+                ?: return
+
+        view.alpha =
+            ALPHA_CON_TRO_KHOA
+
+        nen.setColor(
+            Color.rgb(
+                128,
+                128,
+                128
             )
         )
     }
@@ -958,5 +1056,6 @@ class BoQuanLyConTroOverlay(
 
         private const val TY_LE_THU_NHO_CLICK = 0.72f
         private const val ALPHA_CON_TRO = 0.95f
+        private const val ALPHA_CON_TRO_KHOA = 0.38f
     }
 }

@@ -42,6 +42,14 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             BoChonMucTieuConTro.KetQua? =
         null
 
+    @Volatile
+    private var conTroDangKhoa =
+        false
+
+    @Volatile
+    private var dangVuotConTro =
+        false
+
     private val mainHandlerThongBao =
         Handler(
             Looper.getMainLooper()
@@ -142,6 +150,14 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         ) {
             mucTieuConTroDangChon =
                 null
+
+            conTroDangKhoa =
+                false
+
+            boQuanLyConTroOverlay
+                .datKhoa(
+                    false
+                )
         }
 
         return thanhCong
@@ -151,11 +167,22 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         mucTieuConTroDangChon =
             null
 
+        conTroDangKhoa =
+            false
+
+        dangVuotConTro =
+            false
+
         if (
             !::boQuanLyConTroOverlay.isInitialized
         ) {
             return true
         }
+
+        boQuanLyConTroOverlay
+            .datKhoa(
+                false
+            )
 
         return boQuanLyConTroOverlay.tat()
     }
@@ -163,6 +190,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     private fun diChuyenConTroNoiBo(
         lenh: LenhConTro
     ): Boolean {
+        if (conTroDangKhoa) {
+            return thucThiVuotConTroNoiBo(
+                lenh
+            )
+        }
+
         if (
             !::boQuanLyConTroOverlay.isInitialized
         ) {
@@ -209,7 +242,211 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         return thanhCong
     }
 
+    private fun doiKhoaConTroNoiBo(): Boolean {
+        if (
+            !::boQuanLyConTroOverlay.isInitialized ||
+            !boQuanLyConTroOverlay.dangHienThi()
+        ) {
+            return false
+        }
+
+        val khoaMoi =
+            !conTroDangKhoa
+
+        conTroDangKhoa =
+            khoaMoi
+
+        mucTieuConTroDangChon =
+            null
+
+        val thanhCong =
+            boQuanLyConTroOverlay
+                .datKhoa(
+                    khoaMoi
+                )
+
+        if (!thanhCong) {
+            conTroDangKhoa =
+                !khoaMoi
+            return false
+        }
+
+        hienThiThongBaoHeThongNoiBo(
+            if (khoaMoi) {
+                "Đã khóa con trỏ - xoay đầu để vuốt"
+            } else {
+                "Đã mở khóa con trỏ"
+            }
+        )
+
+        Log.d(
+            TAG_CON_TRO,
+            "CURSOR_LOCK=$khoaMoi"
+        )
+
+        return true
+    }
+
+    private fun thucThiVuotConTroNoiBo(
+        lenh: LenhConTro
+    ): Boolean {
+        if (!conTroDangKhoa) {
+            return false
+        }
+
+        if (dangVuotConTro) {
+            return true
+        }
+
+        val metrics =
+            resources.displayMetrics
+
+        val rong =
+            metrics.widthPixels
+                .toFloat()
+
+        val cao =
+            metrics.heightPixels
+                .toFloat()
+
+        if (
+            rong <= 0f ||
+            cao <= 0f
+        ) {
+            return false
+        }
+
+        val xGiua =
+            rong * 0.50f
+
+        val yGiua =
+            cao * 0.50f
+
+        val xTrai =
+            rong * TY_LE_VUOT_THAP
+
+        val xPhai =
+            rong * TY_LE_VUOT_CAO
+
+        val yTren =
+            cao * TY_LE_VUOT_THAP
+
+        val yDuoi =
+            cao * TY_LE_VUOT_CAO
+
+        val diem =
+            when (lenh) {
+                LenhConTro.TRAI ->
+                    Pair(
+                        Pair(xPhai, yGiua),
+                        Pair(xTrai, yGiua)
+                    )
+
+                LenhConTro.PHAI ->
+                    Pair(
+                        Pair(xTrai, yGiua),
+                        Pair(xPhai, yGiua)
+                    )
+
+                LenhConTro.LEN ->
+                    Pair(
+                        Pair(xGiua, yDuoi),
+                        Pair(xGiua, yTren)
+                    )
+
+                LenhConTro.XUONG ->
+                    Pair(
+                        Pair(xGiua, yTren),
+                        Pair(xGiua, yDuoi)
+                    )
+            }
+
+        val path =
+            Path().apply {
+                moveTo(
+                    diem.first.first,
+                    diem.first.second
+                )
+
+                lineTo(
+                    diem.second.first,
+                    diem.second.second
+                )
+            }
+
+        val gesture =
+            GestureDescription
+                .Builder()
+                .addStroke(
+                    GestureDescription
+                        .StrokeDescription(
+                            path,
+                            0L,
+                            THOI_GIAN_VUOT_CON_TRO_MS
+                        )
+                )
+                .build()
+
+        dangVuotConTro =
+            true
+
+        val daNhan =
+            dispatchGesture(
+                gesture,
+                object :
+                    GestureResultCallback() {
+
+                    override fun onCompleted(
+                        gestureDescription:
+                        GestureDescription?
+                    ) {
+                        dangVuotConTro =
+                            false
+
+                        Log.d(
+                            TAG_CON_TRO,
+                            "SWIPE_$lenh | COMPLETED"
+                        )
+                    }
+
+                    override fun onCancelled(
+                        gestureDescription:
+                        GestureDescription?
+                    ) {
+                        dangVuotConTro =
+                            false
+
+                        Log.e(
+                            TAG_CON_TRO,
+                            "SWIPE_$lenh | CANCELLED"
+                        )
+                    }
+                },
+                null
+            )
+
+        if (!daNhan) {
+            dangVuotConTro =
+                false
+        }
+
+        Log.d(
+            TAG_CON_TRO,
+            "SWIPE_$lenh | DISPATCH=$daNhan"
+        )
+
+        return daNhan
+    }
+
     private fun thucThiClickConTroNoiBo(): Boolean {
+        if (conTroDangKhoa) {
+            Log.d(
+                TAG_CON_TRO,
+                "CLICK_BO_QUA | CURSOR_DANG_KHOA"
+            )
+            return false
+        }
+
         if (
             !::boQuanLyConTroOverlay.isInitialized ||
             !boQuanLyConTroOverlay.dangHienThi()
@@ -1003,6 +1240,257 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 0
     }
 
+    private fun batDauCuocGoiTrenDialerNoiBo(
+        packageDialerMongDoi: String?
+    ): Boolean {
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+        val packageDangHoatDong =
+            root.packageName
+                ?.toString()
+
+        if (
+            !packageDialerMongDoi.isNullOrBlank() &&
+            packageDangHoatDong !=
+            packageDialerMongDoi
+        ) {
+            Log.e(
+                TAG_DIALER,
+                "CHAN_GOI | active=$packageDangHoatDong | expected=$packageDialerMongDoi"
+            )
+            return false
+        }
+
+        val nutGoi =
+            timNutGoiDien(root)
+                ?: return false
+
+        val thanhCong =
+            nutGoi.performAction(
+                AccessibilityNodeInfo.ACTION_CLICK
+            )
+
+        Log.d(
+            TAG_DIALER,
+            "GOI_THAT | package=$packageDangHoatDong | ok=$thanhCong"
+        )
+
+        return thanhCong
+    }
+
+    private fun ketThucCuocGoiNeuDangCoNoiBo(): Boolean {
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+        val nutKetThuc =
+            timNutKetThucCuocGoi(root)
+                ?: return false
+
+        val thanhCong =
+            nutKetThuc.performAction(
+                AccessibilityNodeInfo.ACTION_CLICK
+            )
+
+        Log.d(
+            TAG_DIALER,
+            "KET_THUC_CUOC_GOI | ok=$thanhCong"
+        )
+
+        return thanhCong
+    }
+
+    private fun dangCoCuocGoiDangHienThiNoiBo(): Boolean {
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+        return timNutKetThucCuocGoi(root) != null
+    }
+
+    private fun timNutGoiDien(
+        node: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo? {
+        val ungVien =
+            mutableListOf<Pair<Int, AccessibilityNodeInfo>>()
+
+        thuThapNutGoiDien(
+            node = node,
+            ketQua = ungVien
+        )
+
+        return ungVien
+            .maxByOrNull { it.first }
+            ?.second
+    }
+
+    private fun thuThapNutGoiDien(
+        node: AccessibilityNodeInfo,
+        ketQua: MutableList<Pair<Int, AccessibilityNodeInfo>>
+    ) {
+        if (!node.isVisibleToUser) {
+            return
+        }
+
+        val diem =
+            diemNutGoiDien(node)
+
+        if (diem > 0) {
+            ketQua.add(
+                Pair(diem, node)
+            )
+        }
+
+        for (index in 0 until node.childCount) {
+            val child =
+                node.getChild(index)
+                    ?: continue
+
+            thuThapNutGoiDien(
+                node = child,
+                ketQua = ketQua
+            )
+        }
+    }
+
+    private fun diemNutGoiDien(
+        node: AccessibilityNodeInfo
+    ): Int {
+        val coTheBam =
+            node.isClickable ||
+                    node.actionList.any {
+                        it.id ==
+                                AccessibilityNodeInfo.ACTION_CLICK
+                    }
+
+        if (!coTheBam) {
+            return 0
+        }
+
+        val nhan =
+            nhanNode(node)
+
+        val id =
+            node.viewIdResourceName
+                ?.lowercase()
+                .orEmpty()
+
+        if (
+            nhan.contains("video") ||
+            nhan.contains("cuộc gọi video")
+        ) {
+            return 0
+        }
+
+        var diem = 0
+
+        if (
+            id.contains("dial_button") ||
+            id.contains("dialbutton") ||
+            id.contains("call_button") ||
+            id.contains("callbutton")
+        ) {
+            diem += 100
+        }
+
+        if (
+            nhan == "gọi" ||
+            nhan == "call" ||
+            nhan == "gọi điện" ||
+            nhan == "thực hiện cuộc gọi"
+        ) {
+            diem += 90
+        }
+
+        if (
+            nhan.startsWith("gọi bằng") ||
+            nhan.startsWith("call with") ||
+            nhan.startsWith("call using")
+        ) {
+            diem += 70
+        }
+
+        return diem
+    }
+
+    private fun timNutKetThucCuocGoi(
+        node: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo? {
+        if (!node.isVisibleToUser) {
+            return null
+        }
+
+        val coTheBam =
+            node.isClickable ||
+                    node.actionList.any {
+                        it.id ==
+                                AccessibilityNodeInfo.ACTION_CLICK
+                    }
+
+        if (
+            coTheBam &&
+            laNutKetThucCuocGoi(node)
+        ) {
+            return node
+        }
+
+        for (index in 0 until node.childCount) {
+            val child =
+                node.getChild(index)
+                    ?: continue
+
+            val ketQua =
+                timNutKetThucCuocGoi(child)
+
+            if (ketQua != null) {
+                return ketQua
+            }
+        }
+
+        return null
+    }
+
+    private fun laNutKetThucCuocGoi(
+        node: AccessibilityNodeInfo
+    ): Boolean {
+        val nhan =
+            nhanNode(node)
+
+        val id =
+            node.viewIdResourceName
+                ?.lowercase()
+                .orEmpty()
+
+        val nhanHopLe =
+            nhan.contains("kết thúc cuộc gọi") ||
+                    nhan.contains("ngắt cuộc gọi") ||
+                    nhan.contains("end call") ||
+                    nhan.contains("hang up") ||
+                    nhan.contains("disconnect call")
+
+        val idHopLe =
+            id.contains("end_call") ||
+                    id.contains("endcall") ||
+                    id.contains("hangup") ||
+                    id.contains("disconnect")
+
+        return nhanHopLe || idHopLe
+    }
+
+    private fun nhanNode(
+        node: AccessibilityNodeInfo
+    ): String {
+        return listOfNotNull(
+            node.text?.toString(),
+            node.contentDescription?.toString()
+        )
+            .joinToString(" ")
+            .trim()
+            .lowercase()
+    }
+
     private fun thuThapNodeSetText(
         node: AccessibilityNodeInfo,
         ketQua: MutableList<AccessibilityNodeInfo>
@@ -1356,6 +1844,93 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         return diChuyenAccessibilityFocus(
             huong = View.FOCUS_BACKWARD
         )
+    }
+
+    private fun thucThiXacNhanDieuHuongNoiBo(): Boolean {
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+        val nodeDangFocus =
+            root.findFocus(
+                AccessibilityNodeInfo.FOCUS_ACCESSIBILITY
+            )
+                ?: root.findFocus(
+                    AccessibilityNodeInfo.FOCUS_INPUT
+                )
+
+        if (nodeDangFocus == null) {
+            Log.d(
+                TAG_FOCUS,
+                "XAC_NHAN THAT_BAI | khong co node dang focus"
+            )
+            return false
+        }
+
+        val nodeXacNhan =
+            timNodeXacNhanDieuHuong(
+                nodeDangFocus
+            )
+
+        if (nodeXacNhan == null) {
+            Log.d(
+                TAG_FOCUS,
+                "XAC_NHAN THAT_BAI | node focus khong co ACTION_CLICK"
+            )
+            return false
+        }
+
+        val thanhCong =
+            nodeXacNhan.performAction(
+                AccessibilityNodeInfo.ACTION_CLICK
+            )
+
+        Log.d(
+            TAG_FOCUS,
+            "XAC_NHAN | text=${nodeXacNhan.text} | " +
+                    "desc=${nodeXacNhan.contentDescription} | " +
+                    "OK=$thanhCong"
+        )
+
+        return thanhCong
+    }
+
+    private fun timNodeXacNhanDieuHuong(
+        nodeBanDau: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo? {
+        var node:
+                AccessibilityNodeInfo? =
+            nodeBanDau
+
+        repeat(
+            SO_CAP_PARENT_CLICK_TOI_DA
+        ) {
+            val hienTai =
+                node
+                    ?: return null
+
+            val coActionClick =
+                hienTai.actionList.any {
+                        action ->
+                    action.id ==
+                            AccessibilityNodeInfo.ACTION_CLICK
+                }
+
+            if (
+                hienTai.isVisibleToUser &&
+                (
+                        hienTai.isClickable ||
+                                coActionClick
+                        )
+            ) {
+                return hienTai
+            }
+
+            node =
+                hienTai.parent
+        }
+
+        return null
     }
 
     private fun diChuyenAccessibilityFocus(
@@ -2112,6 +2687,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         private const val KHOANG_TAI_NHAN_DIEN_TARGET_DP =
             48
 
+        private const val TY_LE_VUOT_THAP =
+            0.20f
+
+        private const val TY_LE_VUOT_CAO =
+            0.80f
+
+        private const val THOI_GIAN_VUOT_CON_TRO_MS =
+            300L
+
         private const val SO_CAP_PARENT_CLICK_TOI_DA =
             6
 
@@ -2169,6 +2753,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return dichVu.tatConTroNoiBo()
         }
 
+        fun doiKhoaConTro(): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .doiKhoaConTroNoiBo()
+        }
+
         fun thucThiDiChuyenConTro(
             lenh: LenhConTro
         ): Boolean {
@@ -2216,6 +2809,37 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 .rootInActiveWindow
                 ?.packageName
                 ?.toString()
+        }
+
+        fun thucThiBatDauCuocGoiTrenDialer(
+            packageDialerMongDoi: String?
+        ): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .batDauCuocGoiTrenDialerNoiBo(
+                    packageDialerMongDoi
+                )
+        }
+
+        fun thucThiKetThucCuocGoiNeuDangCo(): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .ketThucCuocGoiNeuDangCoNoiBo()
+        }
+
+        fun dangCoCuocGoiDangHienThi(): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .dangCoCuocGoiDangHienThiNoiBo()
         }
 
         fun thucThiXoaSoTrinhQuaySo(
@@ -2274,6 +2898,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
             return dichVu
                 .thucThiTruocNoiBo()
+        }
+
+        fun thucThiXacNhanDieuHuong(): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .thucThiXacNhanDieuHuongNoiBo()
         }
 
         fun thucThiCuonLen(): Boolean {

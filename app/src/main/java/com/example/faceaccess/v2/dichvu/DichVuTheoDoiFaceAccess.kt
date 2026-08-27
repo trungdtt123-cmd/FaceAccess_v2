@@ -21,6 +21,7 @@ import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
 import com.example.faceaccess.v2.cuchi.huongdau.NhanDienHuongDau
 import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
+import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMiengHaiLan
 import com.example.faceaccess.v2.cuchi.mat.NhanDienNhamHaiMat
 import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
@@ -71,11 +72,15 @@ class DichVuTheoDoiFaceAccess :
     private lateinit var nhanDienMoMieng:
             NhanDienMoMieng
 
+    private lateinit var nhanDienMoMiengHaiLan:
+            NhanDienMoMiengHaiLan
+
     private lateinit var nhanDienHuongDau:
             NhanDienHuongDau
 
     private lateinit var nhanDienNhamHaiMat:
             NhanDienNhamHaiMat
+
 
     private lateinit var dieuPhoiCuChi:
             DieuPhoiCuChi
@@ -141,6 +146,8 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoNhanDienCuChiNen()
 
         khoiTaoNhanDienMoMiengNen()
+
+        khoiTaoNhanDienMoMiengHaiLanNen()
 
         khoiTaoNhanDienHuongDauNen()
 
@@ -228,13 +235,8 @@ class DichVuTheoDoiFaceAccess :
                         .datLaiPhien()
                 }
 
-                if (
-                    cheDoMoi !=
-                    CheDoDieuKhien.CON_TRO &&
-                    ::nhanDienNhamHaiMat.isInitialized
-                ) {
-                    nhanDienNhamHaiMat.datLai()
-                }
+                datLaiNhanDienMieng()
+                datLaiNhanDienMat()
 
                 capNhatTrangThaiConTroTheoCheDoNen(
                     cheDoMoi
@@ -396,6 +398,25 @@ class DichVuTheoDoiFaceAccess :
                                 )
                             }
                         }
+
+                        LenhDieuHuong.XAC_NHAN -> {
+
+                            mainHandler.post {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiXacNhanDieuHuong()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "NEN: XAC_NHAN Accessibility THANH_CONG"
+                                    } else {
+                                        "NEN: XAC_NHAN Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
                     }
                 },
                 khiCoLenhMedia = { lenhMedia ->
@@ -465,6 +486,20 @@ class DichVuTheoDoiFaceAccess :
                         Log.d(
                             TAG_CON_TRO,
                             "NEN: MOVE=$lenhConTro | OK=$thanhCong"
+                        )
+                    }
+                },
+
+                khiCoXacNhanConTro = {
+
+                    mainHandler.post {
+                        val thanhCong =
+                            DichVuTruyCapFaceAccess
+                                .thucThiClickConTro()
+
+                        Log.d(
+                            TAG_CON_TRO,
+                            "NEN: EYE_CLICK | OK=$thanhCong"
                         )
                     }
                 },
@@ -543,6 +578,20 @@ class DichVuTheoDoiFaceAccess :
                                 }
                             }
                         }
+
+                        LenhToanCuc.DOI_KHOA_CON_TRO -> {
+
+                            mainHandler.post {
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .doiKhoaConTro()
+
+                                Log.d(
+                                    TAG_CON_TRO,
+                                    "NEN: MOUTH_DOUBLE_TOGGLE_LOCK | OK=$thanhCong"
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -605,6 +654,40 @@ class DichVuTheoDoiFaceAccess :
             }
     }
 
+    private fun khoiTaoNhanDienMoMiengHaiLanNen() {
+        nhanDienMoMiengHaiLan =
+            NhanDienMoMiengHaiLan(
+                khiMoMotLan = {
+                    Log.d(
+                        TAG_CU_CHI_MIENG,
+                        "NEN: MO MIENG MOT LAN - BACK"
+                    )
+                    dieuPhoiCuChi.xuLy(
+                        SuKienCuChi.MoMieng
+                    )
+                },
+                khiMoHaiLan = {
+                    Log.d(
+                        TAG_CU_CHI_MIENG,
+                        "NEN: MO MIENG HAI LAN - DOI KHOA CON TRO"
+                    )
+                    dieuPhoiCuChi.xuLy(
+                        SuKienCuChi.MoMiengHaiLan
+                    )
+                }
+            )
+    }
+
+    private fun datLaiNhanDienMieng() {
+        if (::nhanDienMoMieng.isInitialized) {
+            nhanDienMoMieng.datLai()
+        }
+
+        if (::nhanDienMoMiengHaiLan.isInitialized) {
+            nhanDienMoMiengHaiLan.datLai()
+        }
+    }
+
     // NHẬN DIỆN HƯỚNG ĐẦU YAW / PITCH NỀN
 
     private fun khoiTaoNhanDienHuongDauNen() {
@@ -641,19 +724,18 @@ class DichVuTheoDoiFaceAccess :
             }
     }
 
+    private fun datLaiNhanDienMat() {
+        if (::nhanDienNhamHaiMat.isInitialized) {
+            nhanDienNhamHaiMat.datLai()
+        }
+    }
+
     private fun khoiTaoNhanDienNhamHaiMatNen() {
         nhanDienNhamHaiMat =
             NhanDienNhamHaiMat {
-                mainHandler.post {
-                    val thanhCong =
-                        DichVuTruyCapFaceAccess
-                            .thucThiClickConTro()
-
-                    Log.d(
-                        TAG_CON_TRO,
-                        "NEN: EYE_CLICK | OK=$thanhCong"
-                    )
-                }
+                dieuPhoiCuChi.xuLy(
+                    SuKienCuChi.NhamHaiMat
+                )
             }
     }
 
@@ -693,6 +775,7 @@ class DichVuTheoDoiFaceAccess :
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
 
+
                             nhanDienNghiengDau.capNhat(
                                 roll = duLieu.roll,
                                 yaw = duLieu.yaw,
@@ -707,29 +790,57 @@ class DichVuTheoDoiFaceAccess :
                                 thoiGianMs = hienTai
                             )
 
-                            nhanDienMoMieng.capNhat(
-                                doMoMieng =
-                                    duLieu.doMoMieng,
-                                thoiGianMs =
-                                    hienTai
-                            )
+                            val cheDoHienTai =
+                                boDinhTuyenCheDo
+                                    .layCheDoHienTai()
 
                             if (
-                                boDinhTuyenCheDo
-                                    .layCheDoHienTai() ==
+                                cheDoHienTai ==
                                 CheDoDieuKhien.CON_TRO
                             ) {
+                                nhanDienMoMiengHaiLan.capNhat(
+                                    doMoMieng =
+                                        duLieu.doMoMieng,
+                                    thoiGianMs =
+                                        hienTai
+                                )
+                            } else {
+                                nhanDienMoMieng.capNhat(
+                                    doMoMieng =
+                                        duLieu.doMoMieng,
+                                    thoiGianMs =
+                                        hienTai
+                                )
+                            }
+
+                            val thoiGianXacNhanNhamMat =
+                                when (cheDoHienTai) {
+                                    CheDoDieuKhien.HO_TRO ->
+                                        BoDieuKhienLienHeHoTro
+                                            .THOI_GIAN_NHAM_XAC_NHAN_MS
+
+                                    CheDoDieuKhien.DIEU_HUONG,
+                                    CheDoDieuKhien.MEDIA,
+                                    CheDoDieuKhien.CON_TRO ->
+                                        NhanDienNhamHaiMat
+                                            .THOI_GIAN_NHAM_XAC_NHAN_MS
+                                }
+
+                            if (thoiGianXacNhanNhamMat != null) {
                                 nhanDienNhamHaiMat.capNhat(
                                     doNhamMatTrai =
                                         duLieu.doNhamMatTrai,
                                     doNhamMatPhai =
                                         duLieu.doNhamMatPhai,
                                     thoiGianMs =
-                                        hienTai
+                                        hienTai,
+                                    thoiGianXacNhanMs =
+                                        thoiGianXacNhanNhamMat
                                 )
                             } else {
-                                nhanDienNhamHaiMat.datLai()
+                                datLaiNhanDienMat()
                             }
+
 
                             if (
                                 hienTai -
@@ -755,11 +866,11 @@ class DichVuTheoDoiFaceAccess :
 
                             nhanDienNghiengDau.datLai()
 
-                            nhanDienMoMieng.datLai()
+                            datLaiNhanDienMieng()
 
                             nhanDienHuongDau.datLai()
 
-                            nhanDienNhamHaiMat.datLai()
+                            datLaiNhanDienMat()
 
                             val hienTai =
                                 SystemClock.uptimeMillis()
@@ -861,9 +972,9 @@ class DichVuTheoDoiFaceAccess :
 
                 nhanDienNghiengDau.datLai()
 
-                nhanDienMoMieng.datLai()
+                datLaiNhanDienMieng()
 
-                nhanDienNhamHaiMat.datLai()
+                datLaiNhanDienMat()
 
                 Log.d(
                     TAG_CAMERA_NEN,
@@ -955,9 +1066,9 @@ class DichVuTheoDoiFaceAccess :
 
         nhanDienNghiengDau.datLai()
 
-        nhanDienMoMieng.datLai()
+        datLaiNhanDienMieng()
 
-        nhanDienNhamHaiMat.datLai()
+        datLaiNhanDienMat()
 
         quanLyCamera.tatCamera()
 
@@ -1048,7 +1159,7 @@ class DichVuTheoDoiFaceAccess :
         }
 
         if (::nhanDienNhamHaiMat.isInitialized) {
-            nhanDienNhamHaiMat.datLai()
+            datLaiNhanDienMat()
         }
 
         cameraNenDangBat =

@@ -1,5 +1,6 @@
 package com.example.faceaccess.v2
 
+import com.example.faceaccess.v2.R
 import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -26,6 +27,7 @@ import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
 import com.example.faceaccess.v2.cuchi.huongdau.NhanDienHuongDau
 import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
+import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMiengHaiLan
 import com.example.faceaccess.v2.cuchi.mat.NhanDienNhamHaiMat
 import com.example.faceaccess.v2.dichvu.DichVuTheoDoiFaceAccess
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
@@ -85,6 +87,40 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
     }
 
+    private fun khoiTaoNhanDienMoMiengHaiLan() {
+        nhanDienMoMiengHaiLan =
+            NhanDienMoMiengHaiLan(
+                khiMoMotLan = {
+                    Log.d(
+                        TAG_CU_CHI_MIENG,
+                        "APP: MO MIENG MOT LAN - BACK"
+                    )
+                    dieuPhoiCuChi.xuLy(
+                        SuKienCuChi.MoMieng
+                    )
+                },
+                khiMoHaiLan = {
+                    Log.d(
+                        TAG_CU_CHI_MIENG,
+                        "APP: MO MIENG HAI LAN - DOI KHOA CON TRO"
+                    )
+                    dieuPhoiCuChi.xuLy(
+                        SuKienCuChi.MoMiengHaiLan
+                    )
+                }
+            )
+    }
+
+    private fun datLaiNhanDienMieng() {
+        if (::nhanDienMoMieng.isInitialized) {
+            nhanDienMoMieng.datLai()
+        }
+
+        if (::nhanDienMoMiengHaiLan.isInitialized) {
+            nhanDienMoMiengHaiLan.datLai()
+        }
+    }
+
     // DETECTOR HƯỚNG ĐẦU YAW / PITCH
 
     private fun khoiTaoNhanDienHuongDau() {
@@ -121,19 +157,18 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
     }
 
+    private fun datLaiNhanDienMat() {
+        if (::nhanDienNhamHaiMat.isInitialized) {
+            nhanDienNhamHaiMat.datLai()
+        }
+    }
+
     private fun khoiTaoNhanDienNhamHaiMat() {
         nhanDienNhamHaiMat =
             NhanDienNhamHaiMat {
-                runOnUiThread {
-                    val thanhCong =
-                        DichVuTruyCapFaceAccess
-                            .thucThiClickConTro()
-
-                    Log.d(
-                        TAG_CON_TRO,
-                        "APP: EYE_CLICK | OK=$thanhCong"
-                    )
-                }
+                dieuPhoiCuChi.xuLy(
+                    SuKienCuChi.NhamHaiMat
+                )
             }
     }
 
@@ -155,11 +190,15 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private lateinit var nhanDienMoMieng:
             NhanDienMoMieng
 
+    private lateinit var nhanDienMoMiengHaiLan:
+            NhanDienMoMiengHaiLan
+
     private lateinit var nhanDienHuongDau:
             NhanDienHuongDau
 
     private lateinit var nhanDienNhamHaiMat:
             NhanDienNhamHaiMat
+
 
     // ĐIỀU PHỐI CỬ CHỈ
 
@@ -457,6 +496,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         khoiTaoNhanDienMoMieng()
 
+        khoiTaoNhanDienMoMiengHaiLan()
+
         khoiTaoNhanDienHuongDau()
 
         khoiTaoNhanDienNhamHaiMat()
@@ -555,13 +596,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         .datLaiPhien()
                 }
 
-                if (
-                    cheDoMoi !=
-                    CheDoDieuKhien.CON_TRO &&
-                    ::nhanDienNhamHaiMat.isInitialized
-                ) {
-                    nhanDienNhamHaiMat.datLai()
-                }
+                datLaiNhanDienMieng()
+                datLaiNhanDienMat()
 
                 capNhatTrangThaiConTroTheoCheDo(
                     cheDoMoi
@@ -736,6 +772,25 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 )
                             }
                         }
+
+                        LenhDieuHuong.XAC_NHAN -> {
+
+                            runOnUiThread {
+
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .thucThiXacNhanDieuHuong()
+
+                                Log.d(
+                                    TAG_LENH_DIEU_HUONG,
+                                    if (thanhCong) {
+                                        "APP: XAC_NHAN Accessibility THANH_CONG"
+                                    } else {
+                                        "APP: XAC_NHAN Accessibility THAT_BAI"
+                                    }
+                                )
+                            }
+                        }
                     }
                 },
                 khiCoLenhMedia = { lenhMedia ->
@@ -805,6 +860,20 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         Log.d(
                             TAG_CON_TRO,
                             "APP: MOVE=$lenhConTro | OK=$thanhCong"
+                        )
+                    }
+                },
+
+                khiCoXacNhanConTro = {
+
+                    runOnUiThread {
+                        val thanhCong =
+                            DichVuTruyCapFaceAccess
+                                .thucThiClickConTro()
+
+                        Log.d(
+                            TAG_CON_TRO,
+                            "APP: EYE_CLICK | OK=$thanhCong"
                         )
                     }
                 },
@@ -889,6 +958,20 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 }
                             }
                         }
+
+                        LenhToanCuc.DOI_KHOA_CON_TRO -> {
+
+                            runOnUiThread {
+                                val thanhCong =
+                                    DichVuTruyCapFaceAccess
+                                        .doiKhoaConTro()
+
+                                Log.d(
+                                    TAG_CON_TRO,
+                                    "APP: MOUTH_DOUBLE_TOGGLE_LOCK | OK=$thanhCong"
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -953,6 +1036,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
 
+
                             // KHUÔN MẶT
 
                             capNhatTrangThaiKhuonMat(
@@ -986,29 +1070,57 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                     thoiGianHienTai
                             )
 
-                            nhanDienMoMieng.capNhat(
-                                doMoMieng =
-                                    duLieu.doMoMieng,
-                                thoiGianMs =
-                                    thoiGianHienTai
-                            )
+                            val cheDoHienTai =
+                                boDinhTuyenCheDo
+                                    .layCheDoHienTai()
 
                             if (
-                                boDinhTuyenCheDo
-                                    .layCheDoHienTai() ==
+                                cheDoHienTai ==
                                 CheDoDieuKhien.CON_TRO
                             ) {
+                                nhanDienMoMiengHaiLan.capNhat(
+                                    doMoMieng =
+                                        duLieu.doMoMieng,
+                                    thoiGianMs =
+                                        thoiGianHienTai
+                                )
+                            } else {
+                                nhanDienMoMieng.capNhat(
+                                    doMoMieng =
+                                        duLieu.doMoMieng,
+                                    thoiGianMs =
+                                        thoiGianHienTai
+                                )
+                            }
+
+                            val thoiGianXacNhanNhamMat =
+                                when (cheDoHienTai) {
+                                    CheDoDieuKhien.HO_TRO ->
+                                        BoDieuKhienLienHeHoTro
+                                            .THOI_GIAN_NHAM_XAC_NHAN_MS
+
+                                    CheDoDieuKhien.DIEU_HUONG,
+                                    CheDoDieuKhien.MEDIA,
+                                    CheDoDieuKhien.CON_TRO ->
+                                        NhanDienNhamHaiMat
+                                            .THOI_GIAN_NHAM_XAC_NHAN_MS
+                                }
+
+                            if (thoiGianXacNhanNhamMat != null) {
                                 nhanDienNhamHaiMat.capNhat(
                                     doNhamMatTrai =
                                         duLieu.doNhamMatTrai,
                                     doNhamMatPhai =
                                         duLieu.doNhamMatPhai,
                                     thoiGianMs =
-                                        thoiGianHienTai
+                                        thoiGianHienTai,
+                                    thoiGianXacNhanMs =
+                                        thoiGianXacNhanNhamMat
                                 )
                             } else {
-                                nhanDienNhamHaiMat.datLai()
+                                datLaiNhanDienMat()
                             }
+
                         }
 
                         override fun khiKhongThayKhuonMat() {
@@ -1019,11 +1131,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                             nhanDienNghiengDau.datLai()
 
-                            nhanDienMoMieng.datLai()
+                            datLaiNhanDienMieng()
 
                             nhanDienHuongDau.datLai()
 
-                            nhanDienNhamHaiMat.datLai()
+                            datLaiNhanDienMat()
 
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = false
@@ -1141,9 +1253,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         nhanDienNghiengDau.datLai()
 
-        nhanDienMoMieng.datLai()
+        datLaiNhanDienMieng()
 
-        nhanDienNhamHaiMat.datLai()
+        datLaiNhanDienMat()
 
         batDichVuTheoDoi()
 
@@ -1170,9 +1282,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 nhanDienNghiengDau.datLai()
 
-                nhanDienMoMieng.datLai()
+                datLaiNhanDienMieng()
 
-                nhanDienNhamHaiMat.datLai()
+                datLaiNhanDienMat()
 
                 txtTrangThaiHeThong.text =
                     "● Camera đang hoạt động - đang tìm khuôn mặt"
@@ -1202,7 +1314,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 nhanDienNghiengDau.datLai()
 
-                nhanDienNhamHaiMat.datLai()
+                datLaiNhanDienMat()
 
                 hienThiCameraDaDung(
                     "CAMERA\nKhông thể khởi động"
@@ -1263,7 +1375,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 nhanDienNghiengDau.datLai()
 
-                nhanDienNhamHaiMat.datLai()
+                datLaiNhanDienMat()
 
                 runOnUiThread {
 
@@ -1338,9 +1450,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         nhanDienNghiengDau.datLai()
 
-        nhanDienMoMieng.datLai()
+        datLaiNhanDienMieng()
 
-        nhanDienNhamHaiMat.datLai()
+        datLaiNhanDienMat()
 
         quanLyCamera.tatCamera()
 
@@ -1681,7 +1793,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             nhanDienNghiengDau.datLai()
 
-            nhanDienMoMieng.datLai()
+            datLaiNhanDienMieng()
+
+            datLaiNhanDienMat()
 
             quanLyCamera.tatCamera()
 
@@ -1711,7 +1825,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             ::nhanDienMoMieng.isInitialized
         ) {
 
-            nhanDienMoMieng.datLai()
+            datLaiNhanDienMieng()
         }
 
         if (
@@ -1720,6 +1834,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             nhanDienHuongDau.datLai()
         }
+
+        datLaiNhanDienMat()
 
         if (
             ::quanLyCamera.isInitialized
