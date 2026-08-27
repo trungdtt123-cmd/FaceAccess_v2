@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.contro.BoQuanLyConTroOverlay
+import com.example.faceaccess.v2.contro.BoChonMucTieuConTro
 import com.example.faceaccess.v2.dieuphoi.contro.LenhConTro
 
 class DichVuTruyCapFaceAccess : AccessibilityService() {
@@ -31,6 +32,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
     private lateinit var boQuanLyConTroOverlay:
             BoQuanLyConTroOverlay
+
+    private val boChonMucTieuConTro =
+        BoChonMucTieuConTro()
 
     private val mainHandlerThongBao =
         Handler(
@@ -143,8 +147,35 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
+        val viTriConTro =
+            boQuanLyConTroOverlay
+                .layTamConTro()
+                ?: return false
+
+        val metrics =
+            resources.displayMetrics
+
+        val mucTieu =
+            rootInActiveWindow
+                ?.let { root ->
+                    boChonMucTieuConTro.timMucTieu(
+                        root = root,
+                        viTriConTro = viTriConTro,
+                        lenh = lenh,
+                        chieuRongManHinh = metrics.widthPixels,
+                        chieuCaoManHinh = metrics.heightPixels,
+                        matDo = metrics.density
+                    )
+                }
+
+        Log.d(
+            TAG_CON_TRO,
+            "MOVE=$lenh | TARGET=${mucTieu?.nhan ?: "NONE"}"
+        )
+
         return boQuanLyConTroOverlay.diChuyen(
-            lenh
+            lenh = lenh,
+            mucTieu = mucTieu?.bounds
         )
     }
 
@@ -1737,6 +1768,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     }
 
     companion object {
+        private const val TAG_CON_TRO = "FaceAccessCursorTarget"
+
 
         private const val TAG =
             "DichVuTruyCap"

@@ -5,12 +5,17 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.graphics.PixelFormat
+import android.graphics.Point
+import android.graphics.Rect
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.View
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
@@ -31,6 +36,10 @@ class BoQuanLyConTroOverlay(
 
     private var viewConTro: View? = null
     private var layoutParamsConTro: WindowManager.LayoutParams? = null
+
+    private var viewMucTieu: View? = null
+    private var layoutParamsMucTieu: WindowManager.LayoutParams? = null
+
     private var animatorDiChuyen: ValueAnimator? = null
 
     private var phienConTroId = 0L
@@ -61,13 +70,42 @@ class BoQuanLyConTroOverlay(
         return tatNoiBo()
     }
 
-    fun diChuyen(lenh: LenhConTro): Boolean {
+    fun diChuyen(
+        lenh: LenhConTro,
+        mucTieu: Rect?
+    ): Boolean {
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            mainHandler.post { diChuyenNoiBo(lenh) }
+            mainHandler.post {
+                diChuyenNoiBo(
+                    lenh = lenh,
+                    mucTieu = mucTieu
+                )
+            }
             return true
         }
 
-        return diChuyenNoiBo(lenh)
+        return diChuyenNoiBo(
+            lenh = lenh,
+            mucTieu = mucTieu
+        )
+    }
+
+    fun layTamConTro(): Point? {
+        val params =
+            layoutParamsConTro
+                ?: return null
+
+        if (
+            !dangBat ||
+            viewConTro?.isAttachedToWindow != true
+        ) {
+            return null
+        }
+
+        return Point(
+            params.x + params.width / 2,
+            params.y + params.height / 2
+        )
     }
 
     fun dong() {
@@ -158,7 +196,10 @@ class BoQuanLyConTroOverlay(
         }
     }
 
-    private fun diChuyenNoiBo(lenh: LenhConTro): Boolean {
+    private fun diChuyenNoiBo(
+        lenh: LenhConTro,
+        mucTieu: Rect?
+    ): Boolean {
         val view =
             viewConTro
                 ?: return false
@@ -175,46 +216,80 @@ class BoQuanLyConTroOverlay(
             return false
         }
 
-        val dichChuyen =
-            dp(BUOC_DI_CHUYEN_DP)
-
-        val deltaX =
-            when (lenh) {
-                LenhConTro.TRAI -> -dichChuyen
-                LenhConTro.PHAI -> dichChuyen
-                else -> 0
-            }
-
-        val deltaY =
-            when (lenh) {
-                LenhConTro.LEN -> -dichChuyen
-                LenhConTro.XUONG -> dichChuyen
-                else -> 0
-            }
+        val kichThuoc =
+            params.width
 
         val dich =
-            gioiHanViTri(
-                x = xLogic + deltaX,
-                y = yLogic + deltaY,
-                kichThuoc = params.width
-            )
+            if (mucTieu != null) {
+                val xMucTieu =
+                    mucTieu.centerX() -
+                            kichThuoc / 2
+
+                val yMucTieu =
+                    mucTieu.centerY() -
+                            kichThuoc / 2
+
+                gioiHanViTri(
+                    x = xMucTieu,
+                    y = yMucTieu,
+                    kichThuoc = kichThuoc
+                )
+            } else {
+                val buoc =
+                    dp(BUOC_DI_CHUYEN_DP)
+
+                val deltaX =
+                    when (lenh) {
+                        LenhConTro.TRAI -> -buoc
+                        LenhConTro.PHAI -> buoc
+                        else -> 0
+                    }
+
+                val deltaY =
+                    when (lenh) {
+                        LenhConTro.LEN -> -buoc
+                        LenhConTro.XUONG -> buoc
+                        else -> 0
+                    }
+
+                gioiHanViTri(
+                    x = xLogic + deltaX,
+                    y = yLogic + deltaY,
+                    kichThuoc = kichThuoc
+                )
+            }
 
         if (
             dich.first == xLogic &&
             dich.second == yLogic
         ) {
-            Log.d(
-                TAG,
-                "BIEN | lenh=$lenh"
-            )
+            if (mucTieu != null) {
+                hienThiMucTieuNoiBo(
+                    mucTieu
+                )
+            }
             return true
         }
 
-        val xBatDau = params.x
-        val yBatDau = params.y
+        val xBatDau =
+            params.x
 
-        xLogic = dich.first
-        yLogic = dich.second
+        val yBatDau =
+            params.y
+
+        xLogic =
+            dich.first
+
+        yLogic =
+            dich.second
+
+        if (mucTieu != null) {
+            hienThiMucTieuNoiBo(
+                mucTieu
+            )
+        } else {
+            anMucTieuNoiBo()
+        }
 
         batDauAnimation(
             view = view,
@@ -227,7 +302,7 @@ class BoQuanLyConTroOverlay(
 
         Log.d(
             TAG,
-            "MOVE | lenh=$lenh | x=$xLogic | y=$yLogic"
+            "MOVE | lenh=$lenh | snap=${mucTieu != null} | x=$xLogic | y=$yLogic"
         )
 
         return true
@@ -323,39 +398,139 @@ class BoQuanLyConTroOverlay(
         y: Int,
         kichThuoc: Int
     ): Pair<Int, Int> {
-        val metrics =
-            accessibilityService.resources.displayMetrics
-
-        val xMin =
-            dp(LE_NGANG_DP)
-
-        val xMax =
-            (
-                    metrics.widthPixels -
-                            kichThuoc -
-                            dp(LE_NGANG_DP)
-                    ).coerceAtLeast(xMin)
-
-        val yMin =
-            dp(LE_TREN_DP)
-
-        val yMax =
-            (
-                    metrics.heightPixels -
-                            kichThuoc -
-                            dp(LE_DUOI_DP)
-                    ).coerceAtLeast(yMin)
+        val vungAnToan =
+            layVungAnToanManHinh(
+                kichThuoc
+            )
 
         return Pair(
             x.coerceIn(
-                xMin,
-                xMax
+                vungAnToan.trai,
+                vungAnToan.phai
             ),
             y.coerceIn(
-                yMin,
-                yMax
+                vungAnToan.tren,
+                vungAnToan.duoi
             )
         )
+    }
+
+    private fun layVungAnToanManHinh(
+        kichThuoc: Int
+    ): VungAnToan {
+        val leAnToan =
+            dp(LE_AN_TOAN_DP)
+
+        if (
+            Build.VERSION.SDK_INT >=
+            Build.VERSION_CODES.R
+        ) {
+            val metrics =
+                windowManager.currentWindowMetrics
+
+            val bounds =
+                metrics.bounds
+
+            val insets =
+                metrics.windowInsets
+                    .getInsetsIgnoringVisibility(
+                        WindowInsets.Type.systemBars()
+                    )
+
+            val trai =
+                bounds.left +
+                        insets.left +
+                        leAnToan
+
+            val tren =
+                bounds.top +
+                        insets.top +
+                        leAnToan
+
+            val phai =
+                (
+                        bounds.right -
+                                insets.right -
+                                kichThuoc -
+                                leAnToan
+                        ).coerceAtLeast(trai)
+
+            val duoi =
+                (
+                        bounds.bottom -
+                                insets.bottom -
+                                kichThuoc -
+                                leAnToan
+                        ).coerceAtLeast(tren)
+
+            return VungAnToan(
+                trai = trai,
+                tren = tren,
+                phai = phai,
+                duoi = duoi
+            )
+        }
+
+        val metrics =
+            accessibilityService.resources.displayMetrics
+
+        val insetTren =
+            layKichThuocHeThong(
+                "status_bar_height"
+            )
+
+        val insetDuoi =
+            layKichThuocHeThong(
+                "navigation_bar_height"
+            )
+
+        val trai =
+            leAnToan
+
+        val tren =
+            insetTren +
+                    leAnToan
+
+        val phai =
+            (
+                    metrics.widthPixels -
+                            kichThuoc -
+                            leAnToan
+                    ).coerceAtLeast(trai)
+
+        val duoi =
+            (
+                    metrics.heightPixels -
+                            insetDuoi -
+                            kichThuoc -
+                            leAnToan
+                    ).coerceAtLeast(tren)
+
+        return VungAnToan(
+            trai = trai,
+            tren = tren,
+            phai = phai,
+            duoi = duoi
+        )
+    }
+
+    private fun layKichThuocHeThong(
+        tenTaiNguyen: String
+    ): Int {
+        val id =
+            accessibilityService.resources
+                .getIdentifier(
+                    tenTaiNguyen,
+                    "dimen",
+                    "android"
+                )
+
+        if (id <= 0) {
+            return 0
+        }
+
+        return accessibilityService.resources
+            .getDimensionPixelSize(id)
     }
 
     private fun tatNoiBo(): Boolean {
@@ -368,6 +543,8 @@ class BoQuanLyConTroOverlay(
 
         viewConTro = null
         layoutParamsConTro = null
+
+        anMucTieuNoiBo()
 
         if (viewCu != null) {
             xoaViewAnToan(viewCu)
@@ -390,6 +567,130 @@ class BoQuanLyConTroOverlay(
         animatorDiChuyen?.cancel()
         animatorDiChuyen = null
         dangDiChuyen = false
+    }
+
+    private fun hienThiMucTieuNoiBo(
+        bounds: Rect
+    ) {
+        val padding =
+            dp(PADDING_HIGHLIGHT_DP)
+
+        val trai =
+            (bounds.left - padding)
+                .coerceAtLeast(0)
+
+        val tren =
+            (bounds.top - padding)
+                .coerceAtLeast(0)
+
+        val rong =
+            bounds.width() +
+                    padding * 2
+
+        val cao =
+            bounds.height() +
+                    padding * 2
+
+        val view =
+            viewMucTieu
+                ?: taoViewMucTieu()
+                    .also {
+                        viewMucTieu = it
+                    }
+
+        val params =
+            layoutParamsMucTieu
+                ?: taoLayoutParamsMucTieu()
+                    .also {
+                        layoutParamsMucTieu = it
+                    }
+
+        params.x = trai
+        params.y = tren
+        params.width = rong
+        params.height = cao
+
+        try {
+            if (view.isAttachedToWindow) {
+                windowManager.updateViewLayout(
+                    view,
+                    params
+                )
+            } else {
+                windowManager.addView(
+                    view,
+                    params
+                )
+            }
+        } catch (exception: Exception) {
+            Log.w(
+                TAG,
+                "Khong the hien highlight",
+                exception
+            )
+        }
+    }
+
+    private fun anMucTieuNoiBo() {
+        val view =
+            viewMucTieu
+                ?: return
+
+        viewMucTieu = null
+        layoutParamsMucTieu = null
+
+        xoaViewAnToan(
+            view
+        )
+    }
+
+    private fun taoViewMucTieu(): View {
+        return View(accessibilityService).apply {
+            importantForAccessibility =
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO
+
+            isClickable = false
+            isFocusable = false
+
+            background =
+                GradientDrawable().apply {
+                    shape =
+                        GradientDrawable.RECTANGLE
+
+                    cornerRadius =
+                        dp(BAN_KINH_HIGHLIGHT_DP)
+                            .toFloat()
+
+                    setColor(
+                        Color.TRANSPARENT
+                    )
+
+                    setStroke(
+                        dp(DO_DAY_HIGHLIGHT_DP),
+                        ContextCompat.getColor(
+                            accessibilityService,
+                            R.color.xanh_chinh
+                        )
+                    )
+                }
+        }
+    }
+
+    private fun taoLayoutParamsMucTieu():
+            WindowManager.LayoutParams {
+        return WindowManager.LayoutParams(
+            1,
+            1,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity =
+                Gravity.TOP or Gravity.START
+        }
     }
 
     private fun taoViewConTro(): View {
@@ -473,15 +774,24 @@ class BoQuanLyConTroOverlay(
                 ).toInt()
     }
 
+    private data class VungAnToan(
+        val trai: Int,
+        val tren: Int,
+        val phai: Int,
+        val duoi: Int
+    )
+
     companion object {
         private const val TAG = "FaceAccessCursor"
 
         private const val KICH_THUOC_CON_TRO_DP = 28
         private const val BUOC_DI_CHUYEN_DP = 64
 
-        private const val LE_NGANG_DP = 8
-        private const val LE_TREN_DP = 56
-        private const val LE_DUOI_DP = 80
+        private const val PADDING_HIGHLIGHT_DP = 4
+        private const val BAN_KINH_HIGHLIGHT_DP = 10
+        private const val DO_DAY_HIGHLIGHT_DP = 2
+
+        private const val LE_AN_TOAN_DP = 8
 
         private const val THOI_GIAN_DI_CHUYEN_MS = 180L
         private const val ALPHA_CON_TRO = 0.95f
