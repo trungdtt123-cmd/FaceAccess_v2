@@ -439,6 +439,22 @@ class DichVuTheoDoiFaceAccess :
                     }
                 },
 
+                khiCoLenhConTro = { lenhConTro ->
+
+                    mainHandler.post {
+                        val thanhCong =
+                            DichVuTruyCapFaceAccess
+                                .thucThiDiChuyenConTro(
+                                    lenhConTro
+                                )
+
+                        Log.d(
+                            TAG_CON_TRO,
+                            "NEN: MOVE=$lenhConTro | OK=$thanhCong"
+                        )
+                    }
+                },
+
                 khiCoLenh = { lenh ->
 
                     when (lenh) {

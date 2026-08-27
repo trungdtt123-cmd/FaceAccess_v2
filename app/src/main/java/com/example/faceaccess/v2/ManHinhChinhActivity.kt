@@ -763,6 +763,22 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     }
                 },
 
+                khiCoLenhConTro = { lenhConTro ->
+
+                    runOnUiThread {
+                        val thanhCong =
+                            DichVuTruyCapFaceAccess
+                                .thucThiDiChuyenConTro(
+                                    lenhConTro
+                                )
+
+                        Log.d(
+                            TAG_CON_TRO,
+                            "APP: MOVE=$lenhConTro | OK=$thanhCong"
+                        )
+                    }
+                },
+
                 khiCoLenh = { lenh ->
 
                     when (lenh) {

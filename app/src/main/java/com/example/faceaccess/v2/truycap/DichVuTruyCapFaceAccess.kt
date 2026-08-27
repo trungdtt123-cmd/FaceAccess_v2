@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.contro.BoQuanLyConTroOverlay
+import com.example.faceaccess.v2.dieuphoi.contro.LenhConTro
 
 class DichVuTruyCapFaceAccess : AccessibilityService() {
 
@@ -131,6 +132,20 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         }
 
         return boQuanLyConTroOverlay.tat()
+    }
+
+    private fun diChuyenConTroNoiBo(
+        lenh: LenhConTro
+    ): Boolean {
+        if (
+            !::boQuanLyConTroOverlay.isInitialized
+        ) {
+            return false
+        }
+
+        return boQuanLyConTroOverlay.diChuyen(
+            lenh
+        )
     }
 
     // FEEDBACK OVERLAY - KHÔNG DÙNG TOAST
@@ -1775,6 +1790,19 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     ?: return false
 
             return dichVu.tatConTroNoiBo()
+        }
+
+        fun thucThiDiChuyenConTro(
+            lenh: LenhConTro
+        ): Boolean {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu.diChuyenConTroNoiBo(
+                lenh
+            )
         }
 
         fun hienThiThongBaoHeThong(
