@@ -11,7 +11,9 @@ class BoChonMucTieuConTro {
 
     data class KetQua(
         val bounds: Rect,
-        val nhan: String?
+        val nhan: String?,
+        val viewId: String?,
+        val tenLop: String?
     )
 
     fun timMucTieu(
@@ -70,7 +72,9 @@ class BoChonMucTieuConTro {
             ?.let {
                 KetQua(
                     bounds = Rect(it.ungVien.bounds),
-                    nhan = it.ungVien.nhan
+                    nhan = it.ungVien.nhan,
+                    viewId = it.ungVien.viewId,
+                    tenLop = it.ungVien.tenLop
                 )
             }
     }
@@ -109,7 +113,11 @@ class BoChonMucTieuConTro {
             ketQua.add(
                 UngVien(
                     bounds = bounds,
-                    nhan = nhan
+                    nhan = nhan,
+                    viewId = node.viewIdResourceName,
+                    tenLop =
+                        node.className
+                            ?.toString()
                 )
             )
         }
@@ -276,7 +284,9 @@ class BoChonMucTieuConTro {
 
     private data class UngVien(
         val bounds: Rect,
-        val nhan: String?
+        val nhan: String?,
+        val viewId: String?,
+        val tenLop: String?
     )
 
     private data class UngVienCoDiem(

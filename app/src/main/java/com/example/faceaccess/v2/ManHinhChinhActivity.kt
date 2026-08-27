@@ -26,6 +26,7 @@ import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
 import com.example.faceaccess.v2.cuchi.huongdau.NhanDienHuongDau
 import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
+import com.example.faceaccess.v2.cuchi.mat.NhanDienNhamHaiMat
 import com.example.faceaccess.v2.dichvu.DichVuTheoDoiFaceAccess
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
 import com.example.faceaccess.v2.dieuphoi.LenhToanCuc
@@ -120,6 +121,22 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
     }
 
+    private fun khoiTaoNhanDienNhamHaiMat() {
+        nhanDienNhamHaiMat =
+            NhanDienNhamHaiMat {
+                runOnUiThread {
+                    val thanhCong =
+                        DichVuTruyCapFaceAccess
+                            .thucThiClickConTro()
+
+                    Log.d(
+                        TAG_CON_TRO,
+                        "APP: EYE_CLICK | OK=$thanhCong"
+                    )
+                }
+            }
+    }
+
     // MEDIAPIPE
 
     private lateinit var xuLyKhuonMat: XuLyKhuonMat
@@ -140,6 +157,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var nhanDienHuongDau:
             NhanDienHuongDau
+
+    private lateinit var nhanDienNhamHaiMat:
+            NhanDienNhamHaiMat
 
     // ĐIỀU PHỐI CỬ CHỈ
 
@@ -439,6 +459,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         khoiTaoNhanDienHuongDau()
 
+        khoiTaoNhanDienNhamHaiMat()
+
         khoiTaoXuLyKhuonMat()
 
         khoiTaoCamera()
@@ -531,6 +553,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                     boDieuKhienLienHeHoTro
                         .datLaiPhien()
+                }
+
+                if (
+                    cheDoMoi !=
+                    CheDoDieuKhien.CON_TRO &&
+                    ::nhanDienNhamHaiMat.isInitialized
+                ) {
+                    nhanDienNhamHaiMat.datLai()
                 }
 
                 capNhatTrangThaiConTroTheoCheDo(
@@ -962,6 +992,23 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 thoiGianMs =
                                     thoiGianHienTai
                             )
+
+                            if (
+                                boDinhTuyenCheDo
+                                    .layCheDoHienTai() ==
+                                CheDoDieuKhien.CON_TRO
+                            ) {
+                                nhanDienNhamHaiMat.capNhat(
+                                    doNhamMatTrai =
+                                        duLieu.doNhamMatTrai,
+                                    doNhamMatPhai =
+                                        duLieu.doNhamMatPhai,
+                                    thoiGianMs =
+                                        thoiGianHienTai
+                                )
+                            } else {
+                                nhanDienNhamHaiMat.datLai()
+                            }
                         }
 
                         override fun khiKhongThayKhuonMat() {
@@ -975,6 +1022,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             nhanDienMoMieng.datLai()
 
                             nhanDienHuongDau.datLai()
+
+                            nhanDienNhamHaiMat.datLai()
 
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = false
@@ -1094,6 +1143,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         nhanDienMoMieng.datLai()
 
+        nhanDienNhamHaiMat.datLai()
+
         batDichVuTheoDoi()
 
         quanLyCamera.batCamera(
@@ -1120,6 +1171,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 nhanDienNghiengDau.datLai()
 
                 nhanDienMoMieng.datLai()
+
+                nhanDienNhamHaiMat.datLai()
 
                 txtTrangThaiHeThong.text =
                     "● Camera đang hoạt động - đang tìm khuôn mặt"
@@ -1148,6 +1201,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     null
 
                 nhanDienNghiengDau.datLai()
+
+                nhanDienNhamHaiMat.datLai()
 
                 hienThiCameraDaDung(
                     "CAMERA\nKhông thể khởi động"
@@ -1207,6 +1262,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     0L
 
                 nhanDienNghiengDau.datLai()
+
+                nhanDienNhamHaiMat.datLai()
 
                 runOnUiThread {
 
@@ -1282,6 +1339,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
         nhanDienNghiengDau.datLai()
 
         nhanDienMoMieng.datLai()
+
+        nhanDienNhamHaiMat.datLai()
 
         quanLyCamera.tatCamera()
 

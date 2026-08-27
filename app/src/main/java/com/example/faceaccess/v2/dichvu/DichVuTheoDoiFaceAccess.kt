@@ -21,6 +21,7 @@ import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
 import com.example.faceaccess.v2.cuchi.huongdau.NhanDienHuongDau
 import com.example.faceaccess.v2.cuchi.mieng.NhanDienMoMieng
+import com.example.faceaccess.v2.cuchi.mat.NhanDienNhamHaiMat
 import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.dieuphoi.DieuPhoiCuChi
@@ -72,6 +73,9 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var nhanDienHuongDau:
             NhanDienHuongDau
+
+    private lateinit var nhanDienNhamHaiMat:
+            NhanDienNhamHaiMat
 
     private lateinit var dieuPhoiCuChi:
             DieuPhoiCuChi
@@ -139,6 +143,8 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoNhanDienMoMiengNen()
 
         khoiTaoNhanDienHuongDauNen()
+
+        khoiTaoNhanDienNhamHaiMatNen()
 
         khoiTaoXuLyKhuonMatNen()
 
@@ -220,6 +226,14 @@ class DichVuTheoDoiFaceAccess :
 
                     boDieuKhienLienHeHoTro
                         .datLaiPhien()
+                }
+
+                if (
+                    cheDoMoi !=
+                    CheDoDieuKhien.CON_TRO &&
+                    ::nhanDienNhamHaiMat.isInitialized
+                ) {
+                    nhanDienNhamHaiMat.datLai()
                 }
 
                 capNhatTrangThaiConTroTheoCheDoNen(
@@ -627,6 +641,22 @@ class DichVuTheoDoiFaceAccess :
             }
     }
 
+    private fun khoiTaoNhanDienNhamHaiMatNen() {
+        nhanDienNhamHaiMat =
+            NhanDienNhamHaiMat {
+                mainHandler.post {
+                    val thanhCong =
+                        DichVuTruyCapFaceAccess
+                            .thucThiClickConTro()
+
+                    Log.d(
+                        TAG_CON_TRO,
+                        "NEN: EYE_CLICK | OK=$thanhCong"
+                    )
+                }
+            }
+    }
+
     // KHỞI TẠO MEDIAPIPE NỀN
 
     private fun khoiTaoXuLyKhuonMatNen() {
@@ -685,6 +715,23 @@ class DichVuTheoDoiFaceAccess :
                             )
 
                             if (
+                                boDinhTuyenCheDo
+                                    .layCheDoHienTai() ==
+                                CheDoDieuKhien.CON_TRO
+                            ) {
+                                nhanDienNhamHaiMat.capNhat(
+                                    doNhamMatTrai =
+                                        duLieu.doNhamMatTrai,
+                                    doNhamMatPhai =
+                                        duLieu.doNhamMatPhai,
+                                    thoiGianMs =
+                                        hienTai
+                                )
+                            } else {
+                                nhanDienNhamHaiMat.datLai()
+                            }
+
+                            if (
                                 hienTai -
                                 thoiGianLogGanNhat >=
                                 KHOANG_LOG_CAMERA_NEN_MS
@@ -711,6 +758,8 @@ class DichVuTheoDoiFaceAccess :
                             nhanDienMoMieng.datLai()
 
                             nhanDienHuongDau.datLai()
+
+                            nhanDienNhamHaiMat.datLai()
 
                             val hienTai =
                                 SystemClock.uptimeMillis()
@@ -814,6 +863,8 @@ class DichVuTheoDoiFaceAccess :
 
                 nhanDienMoMieng.datLai()
 
+                nhanDienNhamHaiMat.datLai()
+
                 Log.d(
                     TAG_CAMERA_NEN,
                     "Camera nen da bat thanh cong"
@@ -906,6 +957,8 @@ class DichVuTheoDoiFaceAccess :
 
         nhanDienMoMieng.datLai()
 
+        nhanDienNhamHaiMat.datLai()
+
         quanLyCamera.tatCamera()
 
         Log.d(
@@ -992,6 +1045,10 @@ class DichVuTheoDoiFaceAccess :
 
         if (::nhanDienHuongDau.isInitialized) {
             nhanDienHuongDau.datLai()
+        }
+
+        if (::nhanDienNhamHaiMat.isInitialized) {
+            nhanDienNhamHaiMat.datLai()
         }
 
         cameraNenDangBat =

@@ -3,6 +3,7 @@ package com.example.faceaccess.v2.truycap
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
@@ -19,6 +20,7 @@ import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.contro.BoQuanLyConTroOverlay
 import com.example.faceaccess.v2.contro.BoChonMucTieuConTro
 import com.example.faceaccess.v2.dieuphoi.contro.LenhConTro
+import kotlin.math.abs
 
 class DichVuTruyCapFaceAccess : AccessibilityService() {
 
@@ -35,6 +37,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
     private val boChonMucTieuConTro =
         BoChonMucTieuConTro()
+
+    private var mucTieuConTroDangChon:
+            BoChonMucTieuConTro.KetQua? =
+        null
 
     private val mainHandlerThongBao =
         Handler(
@@ -116,7 +122,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     // CURSOR OVERLAY
 
     private fun batConTroNoiBo(): Boolean {
-
         if (
             !::boQuanLyConTroOverlay.isInitialized
         ) {
@@ -124,10 +129,27 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 BoQuanLyConTroOverlay(this)
         }
 
-        return boQuanLyConTroOverlay.bat()
+        val daHienThi =
+            boQuanLyConTroOverlay
+                .dangHienThi()
+
+        val thanhCong =
+            boQuanLyConTroOverlay.bat()
+
+        if (
+            thanhCong &&
+            !daHienThi
+        ) {
+            mucTieuConTroDangChon =
+                null
+        }
+
+        return thanhCong
     }
 
     private fun tatConTroNoiBo(): Boolean {
+        mucTieuConTroDangChon =
+            null
 
         if (
             !::boQuanLyConTroOverlay.isInitialized
@@ -168,15 +190,329 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     )
                 }
 
+        val thanhCong =
+            boQuanLyConTroOverlay.diChuyen(
+                lenh = lenh,
+                mucTieu = mucTieu?.bounds
+            )
+
+        if (thanhCong) {
+            mucTieuConTroDangChon =
+                mucTieu
+        }
+
         Log.d(
             TAG_CON_TRO,
-            "MOVE=$lenh | TARGET=${mucTieu?.nhan ?: "NONE"}"
+            "MOVE=$lenh | TARGET=${mucTieu?.nhan ?: "NONE"} | OK=$thanhCong"
         )
 
-        return boQuanLyConTroOverlay.diChuyen(
-            lenh = lenh,
-            mucTieu = mucTieu?.bounds
+        return thanhCong
+    }
+
+    private fun thucThiClickConTroNoiBo(): Boolean {
+        if (
+            !::boQuanLyConTroOverlay.isInitialized ||
+            !boQuanLyConTroOverlay.dangHienThi()
+        ) {
+            return false
+        }
+
+        val mucTieu =
+            mucTieuConTroDangChon
+
+        if (mucTieu != null) {
+            val root =
+                rootInActiveWindow
+
+            val node =
+                root?.let {
+                    timNodeMucTieu(
+                        root = it,
+                        mucTieu = mucTieu
+                    )
+                }
+
+            val nodeClickable =
+                timNodeClickable(
+                    node
+                )
+
+            if (
+                nodeClickable?.performAction(
+                    AccessibilityNodeInfo.ACTION_CLICK
+                ) == true
+            ) {
+                Log.d(
+                    TAG_CON_TRO,
+                    "CLICK_TARGET_NODE | ${mucTieu.nhan ?: mucTieu.viewId ?: "UNKNOWN"}"
+                )
+
+                boQuanLyConTroOverlay
+                    .phanHoiClickThanhCong()
+
+                return true
+            }
+
+            return thucThiTapConTro(
+                x = mucTieu.bounds.centerX(),
+                y = mucTieu.bounds.centerY(),
+                nguon = "TARGET"
+            )
+        }
+
+        val tamConTro =
+            boQuanLyConTroOverlay
+                .layTamConTro()
+                ?: return false
+
+        return thucThiTapConTro(
+            x = tamConTro.x,
+            y = tamConTro.y,
+            nguon = "CURSOR"
         )
+    }
+
+    private fun timNodeMucTieu(
+        root: AccessibilityNodeInfo,
+        mucTieu: BoChonMucTieuConTro.KetQua
+    ): AccessibilityNodeInfo? {
+        var nodeTotNhat:
+                AccessibilityNodeInfo? =
+            null
+
+        var diemTotNhat =
+            Int.MIN_VALUE
+
+        fun duyet(
+            node: AccessibilityNodeInfo
+        ) {
+            if (!node.isVisibleToUser) {
+                return
+            }
+
+            val diem =
+                chamDiemNodeMucTieu(
+                    node = node,
+                    mucTieu = mucTieu
+                )
+
+            if (diem > diemTotNhat) {
+                diemTotNhat =
+                    diem
+
+                nodeTotNhat =
+                    node
+            }
+
+            for (
+            index in 0 until
+                    node.childCount
+            ) {
+                val child =
+                    node.getChild(index)
+                        ?: continue
+
+                duyet(
+                    child
+                )
+            }
+        }
+
+        duyet(
+            root
+        )
+
+        return nodeTotNhat
+            ?.takeIf {
+                diemTotNhat >
+                        Int.MIN_VALUE
+            }
+    }
+
+    private fun chamDiemNodeMucTieu(
+        node: AccessibilityNodeInfo,
+        mucTieu: BoChonMucTieuConTro.KetQua
+    ): Int {
+        val bounds =
+            Rect().also {
+                node.getBoundsInScreen(it)
+            }
+
+        if (bounds.isEmpty) {
+            return Int.MIN_VALUE
+        }
+
+        val khoangCach =
+            abs(
+                bounds.centerX() -
+                        mucTieu.bounds.centerX()
+            ) +
+                    abs(
+                        bounds.centerY() -
+                                mucTieu.bounds.centerY()
+                    )
+
+        val ganMucTieu =
+            Rect.intersects(
+                bounds,
+                mucTieu.bounds
+            ) ||
+                    khoangCach <=
+                    dp(KHOANG_TAI_NHAN_DIEN_TARGET_DP)
+
+        if (!ganMucTieu) {
+            return Int.MIN_VALUE
+        }
+
+        var diem =
+            1000 -
+                    khoangCach
+                        .coerceAtMost(1000)
+
+        if (bounds == mucTieu.bounds) {
+            diem +=
+                1000
+        }
+
+        if (
+            !mucTieu.viewId.isNullOrBlank() &&
+            node.viewIdResourceName ==
+            mucTieu.viewId
+        ) {
+            diem +=
+                1200
+        }
+
+        val nhanNode =
+            node.contentDescription
+                ?.toString()
+                ?.takeIf {
+                    it.isNotBlank()
+                }
+                ?: node.text
+                    ?.toString()
+                    ?.takeIf {
+                        it.isNotBlank()
+                    }
+
+        if (
+            !mucTieu.nhan.isNullOrBlank() &&
+            nhanNode ==
+            mucTieu.nhan
+        ) {
+            diem +=
+                800
+        }
+
+        if (
+            !mucTieu.tenLop.isNullOrBlank() &&
+            node.className
+                ?.toString() ==
+            mucTieu.tenLop
+        ) {
+            diem +=
+                100
+        }
+
+        if (node.isClickable) {
+            diem +=
+                200
+        }
+
+        return diem
+    }
+
+    private fun timNodeClickable(
+        nodeBanDau: AccessibilityNodeInfo?
+    ): AccessibilityNodeInfo? {
+        var node =
+            nodeBanDau
+
+        repeat(
+            SO_CAP_PARENT_CLICK_TOI_DA
+        ) {
+            val hienTai =
+                node
+                    ?: return null
+
+            if (
+                hienTai.isVisibleToUser &&
+                hienTai.isClickable
+            ) {
+                return hienTai
+            }
+
+            node =
+                hienTai.parent
+        }
+
+        return null
+    }
+
+    private fun thucThiTapConTro(
+        x: Int,
+        y: Int,
+        nguon: String
+    ): Boolean {
+        val path =
+            Path().apply {
+                moveTo(
+                    x.toFloat(),
+                    y.toFloat()
+                )
+            }
+
+        val gesture =
+            GestureDescription
+                .Builder()
+                .addStroke(
+                    GestureDescription
+                        .StrokeDescription(
+                            path,
+                            0L,
+                            THOI_GIAN_TAP_CON_TRO_MS
+                        )
+                )
+                .build()
+
+        val daNhan =
+            dispatchGesture(
+                gesture,
+                object :
+                    GestureResultCallback() {
+
+                    override fun onCompleted(
+                        gestureDescription:
+                        GestureDescription?
+                    ) {
+                        boQuanLyConTroOverlay
+                            .phanHoiClickThanhCong()
+
+                        Log.d(
+                            TAG_CON_TRO,
+                            "CLICK_$nguon | GESTURE_COMPLETED"
+                        )
+                    }
+
+                    override fun onCancelled(
+                        gestureDescription:
+                        GestureDescription?
+                    ) {
+                        Log.e(
+                            TAG_CON_TRO,
+                            "CLICK_$nguon | GESTURE_CANCELLED"
+                        )
+                    }
+                },
+                null
+            )
+
+        Log.d(
+            TAG_CON_TRO,
+            "CLICK_$nguon | DISPATCH=$daNhan | x=$x | y=$y"
+        )
+
+        return daNhan
     }
 
     // FEEDBACK OVERLAY - KHÔNG DÙNG TOAST
@@ -1770,6 +2106,14 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     companion object {
         private const val TAG_CON_TRO = "FaceAccessCursorTarget"
 
+        private const val THOI_GIAN_TAP_CON_TRO_MS =
+            60L
+
+        private const val KHOANG_TAI_NHAN_DIEN_TARGET_DP =
+            48
+
+        private const val SO_CAP_PARENT_CLICK_TOI_DA =
+            6
 
         private const val TAG =
             "DichVuTruyCap"
@@ -1836,6 +2180,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return dichVu.diChuyenConTroNoiBo(
                 lenh
             )
+        }
+
+        fun thucThiClickConTro(): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .thucThiClickConTroNoiBo()
         }
 
         fun hienThiThongBaoHeThong(

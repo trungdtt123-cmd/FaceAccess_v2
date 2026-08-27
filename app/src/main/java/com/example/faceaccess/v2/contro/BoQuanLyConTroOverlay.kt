@@ -52,6 +52,9 @@ class BoQuanLyConTroOverlay(
     @Volatile
     private var dangDiChuyen = false
 
+    @Volatile
+    private var dangAnimationClick = false
+
     fun bat(): Boolean {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             mainHandler.post { batNoiBo() }
@@ -106,6 +109,29 @@ class BoQuanLyConTroOverlay(
             params.x + params.width / 2,
             params.y + params.height / 2
         )
+    }
+
+    fun phanHoiClickThanhCong(): Boolean {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post {
+                phanHoiClickThanhCongNoiBo()
+            }
+            return true
+        }
+
+        return phanHoiClickThanhCongNoiBo()
+    }
+
+    fun anMucTieu(): Boolean {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post {
+                anMucTieuNoiBo()
+            }
+            return true
+        }
+
+        anMucTieuNoiBo()
+        return true
     }
 
     fun dong() {
@@ -211,7 +237,8 @@ class BoQuanLyConTroOverlay(
         if (
             !dangBat ||
             !view.isAttachedToWindow ||
-            dangDiChuyen
+            dangDiChuyen ||
+            dangAnimationClick
         ) {
             return false
         }
@@ -567,6 +594,136 @@ class BoQuanLyConTroOverlay(
         animatorDiChuyen?.cancel()
         animatorDiChuyen = null
         dangDiChuyen = false
+
+        val view =
+            viewConTro
+
+        view?.animate()
+            ?.cancel()
+
+        if (view != null) {
+            view.scaleX =
+                1f
+
+            view.scaleY =
+                1f
+
+            datMauConTroMacDinh(
+                view
+            )
+        }
+
+        dangAnimationClick =
+            false
+    }
+
+    private fun phanHoiClickThanhCongNoiBo(): Boolean {
+        val view =
+            viewConTro
+                ?: return false
+
+        if (
+            !dangBat ||
+            !view.isAttachedToWindow ||
+            dangAnimationClick
+        ) {
+            return false
+        }
+
+        val session =
+            phienConTroId
+
+        dangAnimationClick =
+            true
+
+        datMauConTroClick(
+            view
+        )
+
+        view.animate()
+            .cancel()
+
+        view.animate()
+            .scaleX(TY_LE_THU_NHO_CLICK)
+            .scaleY(TY_LE_THU_NHO_CLICK)
+            .setDuration(THOI_GIAN_THU_NHO_CLICK_MS)
+            .setInterpolator(DecelerateInterpolator())
+            .withEndAction {
+                if (
+                    session != phienConTroId ||
+                    !view.isAttachedToWindow
+                ) {
+                    return@withEndAction
+                }
+
+                mainHandler.postDelayed(
+                    {
+                        if (
+                            session != phienConTroId ||
+                            !view.isAttachedToWindow
+                        ) {
+                            return@postDelayed
+                        }
+
+                        view.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(THOI_GIAN_PHONG_LAI_CLICK_MS)
+                            .setInterpolator(DecelerateInterpolator())
+                            .withEndAction {
+                                if (
+                                    session ==
+                                    phienConTroId
+                                ) {
+                                    datMauConTroMacDinh(
+                                        view
+                                    )
+
+                                    dangAnimationClick =
+                                        false
+                                }
+                            }
+                            .start()
+                    },
+                    THOI_GIAN_GIU_MAU_CLICK_MS
+                )
+            }
+            .start()
+
+        return true
+    }
+
+    private fun datMauConTroMacDinh(
+        view: View
+    ) {
+        val nen =
+            view.background as?
+                    GradientDrawable
+                ?: return
+
+        nen.setColor(
+            ContextCompat.getColor(
+                accessibilityService,
+                R.color.xanh_chinh
+            )
+        )
+    }
+
+    private fun datMauConTroClick(
+        view: View
+    ) {
+        val nen =
+            view.background as?
+                    GradientDrawable
+                ?: return
+
+        nen.setColor(
+            android.graphics.Color.rgb(
+                34,
+                197,
+                94
+            )
+        )
     }
 
     private fun hienThiMucTieuNoiBo(
@@ -794,6 +951,12 @@ class BoQuanLyConTroOverlay(
         private const val LE_AN_TOAN_DP = 8
 
         private const val THOI_GIAN_DI_CHUYEN_MS = 180L
+
+        private const val THOI_GIAN_THU_NHO_CLICK_MS = 90L
+        private const val THOI_GIAN_GIU_MAU_CLICK_MS = 80L
+        private const val THOI_GIAN_PHONG_LAI_CLICK_MS = 130L
+
+        private const val TY_LE_THU_NHO_CLICK = 0.72f
         private const val ALPHA_CON_TRO = 0.95f
     }
 }
