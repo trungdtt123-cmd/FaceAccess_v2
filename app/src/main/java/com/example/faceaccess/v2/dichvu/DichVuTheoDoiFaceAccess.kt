@@ -42,9 +42,7 @@ class DichVuTheoDoiFaceAccess :
     Service(),
     LifecycleOwner {
 
-    // =========================================================
     // LIFECYCLE
-    // =========================================================
 
     private val lifecycleRegistry =
         LifecycleRegistry(this)
@@ -52,10 +50,7 @@ class DichVuTheoDoiFaceAccess :
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
 
-
-    // =========================================================
     // CAMERA + MEDIAPIPE NỀN
-    // =========================================================
 
     private lateinit var xuLyKhuonMat:
             XuLyKhuonMat
@@ -95,42 +90,18 @@ class DichVuTheoDoiFaceAccess :
             Looper.getMainLooper()
         )
 
-    /**
-     * true khi Camera nền đã bind thành công và Service
-     * đang thực sự sở hữu Camera.
-     */
     @Volatile
     private var cameraNenDangBat =
         false
 
-    /**
-     * ProcessCameraProvider.bindToLifecycle() là bất đồng bộ
-     * trong QuanLyCamera.batCamera().
-     *
-     * Cờ này ngăn lệnh BAT/TAT chồng lên nhau trong lúc Camera
-     * nền vẫn đang được khởi động.
-     */
     @Volatile
     private var cameraNenDangKhoiDong =
         false
 
-    /**
-     * Có thể Activity quay lại rất nhanh trong lúc Service
-     * vẫn đang chờ Camera nền bind xong.
-     *
-     * Khi đó Service không được báo "đã tắt" quá sớm.
-     * Nó phải chờ bind hoàn tất rồi nhả Camera ngay.
-     */
     @Volatile
     private var yeuCauTatSauKhiKhoiDong =
         false
 
-    /**
-     * One-shot guard cho ACK CAMERA_NEN_DA_TAT.
-     *
-     * Mỗi yêu cầu TẮT từ Activity chỉ được phép phát
-     * đúng một broadcast xác nhận DA_TAT.
-     */
     @Volatile
     private var dangChoXacNhanCameraNenDaTat =
         false
@@ -138,10 +109,7 @@ class DichVuTheoDoiFaceAccess :
     private var thoiGianLogGanNhat =
         0L
 
-
-    // =========================================================
     // SERVICE CREATE
-    // =========================================================
 
     override fun onCreate() {
         super.onCreate()
@@ -158,14 +126,6 @@ class DichVuTheoDoiFaceAccess :
 
         batForeground()
 
-        /*
-         * Chỉ khởi tạo pipeline.
-         * Camera nền chỉ bật khi Activity đã nhả Camera
-         * và gửi HANH_DONG_BAT_CAMERA_NEN.
-         */
-        /*
-         * Mode + dispatcher phải sẵn sàng trước detector.
-         */
         khoiTaoBoDinhTuyenCheDoNen()
 
         khoiTaoBoDieuKhienMediaNen()
@@ -185,10 +145,7 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoCameraNen()
     }
 
-
-    // =========================================================
     // SERVICE START
-    // =========================================================
 
     override fun onStartCommand(
         intent: Intent?,
@@ -215,7 +172,6 @@ class DichVuTheoDoiFaceAccess :
 
                 batCameraNen()
             }
-
 
             HANH_DONG_TAT_CAMERA_NEN -> {
 
@@ -244,15 +200,8 @@ class DichVuTheoDoiFaceAccess :
         return START_STICKY
     }
 
-
-    // =========================================================
     // MODE TOÀN CỤC TRONG SERVICE
-    // =========================================================
 
-    /**
-     * BoDinhTuyenCheDo không còn giữ state riêng.
-     * Nó dùng cùng TrangThaiCheDoToanCuc với Activity.
-     */
     private fun khoiTaoBoDinhTuyenCheDoNen() {
 
         boDinhTuyenCheDo =
@@ -263,11 +212,6 @@ class DichVuTheoDoiFaceAccess :
                     "NEN: CHE DO MOI = $cheDoMoi"
                 )
 
-                /*
-                 * Rời HỖ TRỢ phải dọn state contact cũ.
-                 * Guard isInitialized vì mode router được khởi tạo
-                 * trước controller trong lifecycle Service hiện tại.
-                 */
                 if (
                     cheDoMoi !=
                     CheDoDieuKhien.HO_TRO &&
@@ -277,13 +221,44 @@ class DichVuTheoDoiFaceAccess :
                     boDieuKhienLienHeHoTro
                         .datLaiPhien()
                 }
+
+                capNhatTrangThaiConTroTheoCheDoNen(
+                    cheDoMoi
+                )
             }
+
+        capNhatTrangThaiConTroTheoCheDoNen(
+            boDinhTuyenCheDo
+                .layCheDoHienTai()
+        )
     }
 
+    // CURSOR - ĐỒNG BỘ MODE NỀN
 
-    // =========================================================
+    private fun capNhatTrangThaiConTroTheoCheDoNen(
+        cheDo: CheDoDieuKhien
+    ) {
+
+        if (
+            cheDo == CheDoDieuKhien.CON_TRO
+        ) {
+            val thanhCong =
+                DichVuTruyCapFaceAccess.batConTro()
+
+            Log.d(
+                TAG_CON_TRO,
+                if (thanhCong) {
+                    "NEN: CURSOR BAT"
+                } else {
+                    "NEN: CURSOR CHUA BAT - AccessibilityService chua san sang"
+                }
+            )
+        } else {
+            DichVuTruyCapFaceAccess.tatConTro()
+        }
+    }
+
     // BỘ ĐIỀU KHIỂN MEDIA NỀN
-    // =========================================================
 
     private fun khoiTaoBoDieuKhienMediaNen() {
 
@@ -293,10 +268,7 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-
-    // =========================================================
     // BỘ ĐIỀU KHIỂN LIÊN HỆ HỖ TRỢ NỀN
-    // =========================================================
 
     private fun khoiTaoBoDieuKhienLienHeHoTroNen() {
 
@@ -306,10 +278,7 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-
-    // =========================================================
     // ĐIỀU PHỐI CỬ CHỈ NỀN
-    // =========================================================
 
     private fun khoiTaoDieuPhoiCuChiNen() {
 
@@ -324,10 +293,6 @@ class DichVuTheoDoiFaceAccess :
                         cheDo,
                         huong ->
 
-                    /*
-                     * Giữ log routing tổng quát để kiểm tra
-                     * mode dùng chung khi app chạy nền.
-                     */
                     Log.d(
                         TAG_CU_CHI_THEO_CHE_DO,
                         "NEN: MODE=$cheDo | HUONG=$huong"
@@ -340,15 +305,6 @@ class DichVuTheoDoiFaceAccess :
                         "NEN: LENH_DIEU_HUONG=$lenhDieuHuong"
                     )
 
-
-                    /*
-                     * Checkpoint này chỉ thực thi:
-                     *
-                     * TRUOC
-                     * TIEP_THEO
-                     *
-                     * CUON_LEN / CUON_XUONG vẫn chỉ log.
-                     */
                     when (lenhDieuHuong) {
 
                         LenhDieuHuong.TRUOC -> {
@@ -370,7 +326,6 @@ class DichVuTheoDoiFaceAccess :
                             }
                         }
 
-
                         LenhDieuHuong.TIEP_THEO -> {
 
                             mainHandler.post {
@@ -390,7 +345,6 @@ class DichVuTheoDoiFaceAccess :
                             }
                         }
 
-
                         LenhDieuHuong.CUON_LEN -> {
 
                             mainHandler.post {
@@ -409,7 +363,6 @@ class DichVuTheoDoiFaceAccess :
                                 )
                             }
                         }
-
 
                         LenhDieuHuong.CUON_XUONG -> {
 
@@ -438,7 +391,6 @@ class DichVuTheoDoiFaceAccess :
                         "NEN: LENH_MEDIA=$lenhMedia"
                     )
 
-
                     mainHandler.post {
 
                         val thanhCong =
@@ -446,7 +398,6 @@ class DichVuTheoDoiFaceAccess :
                                 .thucThi(
                                     lenhMedia
                                 )
-
 
                         Log.d(
                             TAG_LENH_MEDIA,
@@ -466,7 +417,6 @@ class DichVuTheoDoiFaceAccess :
                         "NEN: LENH_HO_TRO=$lenhHoTro"
                     )
 
-
                     mainHandler.post {
 
                         val ketQua =
@@ -475,14 +425,12 @@ class DichVuTheoDoiFaceAccess :
                                     lenhHoTro
                                 )
 
-
                         Log.d(
                             TAG_LENH_HO_TRO,
                             "NEN: HO_TRO_ACTION=$lenhHoTro | " +
                                     "THANH_CONG=${ketQua.thanhCong} | " +
                                     "THONG_BAO=${ketQua.thongBao}"
                         )
-
 
                         ThongBaoFaceAccess.hienThi(
                             context = applicationContext,
@@ -502,10 +450,6 @@ class DichVuTheoDoiFaceAccess :
                                 "NEN: LENH HOME"
                             )
 
-                            /*
-                             * Đưa performGlobalAction về main thread
-                             * của process để thao tác Accessibility ổn định.
-                             */
                             mainHandler.post {
 
                                 val thanhCong =
@@ -529,7 +473,6 @@ class DichVuTheoDoiFaceAccess :
                             }
                         }
 
-
                         LenhToanCuc.DOI_CHE_DO -> {
 
                             Log.d(
@@ -537,14 +480,9 @@ class DichVuTheoDoiFaceAccess :
                                 "NEN: LENH DOI_CHE_DO"
                             )
 
-                            /*
-                             * Thay đổi đúng nguồn state mode đang được
-                             * Activity sử dụng.
-                             */
                             boDinhTuyenCheDo
                                 .chuyenCheDoTiepTheo()
                         }
-
 
                         LenhToanCuc.BACK -> {
 
@@ -580,10 +518,7 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-
-    // =========================================================
     // NHẬN DIỆN CỬ CHỈ NỀN
-    // =========================================================
 
     private fun khoiTaoNhanDienCuChiNen() {
 
@@ -607,7 +542,6 @@ class DichVuTheoDoiFaceAccess :
                         )
                     }
 
-
                     HuongNghiengDau.PHAI -> {
 
                         Log.d(
@@ -623,16 +557,8 @@ class DichVuTheoDoiFaceAccess :
             }
     }
 
-
-    // =========================================================
     // NHẬN DIỆN MỞ MIỆNG NỀN
-    // =========================================================
 
-    /**
-     * Checkpoint hiện tại CHỈ ghi Logcat.
-     *
-     * Chưa gọi BACK thật.
-     */
     private fun khoiTaoNhanDienMoMiengNen() {
 
         nhanDienMoMieng =
@@ -649,16 +575,8 @@ class DichVuTheoDoiFaceAccess :
             }
     }
 
-
-
-    // =========================================================
     // NHẬN DIỆN HƯỚNG ĐẦU YAW / PITCH NỀN
-    // =========================================================
 
-    /**
-     * Checkpoint này chỉ Logcat.
-     * Chưa gán hành động Navigation / Media / Cursor.
-     */
     private fun khoiTaoNhanDienHuongDauNen() {
 
         nhanDienHuongDau =
@@ -685,10 +603,6 @@ class DichVuTheoDoiFaceAccess :
                     "NEN: HUONG $tenHuong"
                 )
 
-                /*
-                 * Detector nền chỉ mô tả hướng.
-                 * DieuPhoiCuChi đọc mode dùng chung và route.
-                 */
                 dieuPhoiCuChi.xuLy(
                     SuKienCuChi.DieuHuongDau(
                         huong = huong
@@ -697,10 +611,7 @@ class DichVuTheoDoiFaceAccess :
             }
     }
 
-
-    // =========================================================
     // KHỞI TẠO MEDIAPIPE NỀN
-    // =========================================================
 
     private fun khoiTaoXuLyKhuonMatNen() {
 
@@ -718,7 +629,6 @@ class DichVuTheoDoiFaceAccess :
                                 "MediaPipe nen da san sang"
                             )
                         }
-
 
                         override fun khiCoKetQua(
                             result: FaceLandmarkerResult,
@@ -758,10 +668,6 @@ class DichVuTheoDoiFaceAccess :
                                     hienTai
                             )
 
-                            /*
-                             * Chỉ log tối đa 1 lần/giây để kiểm tra
-                             * pipeline nền mà không spam Logcat.
-                             */
                             if (
                                 hienTai -
                                 thoiGianLogGanNhat >=
@@ -777,7 +683,6 @@ class DichVuTheoDoiFaceAccess :
                                 )
                             }
                         }
-
 
                         override fun khiKhongThayKhuonMat() {
 
@@ -810,7 +715,6 @@ class DichVuTheoDoiFaceAccess :
                             }
                         }
 
-
                         override fun khiCoLoi(
                             thongBao: String
                         ) {
@@ -823,7 +727,6 @@ class DichVuTheoDoiFaceAccess :
                     }
             )
 
-
         phanTichKhungHinhKhuonMat =
             PhanTichKhungHinhKhuonMat(
                 xuLyKhuonMat =
@@ -834,10 +737,7 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-
-    // =========================================================
     // KHỞI TẠO CAMERA NỀN
-    // =========================================================
 
     private fun khoiTaoCameraNen() {
 
@@ -851,10 +751,7 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-
-    // =========================================================
     // BẬT CAMERA NỀN
-    // =========================================================
 
     private fun batCameraNen() {
 
@@ -908,11 +805,6 @@ class DichVuTheoDoiFaceAccess :
 
                 if (yeuCauTatSauKhiKhoiDong) {
 
-                    /*
-                     * Activity đã quay lại trong lúc Camera nền
-                     * còn đang bind. Nhả Camera ngay và chỉ báo
-                     * DA_TAT sau khi unbind đã được gọi.
-                     */
                     yeuCauTatSauKhiKhoiDong =
                         false
 
@@ -928,7 +820,6 @@ class DichVuTheoDoiFaceAccess :
                     guiBroadcastCameraNenDaBat()
                 }
             },
-
 
             khiLoi = { exception ->
 
@@ -950,11 +841,6 @@ class DichVuTheoDoiFaceAccess :
                     exception
                 )
 
-                /*
-                 * Nếu Activity đang chờ Service nhả Camera,
-                 * Camera nền khởi động thất bại đồng nghĩa
-                 * Service hiện không sở hữu Camera.
-                 */
                 if (dangChoTat) {
 
                     guiBroadcastCameraNenDaTatMotLan()
@@ -963,21 +849,12 @@ class DichVuTheoDoiFaceAccess :
         )
     }
 
-
-    // =========================================================
     // TẮT CAMERA NỀN
-    // =========================================================
 
     private fun tatCameraNen() {
 
         if (cameraNenDangKhoiDong) {
 
-            /*
-             * KHÔNG broadcast DA_TAT ngay ở đây.
-             *
-             * Nếu báo sớm, Activity có thể bind Camera trong khi
-             * callback bật Camera nền vẫn chưa kết thúc, tạo race.
-             */
             yeuCauTatSauKhiKhoiDong =
                 true
 
@@ -989,13 +866,8 @@ class DichVuTheoDoiFaceAccess :
             return
         }
 
-
         if (!cameraNenDangBat) {
 
-            /*
-             * Service không sở hữu Camera.
-             * Có thể xác nhận ngay cho Activity.
-             */
             Log.d(
                 TAG_BAN_GIAO_CAMERA,
                 "Camera nen dang tat san -> xac nhan DA_TAT"
@@ -1006,14 +878,9 @@ class DichVuTheoDoiFaceAccess :
             return
         }
 
-
         tatCameraNenVaBaoDaTat()
     }
 
-
-    /**
-     * Nhả Camera của Service rồi mới gửi ACK cho Activity.
-     */
     private fun tatCameraNenVaBaoDaTat() {
 
         cameraNenDangBat =
@@ -1033,10 +900,7 @@ class DichVuTheoDoiFaceAccess :
         guiBroadcastCameraNenDaTatMotLan()
     }
 
-
-    // =========================================================
     // BROADCAST BÀN GIAO CAMERA
-    // =========================================================
 
     private fun guiBroadcastCameraNenDaBat() {
 
@@ -1045,9 +909,6 @@ class DichVuTheoDoiFaceAccess :
                 HANH_DONG_CAMERA_NEN_DA_BAT
             ).apply {
 
-                /*
-                 * Chỉ cho chính package FaceAccess nhận broadcast.
-                 */
                 setPackage(
                     packageName
                 )
@@ -1063,17 +924,8 @@ class DichVuTheoDoiFaceAccess :
         )
     }
 
-
     private fun guiBroadcastCameraNenDaTatMotLan() {
 
-        /*
-         * Có thể nhiều nhánh bất đồng bộ cùng đi đến đây
-         * (camera đã tắt sẵn, callback khởi động xong rồi tắt,
-         * hoặc callback lỗi).
-         *
-         * Chỉ nhánh đầu tiên của đúng một yêu cầu TẮT được
-         * phép gửi ACK. Các lần sau bị bỏ qua.
-         */
         if (!dangChoXacNhanCameraNenDaTat) {
 
             Log.d(
@@ -1084,10 +936,6 @@ class DichVuTheoDoiFaceAccess :
             return
         }
 
-        /*
-         * Clear guard TRƯỚC khi broadcast để ngay cả khi
-         * receiver phản ứng rất nhanh cũng không tạo ACK lặp.
-         */
         dangChoXacNhanCameraNenDaTat =
             false
 
@@ -1111,12 +959,12 @@ class DichVuTheoDoiFaceAccess :
         )
     }
 
-
-    // =========================================================
     // SERVICE DESTROY
-    // =========================================================
 
     override fun onDestroy() {
+
+        DichVuTruyCapFaceAccess
+            .tatConTro()
 
         if (::nhanDienNghiengDau.isInitialized) {
             nhanDienNghiengDau.datLai()
@@ -1163,10 +1011,7 @@ class DichVuTheoDoiFaceAccess :
         super.onDestroy()
     }
 
-
-    // =========================================================
     // BIND
-    // =========================================================
 
     override fun onBind(
         intent: Intent?
@@ -1175,10 +1020,7 @@ class DichVuTheoDoiFaceAccess :
         return null
     }
 
-
-    // =========================================================
     // FOREGROUND
-    // =========================================================
 
     private fun batForeground() {
 
@@ -1208,10 +1050,7 @@ class DichVuTheoDoiFaceAccess :
         )
     }
 
-
-    // =========================================================
     // NOTIFICATION CHANNEL
-    // =========================================================
 
     private fun taoKenhThongBao() {
 
@@ -1242,10 +1081,7 @@ class DichVuTheoDoiFaceAccess :
         }
     }
 
-
-    // =========================================================
     // CONSTANT
-    // =========================================================
 
     companion object {
 
@@ -1278,6 +1114,9 @@ class DichVuTheoDoiFaceAccess :
 
         private const val TAG_LENH_HO_TRO =
             "LenhHoTro"
+
+        private const val TAG_CON_TRO =
+            "FaceAccessCursor"
 
         const val HANH_DONG_BAT_CAMERA_NEN =
             "com.example.faceaccess.v2.BAT_CAMERA_NEN"

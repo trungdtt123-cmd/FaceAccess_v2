@@ -16,23 +16,20 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.example.faceaccess.v2.R
+import com.example.faceaccess.v2.contro.BoQuanLyConTroOverlay
 
 class DichVuTruyCapFaceAccess : AccessibilityService() {
 
-    /**
-     * Chặn hai animation scroll chồng lên nhau.
-     *
-     * Detector PITCH đã one-shot + neutral re-arm, nhưng guard này
-     * vẫn cần để bảo vệ khi người dùng re-arm rất nhanh hoặc khi
-     * callback từ foreground/background đến gần nhau.
-     */
     @Volatile
     private var dangCuonBangCuChi =
         false
 
-    // =========================================================
     // SYSTEM FEEDBACK OVERLAY
-    // =========================================================
+
+    // CURSOR OVERLAY
+
+    private lateinit var boQuanLyConTroOverlay:
+            BoQuanLyConTroOverlay
 
     private val mainHandlerThongBao =
         Handler(
@@ -58,6 +55,13 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         phienBanDangHoatDong = this
 
+        if (
+            !::boQuanLyConTroOverlay.isInitialized
+        ) {
+            boQuanLyConTroOverlay =
+                BoQuanLyConTroOverlay(this)
+        }
+
         Log.d(
             TAG,
             "Dich vu truy cap da ket noi"
@@ -67,12 +71,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     override fun onAccessibilityEvent(
         event: AccessibilityEvent?
     ) {
-        /*
-         * FaceAccess hiện không cần đọc AccessibilityEvent.
-         *
-         * Service chỉ dùng performGlobalAction()
-         * cho các thao tác điều hướng Android.
-         */
+
     }
 
     override fun onInterrupt() {
@@ -91,6 +90,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         anThongBaoHeThongNoiBo()
 
+        if (
+            ::boQuanLyConTroOverlay.isInitialized
+        ) {
+            boQuanLyConTroOverlay.dong()
+        }
+
         if (phienBanDangHoatDong === this) {
             phienBanDangHoatDong = null
         }
@@ -103,32 +108,33 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         super.onDestroy()
     }
 
+    // CURSOR OVERLAY
 
-    // =========================================================
+    private fun batConTroNoiBo(): Boolean {
+
+        if (
+            !::boQuanLyConTroOverlay.isInitialized
+        ) {
+            boQuanLyConTroOverlay =
+                BoQuanLyConTroOverlay(this)
+        }
+
+        return boQuanLyConTroOverlay.bat()
+    }
+
+    private fun tatConTroNoiBo(): Boolean {
+
+        if (
+            !::boQuanLyConTroOverlay.isInitialized
+        ) {
+            return true
+        }
+
+        return boQuanLyConTroOverlay.tat()
+    }
+
     // FEEDBACK OVERLAY - KHÔNG DÙNG TOAST
-    // =========================================================
 
-    /**
-     * Hiển thị banner hệ thống của FaceAccess trên mọi ứng dụng.
-     *
-     * TYPE_ACCESSIBILITY_OVERLAY:
-     * - không cần SYSTEM_ALERT_WINDOW;
-     * - chỉ hoạt động khi AccessibilityService FaceAccess đang bật;
-     * - không nhận touch/focus nên không chặn người dùng.
-     *
-     * Mỗi command mới cập nhật text NGAY LẬP TỨC và reset thời gian ẩn.
-     * Vì vậy YAW:
-     *
-     * Mẹ -> Bố -> Anh
-     *
-     * sẽ lần lượt cập nhật:
-     *
-     * Đã chuyển sang số của Mẹ
-     * Đã chuyển sang số của Bố
-     * Đã chuyển sang số của Anh
-     *
-     * Không phụ thuộc queue/rate-limit của Android Toast.
-     */
     private fun hienThiThongBaoHeThongNoiBo(
         noiDung: String
     ): Boolean {
@@ -138,7 +144,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         ) {
             return false
         }
-
 
         if (
             Looper.myLooper() !=
@@ -155,7 +160,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return true
         }
 
-
         val windowManager =
             windowManagerThongBao
                 ?: (
@@ -170,7 +174,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     }
                 ?: return false
 
-
         val textView =
             viewThongBaoHeThong
                 ?: taoViewThongBaoHeThong()
@@ -179,15 +182,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                             it
                     }
 
-
         textView.text =
             noiDung
 
-
-        /*
-         * Nếu banner đang hiện, chỉ update nội dung.
-         * Nếu chưa hiện, add vào accessibility overlay.
-         */
         if (
             !textView.isAttachedToWindow
         ) {
@@ -213,7 +210,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         )
                 }
 
-
             try {
 
                 windowManager.addView(
@@ -238,11 +234,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             }
         }
 
-
-        /*
-         * Mỗi event mới phải được nhìn thấy ngay.
-         * Không xếp hàng như Toast.
-         */
         textView.alpha =
             1f
 
@@ -255,16 +246,13 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             THOI_GIAN_HIEN_THONG_BAO_MS
         )
 
-
         Log.d(
             TAG_THONG_BAO,
             "HIEN_THI: $noiDung"
         )
 
-
         return true
     }
-
 
     private fun taoViewThongBaoHeThong():
             TextView {
@@ -297,7 +285,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     )
                 )
             }
-
 
         return TextView(
             this
@@ -344,7 +331,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         }
     }
 
-
     private fun anThongBaoHeThongNoiBo() {
 
         if (
@@ -360,14 +346,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return
         }
 
-
         val textView =
             viewThongBaoHeThong
                 ?: return
 
         val windowManager =
             windowManagerThongBao
-
 
         if (
             textView.isAttachedToWindow &&
@@ -393,11 +377,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             }
         }
 
-
         viewThongBaoHeThong =
             null
     }
-
 
     private fun dp(
         giaTri: Int
@@ -410,10 +392,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             .toInt()
     }
 
-
-    // =========================================================
     // GLOBAL ACTIONS
-    // =========================================================
 
     private fun thucThiHomeNoiBo(): Boolean {
 
@@ -422,7 +401,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
     }
 
-
     private fun thucThiBackNoiBo(): Boolean {
 
         return performGlobalAction(
@@ -430,10 +408,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
     }
 
-
-    // =========================================================
     // DIALER - XÓA SỐ NHƯNG GIỮ APP ĐIỆN THOẠI
-    // =========================================================
 
     private fun xoaSoTrinhQuaySoNoiBo(
         packageDialerMongDoi: String?,
@@ -444,15 +419,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             rootInActiveWindow
                 ?: return false
 
-
         val packageDangHoatDong =
             root.packageName
                 ?.toString()
 
-
-        /*
-         * Không bao giờ thao tác node của app khác.
-         */
         if (
             !packageDialerMongDoi.isNullOrBlank() &&
             packageDangHoatDong !=
@@ -467,12 +437,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         val soMongDoi =
             chiLayChuSo(
                 soDienThoai
             )
-
 
         if (
             soMongDoi.isBlank()
@@ -480,20 +448,13 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
-        /*
-         * CÁCH 1:
-         * Tìm field số hỗ trợ ACTION_SET_TEXT và set = "".
-         */
         val nodeSetText =
             mutableListOf<AccessibilityNodeInfo>()
-
 
         thuThapNodeSetText(
             node = root,
             ketQua = nodeSetText
         )
-
 
         val nodeTheoDiem =
             nodeSetText
@@ -507,7 +468,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     )
                 }
 
-
         for (
         node in nodeTheoDiem
         ) {
@@ -519,10 +479,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         .orEmpty()
                 )
 
-
-            /*
-             * Nếu field đang có một số khác hẳn thì không chạm vào nó.
-             */
             if (
                 chuSoNode.isNotBlank() &&
                 !haiSoKhopNhau(
@@ -532,7 +488,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             ) {
                 continue
             }
-
 
             val arguments =
                 Bundle().apply {
@@ -544,13 +499,11 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     )
                 }
 
-
             val daSet =
                 node.performAction(
                     AccessibilityNodeInfo.ACTION_SET_TEXT,
                     arguments
                 )
-
 
             if (
                 daSet
@@ -565,12 +518,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             }
         }
 
-
-        /*
-         * CÁCH 2:
-         * Chỉ tìm Backspace/Delete sau khi xác nhận đúng số đang xuất hiện
-         * trong cây Accessibility của Dialer.
-         */
         if (
             !cayDangHienThiSo(
                 node = root,
@@ -587,18 +534,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         val nutXoa =
             timNutXoaSo(
                 root
             )
                 ?: return false
 
-
-        /*
-         * Nhiều Dialer, trong đó có các bản Samsung,
-         * dùng nhấn giữ Backspace để xóa toàn bộ.
-         */
         val coLongClick =
             nutXoa.isLongClickable ||
                     nutXoa.actionList.any {
@@ -607,7 +548,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         action.id ==
                                 AccessibilityNodeInfo.ACTION_LONG_CLICK
                     }
-
 
         if (
             coLongClick &&
@@ -624,13 +564,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return true
         }
 
-
-        /*
-         * Fallback:
-         * click Backspace đúng số chữ số.
-         *
-         * Re-fetch node mỗi lần để tránh stale AccessibilityNodeInfo.
-         */
         val soLanCanXoa =
             soMongDoi.length
                 .coerceIn(
@@ -641,7 +574,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         var soLanThanhCong =
             0
 
-
         repeat(
             soLanCanXoa
         ) {
@@ -650,11 +582,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 rootInActiveWindow
                     ?: return@repeat
 
-
             val packageMoi =
                 rootMoi.packageName
                     ?.toString()
-
 
             if (
                 !packageDialerMongDoi.isNullOrBlank() &&
@@ -665,13 +595,11 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 return@repeat
             }
 
-
             val nutXoaMoi =
                 timNutXoaSo(
                     rootMoi
                 )
                     ?: return@repeat
-
 
             if (
                 nutXoaMoi.performAction(
@@ -684,17 +612,14 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             }
         }
 
-
         Log.d(
             TAG_DIALER,
             "XOA_SO: BACKSPACE $soLanThanhCong/$soLanCanXoa"
         )
 
-
         return soLanThanhCong >
                 0
     }
-
 
     private fun thuThapNodeSetText(
         node: AccessibilityNodeInfo,
@@ -707,7 +632,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return
         }
 
-
         val hoTroSetText =
             node.actionList.any {
                     action ->
@@ -715,7 +639,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 action.id ==
                         AccessibilityNodeInfo.ACTION_SET_TEXT
             }
-
 
         if (
             node.isEditable ||
@@ -726,7 +649,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 node
             )
         }
-
 
         for (
         index in 0 until
@@ -739,14 +661,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
                     ?: continue
 
-
             thuThapNodeSetText(
                 node = child,
                 ketQua = ketQua
             )
         }
     }
-
 
     private fun diemNodeSo(
         node: AccessibilityNodeInfo,
@@ -755,7 +675,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         var diem =
             0
-
 
         val text =
             node.text
@@ -766,7 +685,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             chiLayChuSo(
                 text
             )
-
 
         if (
             chuSo.isNotBlank() &&
@@ -780,12 +698,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 100
         }
 
-
         val id =
             node.viewIdResourceName
                 ?.lowercase()
                 .orEmpty()
-
 
         if (
             id.contains(
@@ -806,7 +722,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 40
         }
 
-
         if (
             node.isEditable
         ) {
@@ -814,7 +729,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             diem +=
                 20
         }
-
 
         if (
             node.actionList.any {
@@ -829,10 +743,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 20
         }
 
-
         return diem
     }
-
 
     private fun cayDangHienThiSo(
         node: AccessibilityNodeInfo,
@@ -845,14 +757,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         val textSo =
             chiLayChuSo(
                 node.text
                     ?.toString()
                     .orEmpty()
             )
-
 
         if (
             textSo.isNotBlank() &&
@@ -865,14 +775,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return true
         }
 
-
         val descSo =
             chiLayChuSo(
                 node.contentDescription
                     ?.toString()
                     .orEmpty()
             )
-
 
         if (
             descSo.isNotBlank() &&
@@ -885,7 +793,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return true
         }
 
-
         for (
         index in 0 until
                 node.childCount
@@ -896,7 +803,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     index
                 )
                     ?: continue
-
 
             if (
                 cayDangHienThiSo(
@@ -910,10 +816,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             }
         }
 
-
         return false
     }
-
 
     private fun timNutXoaSo(
         node: AccessibilityNodeInfo
@@ -924,7 +828,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         ) {
             return null
         }
-
 
         val nhan =
             listOfNotNull(
@@ -939,12 +842,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 .trim()
                 .lowercase()
 
-
         val id =
             node.viewIdResourceName
                 ?.lowercase()
                 .orEmpty()
-
 
         val nhanHopLe =
             nhan ==
@@ -968,7 +869,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         "delete number"
                     )
 
-
         val idHopLe =
             id.contains(
                 "backspace"
@@ -976,7 +876,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     id.contains(
                         "delete"
                     )
-
 
         val coTheBam =
             node.isClickable ||
@@ -990,7 +889,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                                 AccessibilityNodeInfo.ACTION_LONG_CLICK
                     }
 
-
         if (
             coTheBam &&
             (
@@ -1001,7 +899,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
             return node
         }
-
 
         for (
         index in 0 until
@@ -1014,12 +911,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
                     ?: continue
 
-
             val ketQua =
                 timNutXoaSo(
                     child
                 )
-
 
             if (
                 ketQua !=
@@ -1030,10 +925,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             }
         }
 
-
         return null
     }
-
 
     private fun chiLayChuSo(
         giaTri: String
@@ -1044,7 +937,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 it.isDigit()
             }
     }
-
 
     private fun haiSoKhopNhau(
         a: String,
@@ -1058,7 +950,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         return a ==
                 b ||
                 a.endsWith(
@@ -1069,18 +960,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
     }
 
-
-    // =========================================================
     // ACCESSIBILITY FOCUS NAVIGATION
-    // =========================================================
 
-    /**
-     * Chuyển Accessibility Focus tới phần tử tiếp theo.
-     *
-     * Không dùng performGlobalAction() vì Android không có
-     * global action NEXT/PREVIOUS. Ta di chuyển trực tiếp
-     * trên cây AccessibilityNodeInfo.
-     */
     private fun thucThiTiepTheoNoiBo(): Boolean {
 
         return diChuyenAccessibilityFocus(
@@ -1088,10 +969,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
     }
 
-
-    /**
-     * Chuyển Accessibility Focus về phần tử trước đó.
-     */
     private fun thucThiTruocNoiBo(): Boolean {
 
         return diChuyenAccessibilityFocus(
@@ -1099,13 +976,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
     }
 
-
-    /**
-     * Tìm node đang được Accessibility Focus.
-     *
-     * Nếu chưa có Accessibility Focus, thử Input Focus.
-     * Nếu vẫn chưa có thì dùng root làm điểm bắt đầu.
-     */
     private fun diChuyenAccessibilityFocus(
         huong: Int
     ): Boolean {
@@ -1123,7 +993,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     huong.toString()
             }
 
-
         val root =
             rootInActiveWindow
 
@@ -1137,35 +1006,18 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
-        /*
-         * KHÔNG dùng focusSearch() từ root nữa.
-         *
-         * Trên nhiều màn hình Android, đặc biệt khi chưa có
-         * Accessibility Focus ban đầu, root.focusSearch()
-         * có thể trả về null dù cây UI vẫn có đầy đủ node.
-         *
-         * Thay vào đó:
-         * 1. Duyệt cây Accessibility.
-         * 2. Thu thập các node có thể tương tác.
-         * 3. Tìm node đang Accessibility Focus.
-         * 4. Chọn phần tử trước / tiếp theo theo thứ tự cây.
-         */
         val danhSachNode =
             mutableListOf<AccessibilityNodeInfo>()
-
 
         thuThapNodeCoTheDieuHuong(
             node = root,
             ketQua = danhSachNode
         )
 
-
         Log.d(
             TAG_FOCUS,
             "BAT_DAU[$tenHuong] | soNode=${danhSachNode.size}"
         )
-
 
         if (danhSachNode.isEmpty()) {
 
@@ -1177,7 +1029,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         val accessibilityFocus =
             root.findFocus(
                 AccessibilityNodeInfo.FOCUS_ACCESSIBILITY
@@ -1188,18 +1039,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 AccessibilityNodeInfo.FOCUS_INPUT
             )
 
-        /*
-         * ACTION_ACCESSIBILITY_FOCUS không phải lúc nào cũng được
-         * widget/ROM hỗ trợ nếu service không hoạt động như screen reader.
-         *
-         * Vì vậy ưu tiên tìm trạng thái hiện tại theo:
-         * 1. Accessibility Focus
-         * 2. System/Input Focus
-         */
         val nodeDangFocus =
             accessibilityFocus
                 ?: inputFocus
-
 
         val viTriHienTai =
             if (nodeDangFocus == null) {
@@ -1214,7 +1056,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 }
             }
 
-
         Log.d(
             TAG_FOCUS,
             "FOCUS_HIEN_TAI[$tenHuong] | " +
@@ -1223,7 +1064,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     "index=$viTriHienTai"
         )
 
-
         val viTriDich =
             when (huong) {
 
@@ -1231,10 +1071,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
                     if (viTriHienTai < 0) {
 
-                        /*
-                         * Chưa có focus:
-                         * bắt đầu từ phần tử đầu tiên.
-                         */
                         0
 
                     } else {
@@ -1243,15 +1079,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     }
                 }
 
-
                 View.FOCUS_BACKWARD -> {
 
                     if (viTriHienTai < 0) {
 
-                        /*
-                         * Chưa có focus:
-                         * bắt đầu từ phần tử cuối cùng.
-                         */
                         danhSachNode.lastIndex
 
                     } else {
@@ -1259,7 +1090,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         viTriHienTai - 1
                     }
                 }
-
 
                 else -> {
 
@@ -1271,7 +1101,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     return false
                 }
             }
-
 
         if (
             viTriDich < 0 ||
@@ -1286,10 +1115,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
-        /*
-         * Xóa focus cũ trước khi đặt focus mới.
-         */
         accessibilityFocus?.performAction(
             AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS
         )
@@ -1298,12 +1123,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             AccessibilityNodeInfo.ACTION_CLEAR_FOCUS
         )
 
-
         val nodeDich =
             danhSachNode[
                 viTriDich
             ]
-
 
         Log.d(
             TAG_FOCUS,
@@ -1316,20 +1139,10 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     "focusable=${nodeDich.isFocusable}"
         )
 
-
-        /*
-         * Thử Accessibility Focus trước.
-         *
-         * Nếu ROM/widget từ chối, fallback sang ACTION_FOCUS
-         * (system/input focus). Đây là focus phù hợp hơn với kiểu
-         * điều hướng hands-free của FaceAccess và không yêu cầu
-         * biến service thành screen reader/touch-exploration service.
-         */
         val accessibilityThanhCong =
             nodeDich.performAction(
                 AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS
             )
-
 
         if (accessibilityThanhCong) {
 
@@ -1341,18 +1154,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return true
         }
 
-
         Log.d(
             TAG_FOCUS,
             "FALLBACK[$tenHuong]: ACTION_ACCESSIBILITY_FOCUS=false -> thu ACTION_FOCUS"
         )
 
-
         val systemFocusThanhCong =
             nodeDich.performAction(
                 AccessibilityNodeInfo.ACTION_FOCUS
             )
-
 
         if (systemFocusThanhCong) {
 
@@ -1369,18 +1179,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             )
         }
 
-
         return systemFocusThanhCong
     }
 
-
-    /**
-     * Duyệt cây Accessibility theo thứ tự hiển thị và thu thập
-     * các node có khả năng tương tác với người dùng.
-     *
-     * Không lấy mọi TextView vì như vậy một hàng Settings có thể
-     * bị tách thành nhiều điểm focus gây trải nghiệm rất khó dùng.
-     */
     private fun thuThapNodeCoTheDieuHuong(
         node: AccessibilityNodeInfo,
         ketQua: MutableList<AccessibilityNodeInfo>
@@ -1390,35 +1191,23 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return
         }
 
-
-        /*
-         * Chỉ giữ node thực sự có ý nghĩa để điều hướng.
-         *
-         * Không đưa container thuần như RecyclerView / ScrollView vào
-         * danh sách chỉ vì chúng focusable/scrollable. Scroll sẽ được
-         * xử lý riêng bằng CUON_LEN / CUON_XUONG.
-         */
         val coNhan =
             !node.text.isNullOrBlank() ||
                     !node.contentDescription.isNullOrBlank()
-
 
         val laDichTuongTacTrucTiep =
             node.isClickable ||
                     node.isCheckable ||
                     node.isEditable
 
-
         val laFocusableCoYNgia =
             node.isFocusable &&
                     coNhan &&
                     !node.isScrollable
 
-
         val coTheDieuHuong =
             laDichTuongTacTrucTiep ||
                     laFocusableCoYNgia
-
 
         if (coTheDieuHuong) {
 
@@ -1426,7 +1215,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 node
             )
         }
-
 
         for (
         index in 0 until
@@ -1439,7 +1227,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
                     ?: continue
 
-
             thuThapNodeCoTheDieuHuong(
                 node = child,
                 ketQua = ketQua
@@ -1447,10 +1234,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         }
     }
 
-
-    // =========================================================
     // VERTICAL SCROLL NAVIGATION
-    // =========================================================
 
     private fun thucThiCuonLenNoiBo(): Boolean {
 
@@ -1459,7 +1243,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
     }
 
-
     private fun thucThiCuonXuongNoiBo(): Boolean {
 
         return thucThiCuonDoc(
@@ -1467,20 +1250,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
     }
 
-
-    /**
-     * Scroll mới:
-     *
-     * 1. Ưu tiên dispatchGesture() để mô phỏng một cú vuốt ngắn,
-     *    nhờ vậy UI cuộn có animation tự nhiên hơn.
-     *
-     * 2. Nếu Android từ chối gesture ngay từ đầu, fallback về
-     *    AccessibilityNodeInfo ACTION_SCROLL_* đang hoạt động ổn.
-     *
-     * PITCH:
-     * - LEN   -> vuốt xuống -> nội dung cuộn lên.
-     * - XUONG -> vuốt lên   -> nội dung cuộn xuống.
-     */
     private fun thucThiCuonDoc(
         cuonXuong: Boolean
     ): Boolean {
@@ -1492,11 +1261,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 "UP"
             }
 
-
-        /*
-         * Một gesture scroll đang chạy thì không nhận thêm
-         * animation mới chồng lên nó.
-         */
         if (dangCuonBangCuChi) {
 
             Log.d(
@@ -1504,47 +1268,29 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 "BO_QUA[$tenHuong]: animation scroll dang chay"
             )
 
-            /*
-             * Request được consume để Activity/Service không
-             * fallback hoặc phát thêm thao tác khác.
-             */
             return true
         }
-
 
         val gestureDaNhan =
             thucThiCuonBangCuChi(
                 cuonXuong = cuonXuong
             )
 
-
         if (gestureDaNhan) {
 
             return true
         }
 
-
-        /*
-         * Fallback cho ROM/app không nhận dispatchGesture().
-         */
         Log.d(
             TAG_SCROLL,
             "FALLBACK[$tenHuong]: dispatchGesture=false -> ACTION_SCROLL"
         )
-
 
         return thucThiCuonBangNode(
             cuonXuong = cuonXuong
         )
     }
 
-
-    /**
-     * Tạo một cú vuốt ngắn ở giữa màn hình.
-     *
-     * Khoảng di chuyển khoảng 30% chiều cao và duration 300ms,
-     * đủ mượt nhưng không chậm, không nhảy thẳng cả trang.
-     */
     private fun thucThiCuonBangCuChi(
         cuonXuong: Boolean
     ): Boolean {
@@ -1557,7 +1303,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         val chieuCao =
             metrics.heightPixels.toFloat()
-
 
         if (
             chieuRong <= 0f ||
@@ -1572,18 +1317,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         val x =
             chieuRong * 0.50f
 
-
-        /*
-         * Nội dung cuộn XUỐNG:
-         * ngón tay phải vuốt từ dưới lên.
-         *
-         * Nội dung cuộn LÊN:
-         * ngón tay phải vuốt từ trên xuống.
-         */
         val yBatDau =
             if (cuonXuong) {
 
@@ -1596,7 +1332,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         TY_LE_Y_KET_THUC_CUON_XUONG
             }
 
-
         val yKetThuc =
             if (cuonXuong) {
 
@@ -1608,7 +1343,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 chieuCao *
                         TY_LE_Y_BAT_DAU_CUON_XUONG
             }
-
 
         val path =
             Path().apply {
@@ -1624,7 +1358,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
             }
 
-
         val stroke =
             GestureDescription
                 .StrokeDescription(
@@ -1632,7 +1365,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     0L,
                     THOI_GIAN_CUON_MUOT_MS
                 )
-
 
         val gesture =
             GestureDescription
@@ -1642,7 +1374,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
                 .build()
 
-
         val tenHuong =
             if (cuonXuong) {
                 "DOWN"
@@ -1650,10 +1381,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 "UP"
             }
 
-
         dangCuonBangCuChi =
             true
-
 
         val daNhan =
             dispatchGesture(
@@ -1675,7 +1404,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         )
                     }
 
-
                     override fun onCancelled(
                         gestureDescription:
                         GestureDescription?
@@ -1689,11 +1417,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                             "CANCEL[$tenHuong]: smooth gesture bi huy -> thu ACTION_SCROLL"
                         )
 
-
-                        /*
-                         * Gesture đã được hệ thống nhận nhưng bị hủy
-                         * giữa chừng. Fallback về node scroll.
-                         */
                         thucThiCuonBangNode(
                             cuonXuong = cuonXuong
                         )
@@ -1701,7 +1424,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 },
                 null
             )
-
 
         if (!daNhan) {
 
@@ -1722,18 +1444,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             )
         }
 
-
         return daNhan
     }
 
-
-    /**
-     * Fallback AccessibilityNodeInfo.
-     *
-     * Đây là thuật toán scroll cũ đang chạy ổn:
-     * ưu tiên scroll container là parent của node đang focus,
-     * sau đó mới duyệt toàn bộ cây UI.
-     */
     private fun thucThiCuonBangNode(
         cuonXuong: Boolean
     ): Boolean {
@@ -1751,7 +1464,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         val actionDoc =
             if (cuonXuong) {
 
@@ -1768,7 +1480,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     .id
             }
 
-
         val actionFallback =
             if (cuonXuong) {
 
@@ -1781,14 +1492,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     .ACTION_SCROLL_BACKWARD
             }
 
-
         val tenHuong =
             if (cuonXuong) {
                 "DOWN"
             } else {
                 "UP"
             }
-
 
         val accessibilityFocus =
             root.findFocus(
@@ -1804,14 +1513,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             accessibilityFocus
                 ?: inputFocus
 
-
         val nodeCuonTuFocus =
             timNodeCuonTuNodeDangFocus(
                 nodeBatDau = nodeDangFocus,
                 actionDoc = actionDoc,
                 actionFallback = actionFallback
             )
-
 
         val nodeCuon =
             nodeCuonTuFocus
@@ -1820,7 +1527,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     actionDoc = actionDoc,
                     actionFallback = actionFallback
                 )
-
 
         if (nodeCuon == null) {
 
@@ -1832,7 +1538,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return false
         }
 
-
         Log.d(
             TAG_SCROLL,
             "NODE_CUON[$tenHuong] | " +
@@ -1840,7 +1545,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     "scrollable=${nodeCuon.isScrollable} | " +
                     "tuFocus=${nodeCuonTuFocus != null}"
         )
-
 
         if (
             hoTroHanhDong(
@@ -1854,7 +1558,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     actionDoc
                 )
 
-
             if (thanhCong) {
 
                 Log.d(
@@ -1865,13 +1568,11 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 return true
             }
 
-
             Log.d(
                 TAG_SCROLL,
                 "FALLBACK[$tenHuong]: ACTION_SCROLL_DOC=false"
             )
         }
-
 
         if (
             hoTroHanhDong(
@@ -1884,7 +1585,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 nodeCuon.performAction(
                     actionFallback
                 )
-
 
             if (thanhCong) {
 
@@ -1901,10 +1601,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
             }
 
-
             return thanhCong
         }
-
 
         Log.e(
             TAG_SCROLL,
@@ -1914,10 +1612,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         return false
     }
 
-
-    /**
-     * Đi từ node đang focus lên các parent để tìm container cuộn.
-     */
     private fun timNodeCuonTuNodeDangFocus(
         nodeBatDau: AccessibilityNodeInfo?,
         actionDoc: Int,
@@ -1926,7 +1620,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         var nodeHienTai =
             nodeBatDau
-
 
         while (nodeHienTai != null) {
 
@@ -1942,19 +1635,13 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 return nodeHienTai
             }
 
-
             nodeHienTai =
                 nodeHienTai.parent
         }
 
-
         return null
     }
 
-
-    /**
-     * Fallback: duyệt cây để tìm scroll container đang hiển thị.
-     */
     private fun timNodeCuonTrongCay(
         node: AccessibilityNodeInfo,
         actionDoc: Int,
@@ -1964,7 +1651,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         if (!node.isVisibleToUser) {
             return null
         }
-
 
         if (
             coTheCuonTheoHuong(
@@ -1977,7 +1663,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return node
         }
 
-
         for (
         index in 0 until
                 node.childCount
@@ -1989,7 +1674,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 )
                     ?: continue
 
-
             val ketQua =
                 timNodeCuonTrongCay(
                     node = child,
@@ -1997,16 +1681,13 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     actionFallback = actionFallback
                 )
 
-
             if (ketQua != null) {
                 return ketQua
             }
         }
 
-
         return null
     }
-
 
     private fun coTheCuonTheoHuong(
         node: AccessibilityNodeInfo,
@@ -2027,7 +1708,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         )
     }
 
-
     private fun hoTroHanhDong(
         node: AccessibilityNodeInfo,
         action: Int
@@ -2040,7 +1720,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     action
         }
     }
-
 
     companion object {
 
@@ -2062,19 +1741,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         private const val THOI_GIAN_HIEN_THONG_BAO_MS =
             1400L
 
-        /**
-         * Khoảng vuốt nằm trong vùng giữa màn hình để tránh
-         * status bar / navigation bar và giữ cảm giác tự nhiên.
-         */
         private const val TY_LE_Y_BAT_DAU_CUON_XUONG =
             0.68f
 
         private const val TY_LE_Y_KET_THUC_CUON_XUONG =
             0.38f
 
-        /**
-         * 300ms đủ mượt nhưng vẫn phản hồi nhanh.
-         */
         private const val THOI_GIAN_CUON_MUOT_MS =
             300L
 
@@ -2082,18 +1754,29 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         private var phienBanDangHoatDong:
                 DichVuTruyCapFaceAccess? = null
 
-
         fun dangHoatDong(): Boolean {
 
             return phienBanDangHoatDong != null
         }
 
+        fun batConTro(): Boolean {
 
-        /**
-         * Feedback chính thức của FaceAccess khi Accessibility đang chạy.
-         *
-         * Trả true nếu request đã được nhận.
-         */
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu.batConTroNoiBo()
+        }
+
+        fun tatConTro(): Boolean {
+
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu.tatConTroNoiBo()
+        }
+
         fun hienThiThongBaoHeThong(
             noiDung: String
         ): Boolean {
@@ -2102,13 +1785,11 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 phienBanDangHoatDong
                     ?: return false
 
-
             return dichVu
                 .hienThiThongBaoHeThongNoiBo(
                     noiDung
                 )
         }
-
 
         fun layPackageDangHoatDong():
                 String? {
@@ -2117,13 +1798,11 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 phienBanDangHoatDong
                     ?: return null
 
-
             return dichVu
                 .rootInActiveWindow
                 ?.packageName
                 ?.toString()
         }
-
 
         fun thucThiXoaSoTrinhQuaySo(
             packageDialerMongDoi: String?,
@@ -2134,7 +1813,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 phienBanDangHoatDong
                     ?: return false
 
-
             return dichVu
                 .xoaSoTrinhQuaySoNoiBo(
                     packageDialerMongDoi =
@@ -2143,7 +1821,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                         soDienThoai
                 )
         }
-
 
         fun thucThiHome(): Boolean {
 
@@ -2155,7 +1832,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 .thucThiHomeNoiBo()
         }
 
-
         fun thucThiBack(): Boolean {
 
             val dichVu =
@@ -2165,7 +1841,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return dichVu
                 .thucThiBackNoiBo()
         }
-
 
         fun thucThiTiepTheo(): Boolean {
 
@@ -2177,7 +1852,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 .thucThiTiepTheoNoiBo()
         }
 
-
         fun thucThiTruoc(): Boolean {
 
             val dichVu =
@@ -2188,7 +1862,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 .thucThiTruocNoiBo()
         }
 
-
         fun thucThiCuonLen(): Boolean {
 
             val dichVu =
@@ -2198,7 +1871,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return dichVu
                 .thucThiCuonLenNoiBo()
         }
-
 
         fun thucThiCuonXuong(): Boolean {
 

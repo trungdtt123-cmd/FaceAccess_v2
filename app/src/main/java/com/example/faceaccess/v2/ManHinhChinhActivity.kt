@@ -47,9 +47,7 @@ import java.util.Locale
 
 class ManHinhChinhActivity : AppCompatActivity() {
 
-    // =========================================================
     // CAMERA
-    // =========================================================
 
     private lateinit var quanLyCamera: QuanLyCamera
 
@@ -60,15 +58,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
     @Volatile
     private var cameraDangBat = false
 
-    /**
-     * Trạng thái phiên theo dõi tổng thể.
-     *
-     * true  = người dùng đã bấm BẮT ĐẦU THEO DÕI và chưa bấm DỪNG.
-     * false = hệ thống theo dõi đã dừng hoàn toàn.
-     *
-     * Biến này khác cameraDangBat:
-     * cameraDangBat chỉ cho biết Camera đang thuộc Activity.
-     */
     @Volatile
     private var theoDoiDangHoatDong = false
 
@@ -77,17 +66,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private var daDangKyBoNhanBanGiaoCamera = false
 
-
-    // =========================================================
     // DETECTOR MỞ MIỆNG
-    // =========================================================
 
-    /**
-     * Checkpoint hiện tại CHỈ ghi Logcat.
-     *
-     * Chưa gọi BACK thật.
-     * Chưa đi qua DieuPhoiCuChi.
-     */
     private fun khoiTaoNhanDienMoMieng() {
 
         nhanDienMoMieng =
@@ -104,16 +84,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
     }
 
-
-
-    // =========================================================
     // DETECTOR HƯỚNG ĐẦU YAW / PITCH
-    // =========================================================
 
-    /**
-     * Checkpoint này chỉ Logcat.
-     * Chưa gán hành động Navigation / Media / Cursor.
-     */
     private fun khoiTaoNhanDienHuongDau() {
 
         nhanDienHuongDau =
@@ -140,11 +112,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     "APP: HUONG $tenHuong"
                 )
 
-                /*
-                 * Detector chỉ mô tả hướng.
-                 * DieuPhoiCuChi mới quyết định event này
-                 * đang thuộc mode nào.
-                 */
                 dieuPhoiCuChi.xuLy(
                     SuKienCuChi.DieuHuongDau(
                         huong = huong
@@ -153,10 +120,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
     }
 
-
-    // =========================================================
     // MEDIAPIPE
-    // =========================================================
 
     private lateinit var xuLyKhuonMat: XuLyKhuonMat
 
@@ -166,10 +130,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private lateinit var trichXuatDuLieuKhuonMat:
             TrichXuatDuLieuKhuonMat
 
-
-    // =========================================================
     // NHẬN DIỆN CỬ CHỈ
-    // =========================================================
 
     private lateinit var nhanDienNghiengDau:
             NhanDienNghiengDau
@@ -180,10 +141,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private lateinit var nhanDienHuongDau:
             NhanDienHuongDau
 
-
-    // =========================================================
     // ĐIỀU PHỐI CỬ CHỈ
-    // =========================================================
 
     private lateinit var dieuPhoiCuChi:
             DieuPhoiCuChi
@@ -194,27 +152,18 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private lateinit var boDieuKhienLienHeHoTro:
             BoDieuKhienLienHeHoTro
 
-
-    // =========================================================
     // CHẾ ĐỘ
-    // =========================================================
 
     private lateinit var boDinhTuyenCheDo:
             BoDinhTuyenCheDo
 
-
-    // =========================================================
     // GIAO DIỆN HỆ THỐNG
-    // =========================================================
 
     private lateinit var btnBatDauTheoDoi: Button
 
     private lateinit var txtTrangThaiHeThong: TextView
 
-
-    // =========================================================
     // GIAO DIỆN CHẾ ĐỘ
-    // =========================================================
 
     private lateinit var txtCheDoHienTai: TextView
 
@@ -226,10 +175,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var cardConTro: TextView
 
-
-    // =========================================================
     // GIAO DIỆN DEBUG
-    // =========================================================
 
     private lateinit var txtRoll: TextView
 
@@ -241,25 +187,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var txtTrangThaiMieng: TextView
 
-
-    // =========================================================
     // TRẠNG THÁI
-    // =========================================================
 
     private var dangThayKhuonMat: Boolean? = null
 
     private var thoiGianCapNhatUiGanNhat = 0L
 
-
-    // =========================================================
     // FOREGROUND TRACKING SERVICE + BÀN GIAO CAMERA
-    // =========================================================
 
-    /**
-     * Khởi động Foreground Service khi người dùng bắt đầu theo dõi.
-     *
-     * Lệnh này chỉ tạo/duy trì Service. Camera nền chưa tự bật.
-     */
     private fun batDichVuTheoDoi() {
 
         val intent =
@@ -279,11 +214,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    /**
-     * Dừng hoàn toàn Foreground Service khi người dùng
-     * chủ động bấm DỪNG THEO DÕI hoặc Camera khởi động lỗi.
-     */
     private fun tatDichVuTheoDoi() {
 
         val intent =
@@ -300,10 +230,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    /**
-     * Activity đã nhả Camera và yêu cầu Service lấy Camera.
-     */
     private fun yeuCauBatCameraNen() {
 
         val intent =
@@ -325,14 +251,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    /**
-     * Yêu cầu Service nhả Camera.
-     *
-     * Activity KHÔNG bind Camera ngay tại đây.
-     * Activity chỉ bind lại sau khi nhận broadcast xác nhận
-     * HANH_DONG_CAMERA_NEN_DA_TAT từ Service.
-     */
     private fun yeuCauTatCameraNenDeNhanLaiCamera() {
 
         if (dangChoCameraNenNhaQuyen) {
@@ -361,13 +279,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    /**
-     * BroadcastReceiver nhận xác nhận từ Service rằng
-     * Camera nền đã được nhả hoàn toàn.
-     *
-     * Chỉ sau mốc này Activity mới được bind Camera lại.
-     */
     private val boNhanBanGiaoCamera =
         object : BroadcastReceiver() {
 
@@ -405,7 +316,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
         }
 
-
     private fun dangKyBoNhanBanGiaoCamera() {
 
         if (daDangKyBoNhanBanGiaoCamera) {
@@ -429,7 +339,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
             true
     }
 
-
     private fun huyDangKyBoNhanBanGiaoCamera() {
 
         if (!daDangKyBoNhanBanGiaoCamera) {
@@ -444,10 +353,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             false
     }
 
-
-    // =========================================================
     // QUYỀN CAMERA
-    // =========================================================
 
     private val yeuCauQuyenCamera =
         registerForActivityResult(
@@ -469,10 +375,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
         }
 
-
-    // =========================================================
     // QUYỀN THÔNG BÁO
-    // =========================================================
 
     private val yeuCauQuyenThongBao =
         registerForActivityResult(
@@ -485,14 +388,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
         }
 
-
-    /**
-     * Android 13+ yêu cầu POST_NOTIFICATIONS ở runtime.
-     *
-     * Quyền này chỉ quyết định notification có được hiển thị
-     * trong notification drawer hay không; Foreground Service
-     * vẫn có lifecycle riêng của nó.
-     */
     private fun kiemTraVaYeuCauQuyenThongBao() {
 
         if (
@@ -515,10 +410,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    // =========================================================
     // ON CREATE
-    // =========================================================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -529,20 +421,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         dangKyBoNhanBanGiaoCamera()
 
-        /*
-         * Xin quyền notification sớm để Foreground Service
-         * có thể hiển thị thông báo trên Android 13+.
-         */
         kiemTraVaYeuCauQuyenThongBao()
 
         khoiTaoTrichXuatDuLieu()
 
-        /*
-         * Khởi tạo hệ thống chế độ trước điều phối.
-         *
-         * DieuPhoiCuChi sẽ gọi BoDinhTuyenCheDo
-         * khi nhận LENH DOI_CHE_DO.
-         */
         khoiTaoBoDinhTuyenCheDo()
 
         khoiTaoBoDieuKhienMedia()
@@ -570,10 +452,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         datLaiThongTinNhanDien()
     }
 
-
-    // =========================================================
     // ÁNH XẠ UI
-    // =========================================================
 
     private fun anhXaGiaoDien() {
 
@@ -584,14 +463,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
         txtTrangThaiCamera =
             findViewById(R.id.txtTrangThaiCamera)
 
-
         // Hệ thống
         btnBatDauTheoDoi =
             findViewById(R.id.btnBatDauTheoDoi)
 
         txtTrangThaiHeThong =
             findViewById(R.id.txtTrangThaiHeThong)
-
 
         // Chế độ
         txtCheDoHienTai =
@@ -608,7 +485,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         cardConTro =
             findViewById(R.id.cardConTro)
-
 
         // Debug
         txtRoll =
@@ -627,10 +503,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             findViewById(R.id.txtTrangThaiMieng)
     }
 
-
-    // =========================================================
     // TRÍCH XUẤT DỮ LIỆU
-    // =========================================================
 
     private fun khoiTaoTrichXuatDuLieu() {
 
@@ -638,10 +511,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             TrichXuatDuLieuKhuonMat()
     }
 
-
-    // =========================================================
     // HỆ THỐNG CHẾ ĐỘ
-    // =========================================================
 
     private fun khoiTaoBoDinhTuyenCheDo() {
 
@@ -653,12 +523,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     "Che do moi: $cheDoMoi"
                 )
 
-                /*
-                 * State HỖ TRỢ chỉ có ý nghĩa trong đúng mode HỖ TRỢ.
-                 *
-                 * Rời mode phải xóa contact/session cũ để khi quay lại
-                 * người dùng bắt buộc YAW chọn lại có chủ đích.
-                 */
                 if (
                     cheDoMoi !=
                     CheDoDieuKhien.HO_TRO &&
@@ -669,25 +533,56 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         .datLaiPhien()
                 }
 
+                capNhatTrangThaiConTroTheoCheDo(
+                    cheDoMoi
+                )
+
                 capNhatGiaoDienCheDo(
                     cheDoMoi
                 )
             }
 
-        /*
-         * Chế độ mặc định khi mở app:
-         * ĐIỀU HƯỚNG.
-         */
-        capNhatGiaoDienCheDo(
+        val cheDoBanDau =
             boDinhTuyenCheDo
                 .layCheDoHienTai()
+
+        capNhatTrangThaiConTroTheoCheDo(
+            cheDoBanDau
+        )
+
+        capNhatGiaoDienCheDo(
+            cheDoBanDau
         )
     }
 
+    // CURSOR - ĐỒNG BỘ THEO MODE
 
-    // =========================================================
+    private fun capNhatTrangThaiConTroTheoCheDo(
+        cheDo: CheDoDieuKhien
+    ) {
+
+        if (
+            !theoDoiDangHoatDong ||
+            cheDo != CheDoDieuKhien.CON_TRO
+        ) {
+            DichVuTruyCapFaceAccess.tatConTro()
+            return
+        }
+
+        val thanhCong =
+            DichVuTruyCapFaceAccess.batConTro()
+
+        Log.d(
+            TAG_CON_TRO,
+            if (thanhCong) {
+                "APP: CURSOR BAT"
+            } else {
+                "APP: CURSOR CHUA BAT - AccessibilityService chua san sang"
+            }
+        )
+    }
+
     // BỘ ĐIỀU KHIỂN MEDIA
-    // =========================================================
 
     private fun khoiTaoBoDieuKhienMedia() {
 
@@ -697,10 +592,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
     }
 
-
-    // =========================================================
     // BỘ ĐIỀU KHIỂN LIÊN HỆ HỖ TRỢ
-    // =========================================================
 
     private fun khoiTaoBoDieuKhienLienHeHoTro() {
 
@@ -710,10 +602,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
     }
 
-
-    // =========================================================
     // ĐIỀU PHỐI CỬ CHỈ
-    // =========================================================
 
     private fun khoiTaoDieuPhoiCuChi() {
 
@@ -728,10 +617,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         cheDo,
                         huong ->
 
-                    /*
-                     * Giữ log routing tổng quát để kiểm tra
-                     * DIEU_HUONG / MEDIA / HO_TRO / CON_TRO.
-                     */
                     Log.d(
                         TAG_CU_CHI_THEO_CHE_DO,
                         "APP: MODE=$cheDo | HUONG=$huong"
@@ -744,15 +629,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         "APP: LENH_DIEU_HUONG=$lenhDieuHuong"
                     )
 
-
-                    /*
-                     * Checkpoint này chỉ thực thi:
-                     *
-                     * TRUOC
-                     * TIEP_THEO
-                     *
-                     * CUON_LEN / CUON_XUONG vẫn chỉ log.
-                     */
                     when (lenhDieuHuong) {
 
                         LenhDieuHuong.TRUOC -> {
@@ -774,7 +650,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             }
                         }
 
-
                         LenhDieuHuong.TIEP_THEO -> {
 
                             runOnUiThread {
@@ -794,7 +669,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             }
                         }
 
-
                         LenhDieuHuong.CUON_LEN -> {
 
                             runOnUiThread {
@@ -813,7 +687,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 )
                             }
                         }
-
 
                         LenhDieuHuong.CUON_XUONG -> {
 
@@ -842,12 +715,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         "APP: LENH_MEDIA=$lenhMedia"
                     )
 
-
-                    /*
-                     * Callback detector có thể chạy ngoài main thread.
-                     * Đưa media action về main thread để hành vi
-                     * foreground/background nhất quán.
-                     */
                     runOnUiThread {
 
                         val thanhCong =
@@ -855,7 +722,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 .thucThi(
                                     lenhMedia
                                 )
-
 
                         Log.d(
                             TAG_LENH_MEDIA,
@@ -875,13 +741,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         "APP: LENH_HO_TRO=$lenhHoTro"
                     )
 
-
-                    /*
-                     * Detector có thể callback ngoài main thread.
-                     *
-                     * Mọi feedback UI + ACTION_DIAL được đưa về
-                     * main thread để hành vi ổn định.
-                     */
                     runOnUiThread {
 
                         val ketQua =
@@ -890,14 +749,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                     lenhHoTro
                                 )
 
-
                         Log.d(
                             TAG_LENH_HO_TRO,
                             "APP: HO_TRO_ACTION=$lenhHoTro | " +
                                     "THANH_CONG=${ketQua.thanhCong} | " +
                                     "THONG_BAO=${ketQua.thongBao}"
                         )
-
 
                         ThongBaoFaceAccess.hienThi(
                             context = this,
@@ -917,11 +774,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 "LENH HOME"
                             )
 
-                            /*
-                             * Callback cử chỉ có thể chạy ngoài main thread.
-                             * Đưa thao tác Accessibility về main thread để
-                             * thực thi HOME ổn định và cập nhật UI an toàn.
-                             */
                             runOnUiThread {
 
                                 val thanhCong =
@@ -948,7 +800,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             }
                         }
 
-
                         LenhToanCuc.DOI_CHE_DO -> {
 
                             Log.d(
@@ -956,14 +807,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 "LENH DOI_CHE_DO"
                             )
 
-                            /*
-                             * Đây là nơi duy nhất hiện tại
-                             * xử lý yêu cầu đổi chế độ.
-                             */
                             boDinhTuyenCheDo
                                 .chuyenCheDoTiepTheo()
                         }
-
 
                         LenhToanCuc.BACK -> {
 
@@ -1002,25 +848,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
     }
 
-
-    // =========================================================
     // DETECTOR ROLL
-    // =========================================================
 
     private fun khoiTaoNhanDienNghiengDau() {
 
         nhanDienNghiengDau =
             NhanDienNghiengDau { huong ->
 
-                /*
-                 * Detector chỉ biết:
-                 *
-                 * TRAI
-                 * PHAI
-                 *
-                 * Không biết HOME.
-                 * Không biết mode.
-                 */
                 when (huong) {
 
                     HuongNghiengDau.TRAI -> {
@@ -1029,7 +863,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             SuKienCuChi.NghiengTrai
                         )
                     }
-
 
                     HuongNghiengDau.PHAI -> {
 
@@ -1041,10 +874,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
     }
 
-
-    // =========================================================
     // MEDIAPIPE
-    // =========================================================
 
     private fun khoiTaoXuLyKhuonMat() {
 
@@ -1063,17 +893,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             )
                         }
 
-
                         override fun khiCoKetQua(
                             result: FaceLandmarkerResult,
                             chieuRongAnh: Int,
                             chieuCaoAnh: Int
                         ) {
 
-                            /*
-                             * Có thể còn callback MediaPipe cũ
-                             * ngay sau khi Camera vừa dừng.
-                             */
                             if (!cameraDangBat) {
                                 return
                             }
@@ -1082,28 +907,19 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
 
-
-                            // ---------------------------------
                             // KHUÔN MẶT
-                            // ---------------------------------
 
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = true
                             )
 
-
-                            // ---------------------------------
                             // DEBUG REALTIME
-                            // ---------------------------------
 
                             capNhatDuLieuKhuonMat(
                                 duLieu
                             )
 
-
-                            // ---------------------------------
                             // DETECTOR ROLL
-                            // ---------------------------------
 
                             val thoiGianHienTai =
                                 SystemClock.uptimeMillis()
@@ -1132,17 +948,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             )
                         }
 
-
                         override fun khiKhongThayKhuonMat() {
 
                             if (!cameraDangBat) {
                                 return
                             }
 
-                            /*
-                             * Mất tracking thì detector
-                             * không được giữ gesture cũ.
-                             */
                             nhanDienNghiengDau.datLai()
 
                             nhanDienMoMieng.datLai()
@@ -1155,7 +966,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                             datLaiThongTinNhanDien()
                         }
-
 
                         override fun khiCoLoi(
                             thongBao: String
@@ -1178,14 +988,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     }
             )
 
-
-        /*
-         * ImageProxy
-         * ↓
-         * MPImage
-         * ↓
-         * XuLyKhuonMat
-         */
         phanTichKhungHinhKhuonMat =
             PhanTichKhungHinhKhuonMat(
                 xuLyKhuonMat = xuLyKhuonMat,
@@ -1193,10 +995,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
     }
 
-
-    // =========================================================
     // CAMERA
-    // =========================================================
 
     private fun khoiTaoCamera() {
 
@@ -1210,10 +1009,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
     }
 
-
-    // =========================================================
     // SỰ KIỆN UI
-    // =========================================================
 
     private fun ganSuKien() {
 
@@ -1229,13 +1025,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
         }
 
-
-        /*
-         * Card HỖ TRỢ đồng thời là lối vào khu vực
-         * quản lý danh sách liên hệ hỗ trợ.
-         *
-         * Việc đổi mode bằng ROLL phải vẫn giữ nguyên.
-         */
         cardHoTro.setOnClickListener {
 
             startActivity(
@@ -1247,10 +1036,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    // =========================================================
     // QUYỀN CAMERA
-    // =========================================================
 
     private fun kiemTraVaBatCamera() {
 
@@ -1272,10 +1058,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    // =========================================================
     // BẬT CAMERA
-    // =========================================================
 
     private fun batCamera() {
 
@@ -1291,19 +1074,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
         btnBatDauTheoDoi.isEnabled =
             false
 
-        /*
-         * Session mới phải bắt đầu
-         * với detector sạch.
-         */
         nhanDienNghiengDau.datLai()
 
         nhanDienMoMieng.datLai()
 
-        /*
-         * Foreground Service được bật trước Camera.
-         * Nếu Camera khởi động thất bại, service sẽ
-         * được dừng trong callback khiLoi.
-         */
         batDichVuTheoDoi()
 
         quanLyCamera.batCamera(
@@ -1315,6 +1089,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 theoDoiDangHoatDong =
                     true
+
+                capNhatTrangThaiConTroTheoCheDo(
+                    boDinhTuyenCheDo
+                        .layCheDoHienTai()
+                )
 
                 dangThayKhuonMat =
                     null
@@ -1336,13 +1115,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     true
             },
 
-
             khiLoi = { exception ->
 
-                /*
-                 * Không giữ Foreground Service chạy nếu
-                 * Camera không thể khởi động.
-                 */
                 tatDichVuTheoDoi()
 
                 cameraDangBat =
@@ -1350,6 +1124,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 theoDoiDangHoatDong =
                     false
+
+                DichVuTruyCapFaceAccess
+                    .tatConTro()
 
                 dangThayKhuonMat =
                     null
@@ -1377,18 +1154,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    // =========================================================
     // NHẬN LẠI CAMERA TỪ SERVICE
-    // =========================================================
 
-    /**
-     * Chỉ được gọi sau khi Service đã broadcast xác nhận
-     * Camera nền đã tắt.
-     *
-     * Không khởi động lại Foreground Service và không tạo
-     * một phiên theo dõi mới; chỉ bind Camera về Activity.
-     */
     private fun batLaiCameraActivitySauBanGiao() {
 
         if (
@@ -1411,6 +1178,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 cameraDangBat =
                     true
+
+                capNhatTrangThaiConTroTheoCheDo(
+                    boDinhTuyenCheDo
+                        .layCheDoHienTai()
+                )
 
                 dangThayKhuonMat =
                     null
@@ -1444,7 +1216,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 )
             },
 
-
             khiLoi = { exception ->
 
                 cameraDangBat =
@@ -1468,23 +1239,16 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    // =========================================================
     // DỪNG CAMERA
-    // =========================================================
 
     private fun tatCamera() {
 
-        /*
-         * Người dùng chủ động dừng toàn bộ phiên theo dõi.
-         */
         theoDoiDangHoatDong =
             false
 
-        /*
-         * Người dùng chủ động dừng tracking = kết thúc phiên điều khiển.
-         * Không được giữ contact HỖ TRỢ cũ cho lần bật sau.
-         */
+        DichVuTruyCapFaceAccess
+            .tatConTro()
+
         if (
             ::boDieuKhienLienHeHoTro.isInitialized
         ) {
@@ -1496,9 +1260,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         dangChoCameraNenNhaQuyen =
             false
 
-        /*
-         * Chặn callback MediaPipe đến muộn.
-         */
         cameraDangBat =
             false
 
@@ -1508,10 +1269,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         quanLyCamera.tatCamera()
 
-        /*
-         * Người dùng chủ động dừng theo dõi thì
-         * Foreground Service cũng phải dừng.
-         */
         tatDichVuTheoDoi()
 
         dangThayKhuonMat =
@@ -1533,10 +1290,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             "BẮT ĐẦU THEO DÕI"
     }
 
-
-    // =========================================================
     // CẬP NHẬT GIAO DIỆN CHẾ ĐỘ
-    // =========================================================
 
     private fun capNhatGiaoDienCheDo(
         cheDo: CheDoDieuKhien
@@ -1544,14 +1298,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         runOnUiThread {
 
-            /*
-             * Đầu tiên đưa tất cả card về trạng thái thường.
-             */
             datTatCaCardVeTrangThaiThuong()
 
-            /*
-             * Sau đó chỉ highlight card đang hoạt động.
-             */
             when (cheDo) {
 
                 CheDoDieuKhien.DIEU_HUONG -> {
@@ -1564,7 +1312,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     )
                 }
 
-
                 CheDoDieuKhien.MEDIA -> {
 
                     txtCheDoHienTai.text =
@@ -1575,7 +1322,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     )
                 }
 
-
                 CheDoDieuKhien.HO_TRO -> {
 
                     txtCheDoHienTai.text =
@@ -1585,7 +1331,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         cardHoTro
                     )
                 }
-
 
                 CheDoDieuKhien.CON_TRO -> {
 
@@ -1600,10 +1345,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    /**
-     * Đưa 4 card về giao diện chưa được chọn.
-     */
     private fun datTatCaCardVeTrangThaiThuong() {
 
         val mauChuThuong =
@@ -1632,10 +1373,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    /**
-     * Highlight card của chế độ đang chạy.
-     */
     private fun danhDauCardDangChon(
         card: TextView
     ) {
@@ -1652,10 +1389,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    // =========================================================
     // TRẠNG THÁI KHUÔN MẶT
-    // =========================================================
 
     private fun capNhatTrangThaiKhuonMat(
         coKhuonMat: Boolean
@@ -1694,10 +1428,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    // =========================================================
     // DỮ LIỆU REALTIME
-    // =========================================================
 
     private fun capNhatDuLieuKhuonMat(
         duLieu: DuLieuKhuonMat
@@ -1710,10 +1441,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         val thoiGianHienTai =
             SystemClock.uptimeMillis()
 
-        /*
-         * MediaPipe có thể chạy nhiều frame/giây,
-         * nhưng TextView chỉ cần khoảng 10Hz.
-         */
         if (
             thoiGianHienTai -
             thoiGianCapNhatUiGanNhat <
@@ -1772,10 +1499,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    // =========================================================
     // FORMAT
-    // =========================================================
 
     private fun dinhDangGoc(
         giaTri: Float?
@@ -1792,7 +1516,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
     private fun dinhDangDiem(
         giaTri: Float?
     ): String {
@@ -1808,10 +1531,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
-
-    // =========================================================
     // RESET DEBUG UI
-    // =========================================================
 
     private fun datLaiThongTinNhanDien() {
 
@@ -1834,10 +1554,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
-    // =========================================================
     // CAMERA PLACEHOLDER
-    // =========================================================
 
     private fun hienThiCameraDaDung(
         noiDung: String
@@ -1853,21 +1570,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
             View.VISIBLE
     }
 
-
-    // =========================================================
     // ACTIVITY LIFECYCLE - BÀN GIAO CAMERA
-    // =========================================================
 
     override fun onStart() {
         super.onStart()
 
-        /*
-         * Đồng bộ UI với nguồn trạng thái mode duy nhất.
-         *
-         * Nếu Service đã đổi mode khi FaceAccess ở background,
-         * khi Activity quay lại card/nhãn mode phải hiển thị
-         * đúng trạng thái mới.
-         */
         if (::boDinhTuyenCheDo.isInitialized) {
 
             capNhatGiaoDienCheDo(
@@ -1876,12 +1583,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
         }
 
-        /*
-         * Nếu phiên theo dõi vẫn còn hoạt động nhưng Camera
-         * đang thuộc Service, yêu cầu Service nhả Camera.
-         *
-         * Activity sẽ chờ broadcast xác nhận trước khi bind lại.
-         */
         if (
             theoDoiDangHoatDong &&
             !cameraDangBat &&
@@ -1892,18 +1593,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
-
     override fun onStop() {
 
-        /*
-         * Activity đi background nhưng người dùng CHƯA dừng
-         * phiên theo dõi:
-         *
-         * 1. Activity nhả Camera trước.
-         * 2. Sau đó mới yêu cầu Service lấy Camera.
-         *
-         * Nhờ thứ tự này hai owner không bind Camera đồng thời.
-         */
         if (
             theoDoiDangHoatDong &&
             cameraDangBat &&
@@ -1930,10 +1621,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         super.onStop()
     }
 
-
-    // =========================================================
     // DESTROY
-    // =========================================================
 
     override fun onDestroy() {
 
@@ -1977,10 +1665,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-
-    // =========================================================
     // CONSTANT
-    // =========================================================
 
     companion object {
 
@@ -1998,6 +1683,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_DICH_VU =
             "DichVuTheoDoi"
+
+        private const val TAG_CON_TRO =
+            "FaceAccessCursor"
 
         private const val TAG_BAN_GIAO_CAMERA =
             "BanGiaoCamera"
