@@ -1,9 +1,12 @@
 package com.example.faceaccess.v2.truycap
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
+import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
@@ -14,6 +17,8 @@ import android.view.Gravity
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.example.faceaccess.v2.R
@@ -29,10 +34,51 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     private var dangCuonBangCuChi =
         false
 
+    private data class DauVetNodeDieuHuong(
+        val windowId: Int,
+        val bounds: Rect,
+        val viewId: String?,
+        val className: String?,
+        val text: String?,
+        val contentDescription: String?
+    )
+
+    private data class MucDieuHuong(
+        val nodeFocus: AccessibilityNodeInfo,
+        val nodeClick: AccessibilityNodeInfo,
+        val bounds: Rect,
+        val nhan: String?
+    )
+
+    private var dauVetNodeDieuHuongDangChon:
+            DauVetNodeDieuHuong? =
+        null
+
+    private var viewFocusDieuHuong:
+            View? =
+        null
+
+    private var windowManagerFocusDieuHuong:
+            WindowManager? =
+        null
+
     // SYSTEM FEEDBACK OVERLAY
 
     private lateinit var boQuanLyTrangThaiOverlay:
-            BoQuanLyTrangThaiOverlay
+            BoQuanLyTrangThaiOverlayNoiBo
+
+    private fun batHoTroTruyXuatNhieuCuaSo() {
+        val thongTinDichVu =
+            serviceInfo
+
+        thongTinDichVu.flags =
+            thongTinDichVu.flags or
+                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+
+        setServiceInfo(
+            thongTinDichVu
+        )
+    }
 
     // CURSOR OVERLAY
 
@@ -76,6 +122,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
 
+        batHoTroTruyXuatNhieuCuaSo()
+
         phienBanDangHoatDong = this
 
         if (
@@ -89,7 +137,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             !::boQuanLyTrangThaiOverlay.isInitialized
         ) {
             boQuanLyTrangThaiOverlay =
-                BoQuanLyTrangThaiOverlay(this)
+                BoQuanLyTrangThaiOverlayNoiBo(this)
         }
 
         dongBoTrangThaiOverlayNoiBo()
@@ -103,7 +151,76 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     override fun onAccessibilityEvent(
         event: AccessibilityEvent?
     ) {
+        if (event == null) {
+            return
+        }
 
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ->
+                capNhatKhiWindowUngDungThayDoi()
+
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED ->
+                kiemTraWindowDieuHuongConTonTai()
+        }
+    }
+
+    private fun capNhatKhiWindowUngDungThayDoi() {
+        val dauVet =
+            dauVetNodeDieuHuongDangChon
+                ?: return
+
+        val windowIdHienTai =
+            rootInActiveWindow
+                ?.windowId
+                ?: return
+
+        if (
+            windowIdHienTai ==
+            dauVet.windowId
+        ) {
+            return
+        }
+
+        Log.d(
+            TAG_FOCUS,
+            "RESET_VIRTUAL_FOCUS | " +
+                    "window=${dauVet.windowId}->$windowIdHienTai"
+        )
+
+        dauVetNodeDieuHuongDangChon =
+            null
+
+        anFocusDieuHuongOverlayNoiBo()
+    }
+
+    private fun kiemTraWindowDieuHuongConTonTai() {
+        val dauVet =
+            dauVetNodeDieuHuongDangChon
+                ?: return
+
+        val windowConTonTai =
+            windows.any { window ->
+                window.id ==
+                        dauVet.windowId &&
+                        laWindowDieuHuongHopLe(
+                            window
+                        )
+            }
+
+        if (windowConTonTai) {
+            return
+        }
+
+        Log.d(
+            TAG_FOCUS,
+            "RESET_VIRTUAL_FOCUS | " +
+                    "window=${dauVet.windowId} da dong"
+        )
+
+        dauVetNodeDieuHuongDangChon =
+            null
+
+        anFocusDieuHuongOverlayNoiBo()
     }
 
     override fun onInterrupt() {
@@ -121,6 +238,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
 
         anThongBaoHeThongNoiBo()
+        anFocusDieuHuongOverlayNoiBo()
 
         if (
             ::boQuanLyConTroOverlay.isInitialized
@@ -229,18 +347,18 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         val metrics =
             resources.displayMetrics
 
+        val cacRootConTro =
+            layDanhSachRootConTro()
+
         val mucTieu =
-            rootInActiveWindow
-                ?.let { root ->
-                    boChonMucTieuConTro.timMucTieu(
-                        root = root,
-                        viTriConTro = viTriConTro,
-                        lenh = lenh,
-                        chieuRongManHinh = metrics.widthPixels,
-                        chieuCaoManHinh = metrics.heightPixels,
-                        matDo = metrics.density
-                    )
-                }
+            boChonMucTieuConTro.timMucTieu(
+                roots = cacRootConTro,
+                viTriConTro = viTriConTro,
+                lenh = lenh,
+                chieuRongManHinh = metrics.widthPixels,
+                chieuCaoManHinh = metrics.heightPixels,
+                matDo = metrics.density
+            )
 
         val thanhCong =
             boQuanLyConTroOverlay.diChuyen(
@@ -255,10 +373,132 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         Log.d(
             TAG_CON_TRO,
-            "MOVE=$lenh | TARGET=${mucTieu?.nhan ?: "NONE"} | OK=$thanhCong"
+            "MOVE=$lenh | " +
+                    "ROOTS=${cacRootConTro.size} | " +
+                    "TARGET=${mucTieu?.nhan ?: "NONE"} | " +
+                    "WINDOW=${mucTieu?.windowId ?: -1} | " +
+                    "OK=$thanhCong"
         )
 
         return thanhCong
+    }
+
+    private fun layDanhSachRootConTro():
+            List<AccessibilityNodeInfo> {
+
+        val ketQua =
+            mutableListOf<AccessibilityNodeInfo>()
+
+        val cacWindow =
+            windows
+                .filter {
+                    laWindowConTroHopLe(
+                        it
+                    )
+                }
+                .sortedWith(
+                    compareByDescending<AccessibilityWindowInfo> {
+                        it.isFocused ||
+                                it.isActive
+                    }
+                        .thenByDescending {
+                            it.layer
+                        }
+                )
+
+        for (window in cacWindow) {
+            val root =
+                window.root
+                    ?: continue
+
+            if (!root.isVisibleToUser) {
+                continue
+            }
+
+            if (
+                ketQua.none {
+                    it.windowId ==
+                            root.windowId
+                }
+            ) {
+                ketQua.add(
+                    root
+                )
+            }
+        }
+
+        val rootActive =
+            rootInActiveWindow
+
+        if (
+            rootActive != null &&
+            rootActive.isVisibleToUser &&
+            ketQua.none {
+                it.windowId ==
+                        rootActive.windowId
+            }
+        ) {
+            ketQua.add(
+                rootActive
+            )
+        }
+
+        Log.d(
+            TAG_CON_TRO,
+            "CURSOR_WINDOWS=" +
+                    cacWindow.joinToString(
+                        separator = " | "
+                    ) {
+                        "id=${it.id}," +
+                                "type=${it.type}," +
+                                "layer=${it.layer}," +
+                                "active=${it.isActive}," +
+                                "focused=${it.isFocused}"
+                    }
+        )
+
+        return ketQua
+    }
+
+    private fun laWindowConTroHopLe(
+        window: AccessibilityWindowInfo
+    ): Boolean {
+
+        return window.type !=
+                AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY
+    }
+
+    private fun layRootConTroTheoWindowId(
+        windowId: Int
+    ): AccessibilityNodeInfo? {
+
+        val rootTheoWindow =
+            windows
+                .firstOrNull {
+                    it.id ==
+                            windowId &&
+                            laWindowConTroHopLe(
+                                it
+                            )
+                }
+                ?.root
+
+        if (
+            rootTheoWindow != null &&
+            rootTheoWindow.isVisibleToUser
+        ) {
+            return rootTheoWindow
+        }
+
+        val rootActive =
+            rootInActiveWindow
+
+        return rootActive
+            ?.takeIf {
+                it.windowId ==
+                        windowId &&
+                        it.isVisibleToUser
+            }
     }
 
     private fun doiKhoaConTroNoiBo(): Boolean {
@@ -478,7 +718,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         if (mucTieu != null) {
             val root =
-                rootInActiveWindow
+                layRootConTroTheoWindowId(
+                    mucTieu.windowId
+                )
 
             val node =
                 root?.let {
@@ -500,7 +742,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             ) {
                 Log.d(
                     TAG_CON_TRO,
-                    "CLICK_TARGET_NODE | ${mucTieu.nhan ?: mucTieu.viewId ?: "UNKNOWN"}"
+                    "CLICK_TARGET_NODE | " +
+                            "${mucTieu.nhan ?: mucTieu.viewId ?: "UNKNOWN"} | " +
+                            "WINDOW=${mucTieu.windowId}"
                 )
 
                 boQuanLyConTroOverlay
@@ -691,9 +935,18 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 node
                     ?: return null
 
+            val coActionClick =
+                hienTai.actionList.any {
+                    it.id ==
+                            AccessibilityNodeInfo.ACTION_CLICK
+                }
+
             if (
                 hienTai.isVisibleToUser &&
-                hienTai.isClickable
+                (
+                        hienTai.isClickable ||
+                                coActionClick
+                        )
             ) {
                 return hienTai
             }
@@ -776,7 +1029,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             !::boQuanLyTrangThaiOverlay.isInitialized
         ) {
             boQuanLyTrangThaiOverlay =
-                BoQuanLyTrangThaiOverlay(this)
+                BoQuanLyTrangThaiOverlayNoiBo(this)
         }
 
         if (!trangThaiOverlayDangBat) {
@@ -1884,23 +2137,34 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     }
 
     private fun thucThiXacNhanDieuHuongNoiBo(): Boolean {
-        val root =
-            rootInActiveWindow
+
+        val cacRoot =
+            layDanhSachRootDieuHuong()
+
+        val rootUuTien =
+            timRootCoMucDieuHuong(
+                cacRoot
+            )
                 ?: return false
 
-        val nodeDangFocus =
-            root.findFocus(
-                AccessibilityNodeInfo.FOCUS_ACCESSIBILITY
+        val nodeTheoVirtualFocus =
+            timNodeTheoDauVet(
+                root = rootUuTien,
+                dauVet = dauVetNodeDieuHuongDangChon
             )
-                ?: root.findFocus(
-                    AccessibilityNodeInfo.FOCUS_INPUT
+
+        val nodeDangFocus =
+            nodeTheoVirtualFocus
+                ?: timNodeDangFocusTrongRoot(
+                    rootUuTien
                 )
 
         if (nodeDangFocus == null) {
             Log.d(
                 TAG_FOCUS,
-                "XAC_NHAN THAT_BAI | khong co node dang focus"
+                "XAC_NHAN THAT_BAI | khong co node dang chon trong window=${rootUuTien.windowId}"
             )
+
             return false
         }
 
@@ -1908,33 +2172,147 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             timNodeXacNhanDieuHuong(
                 nodeDangFocus
             )
+                ?: nodeDangFocus
+                    .takeIf {
+                        it.isVisibleToUser
+                    }
 
         if (nodeXacNhan == null) {
             Log.d(
                 TAG_FOCUS,
-                "XAC_NHAN THAT_BAI | node focus khong co ACTION_CLICK"
+                "XAC_NHAN THAT_BAI | khong tim thay node xac nhan"
             )
+
             return false
         }
 
-        val thanhCong =
+        val actionClickThanhCong =
             nodeXacNhan.performAction(
                 AccessibilityNodeInfo.ACTION_CLICK
             )
 
         Log.d(
             TAG_FOCUS,
-            "XAC_NHAN | text=${nodeXacNhan.text} | " +
+            "XAC_NHAN_ACTION_CLICK | " +
+                    "virtual=${nodeTheoVirtualFocus != null} | " +
+                    "text=${nodeXacNhan.text} | " +
                     "desc=${nodeXacNhan.contentDescription} | " +
-                    "OK=$thanhCong"
+                    "OK=$actionClickThanhCong"
         )
 
-        return thanhCong
+        if (actionClickThanhCong) {
+            ketThucLuaChonDieuHuongSauXacNhan()
+            return true
+        }
+
+        val tapThanhCong =
+            thucThiTapNodeDieuHuong(
+                node = nodeXacNhan
+            )
+
+        Log.d(
+            TAG_FOCUS,
+            "XAC_NHAN_TAP_FALLBACK | " +
+                    "virtual=${nodeTheoVirtualFocus != null} | " +
+                    "OK=$tapThanhCong"
+        )
+
+        if (tapThanhCong) {
+            ketThucLuaChonDieuHuongSauXacNhan()
+        }
+
+        return tapThanhCong
+    }
+
+    private fun thucThiTapNodeDieuHuong(
+        node: AccessibilityNodeInfo
+    ): Boolean {
+
+        val bounds =
+            Rect().also {
+                node.getBoundsInScreen(
+                    it
+                )
+            }
+
+        if (
+            bounds.isEmpty ||
+            bounds.width() <= 0 ||
+            bounds.height() <= 0
+        ) {
+            return false
+        }
+
+        val x =
+            bounds.centerX()
+                .toFloat()
+
+        val y =
+            bounds.centerY()
+                .toFloat()
+
+        val path =
+            Path().apply {
+                moveTo(
+                    x,
+                    y
+                )
+            }
+
+        val gesture =
+            GestureDescription
+                .Builder()
+                .addStroke(
+                    GestureDescription
+                        .StrokeDescription(
+                            path,
+                            0L,
+                            THOI_GIAN_TAP_DIEU_HUONG_MS
+                        )
+                )
+                .build()
+
+        return dispatchGesture(
+            gesture,
+            object :
+                GestureResultCallback() {
+
+                override fun onCompleted(
+                    gestureDescription:
+                    GestureDescription?
+                ) {
+                    Log.d(
+                        TAG_FOCUS,
+                        "XAC_NHAN_TAP_COMPLETED | x=$x | y=$y"
+                    )
+                }
+
+                override fun onCancelled(
+                    gestureDescription:
+                    GestureDescription?
+                ) {
+                    Log.e(
+                        TAG_FOCUS,
+                        "XAC_NHAN_TAP_CANCELLED | x=$x | y=$y"
+                    )
+                }
+            },
+            null
+        )
+    }
+
+    private fun ketThucLuaChonDieuHuongSauXacNhan() {
+
+        dauVetNodeDieuHuongDangChon =
+            null
+
+        anFocusDieuHuongOverlayNoiBo()
     }
 
     private fun timNodeXacNhanDieuHuong(
         nodeBanDau: AccessibilityNodeInfo
     ): AccessibilityNodeInfo? {
+
         var node:
                 AccessibilityNodeInfo? =
             nodeBanDau
@@ -1946,19 +2324,11 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 node
                     ?: return null
 
-            val coActionClick =
-                hienTai.actionList.any {
-                        action ->
-                    action.id ==
-                            AccessibilityNodeInfo.ACTION_CLICK
-                }
-
             if (
                 hienTai.isVisibleToUser &&
-                (
-                        hienTai.isClickable ||
-                                coActionClick
-                        )
+                coActionClick(
+                    hienTai
+                )
             ) {
                 return hienTai
             }
@@ -1976,221 +2346,1120 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         val tenHuong =
             when (huong) {
-
                 View.FOCUS_FORWARD ->
                     "FORWARD"
 
                 View.FOCUS_BACKWARD ->
                     "BACKWARD"
 
-                else ->
-                    huong.toString()
-            }
-
-        val root =
-            rootInActiveWindow
-
-        if (root == null) {
-
-            Log.e(
-                TAG_FOCUS,
-                "THAT_BAI[$tenHuong]: rootInActiveWindow = null"
-            )
-
-            return false
-        }
-
-        val danhSachNode =
-            mutableListOf<AccessibilityNodeInfo>()
-
-        thuThapNodeCoTheDieuHuong(
-            node = root,
-            ketQua = danhSachNode
-        )
-
-        Log.d(
-            TAG_FOCUS,
-            "BAT_DAU[$tenHuong] | soNode=${danhSachNode.size}"
-        )
-
-        if (danhSachNode.isEmpty()) {
-
-            Log.e(
-                TAG_FOCUS,
-                "THAT_BAI[$tenHuong]: khong co node co the dieu huong"
-            )
-
-            return false
-        }
-
-        val accessibilityFocus =
-            root.findFocus(
-                AccessibilityNodeInfo.FOCUS_ACCESSIBILITY
-            )
-
-        val inputFocus =
-            root.findFocus(
-                AccessibilityNodeInfo.FOCUS_INPUT
-            )
-
-        val nodeDangFocus =
-            accessibilityFocus
-                ?: inputFocus
-
-        val viTriHienTai =
-            if (nodeDangFocus == null) {
-
-                -1
-
-            } else {
-
-                danhSachNode.indexOfFirst { node ->
-
-                    node == nodeDangFocus
-                }
-            }
-
-        Log.d(
-            TAG_FOCUS,
-            "FOCUS_HIEN_TAI[$tenHuong] | " +
-                    "accessibility=${accessibilityFocus != null} | " +
-                    "input=${inputFocus != null} | " +
-                    "index=$viTriHienTai"
-        )
-
-        val viTriDich =
-            when (huong) {
-
-                View.FOCUS_FORWARD -> {
-
-                    if (viTriHienTai < 0) {
-
-                        0
-
-                    } else {
-
-                        viTriHienTai + 1
-                    }
-                }
-
-                View.FOCUS_BACKWARD -> {
-
-                    if (viTriHienTai < 0) {
-
-                        danhSachNode.lastIndex
-
-                    } else {
-
-                        viTriHienTai - 1
-                    }
-                }
-
                 else -> {
-
                     Log.e(
                         TAG_FOCUS,
-                        "THAT_BAI[$tenHuong]: huong focus khong hop le"
+                        "THAT_BAI: huong focus khong hop le=$huong"
                     )
 
                     return false
                 }
             }
 
-        if (
-            viTriDich < 0 ||
-            viTriDich > danhSachNode.lastIndex
-        ) {
+        val cacRoot =
+            layDanhSachRootDieuHuong()
 
-            Log.d(
+        if (cacRoot.isEmpty()) {
+            Log.e(
                 TAG_FOCUS,
-                "HET_DANH_SACH[$tenHuong] | viTriHienTai=$viTriHienTai"
+                "THAT_BAI[$tenHuong]: khong co accessibility window hop le"
             )
 
             return false
         }
 
-        accessibilityFocus?.performAction(
-            AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS
+        val rootUuTien =
+            timRootCoMucDieuHuong(
+                cacRoot
+            )
+                ?: run {
+                    Log.e(
+                        TAG_FOCUS,
+                        "THAT_BAI[$tenHuong]: khong co muc co the dieu huong"
+                    )
+
+                    return false
+                }
+
+        val danhSachMuc =
+            taoDanhSachMucDieuHuong(
+                rootUuTien
+            )
+
+        if (danhSachMuc.isEmpty()) {
+            return false
+        }
+
+        val nodeFocusHeThong =
+            timNodeDangFocusTrongRoot(
+                rootUuTien
+            )
+
+        val viTriTheoFocusHeThong =
+            timViTriMucDangFocus(
+                nodeDangFocus = nodeFocusHeThong,
+                danhSachMuc = danhSachMuc
+            )
+
+        val viTriTheoDauVet =
+            timViTriTheoDauVet(
+                danhSachMuc = danhSachMuc,
+                dauVet = dauVetNodeDieuHuongDangChon
+            )
+
+        val viTriHienTai =
+            when {
+                viTriTheoDauVet >= 0 ->
+                    viTriTheoDauVet
+
+                viTriTheoFocusHeThong >= 0 ->
+                    viTriTheoFocusHeThong
+
+                else ->
+                    -1
+            }
+
+        Log.d(
+            TAG_FOCUS,
+            "BAT_DAU[$tenHuong] | " +
+                    "soWindow=${cacRoot.size} | " +
+                    "windowId=${rootUuTien.windowId} | " +
+                    "soMuc=${danhSachMuc.size} | " +
+                    "indexHeThong=$viTriTheoFocusHeThong | " +
+                    "indexFaceAccess=$viTriTheoDauVet"
         )
 
-        inputFocus?.performAction(
-            AccessibilityNodeInfo.ACTION_CLEAR_FOCUS
-        )
+        if (
+            nodeFocusHeThong != null &&
+            viTriTheoDauVet < 0
+        ) {
+            val nodeTheoHeThong =
+                timNodeTheoFocusSearch(
+                    nodeDangFocus = nodeFocusHeThong,
+                    huong = huong
+                )
 
-        val nodeDich =
-            danhSachNode[
+            if (
+                nodeTheoHeThong != null &&
+                nodeTheoHeThong.windowId ==
+                rootUuTien.windowId &&
+                !laCungNode(
+                    a = nodeTheoHeThong,
+                    b = nodeFocusHeThong
+                )
+            ) {
+                val mucTheoHeThong =
+                    taoMucDieuHuongTuNode(
+                        node = nodeTheoHeThong,
+                        nodeGoiYFocus = nodeTheoHeThong
+                    )
+
+                if (
+                    mucTheoHeThong != null &&
+                    datFocusVaoMuc(
+                        muc = mucTheoHeThong,
+                        tenHuong = tenHuong,
+                        nguon = "FOCUS_SEARCH"
+                    )
+                ) {
+                    luuNodeDieuHuongDangChon(
+                        mucTheoHeThong.nodeClick
+                    )
+
+                    return true
+                }
+            }
+        }
+
+        val viTriDich =
+            tinhViTriDich(
+                huong = huong,
+                viTriHienTai = viTriHienTai,
+                soLuong = danhSachMuc.size
+            )
+
+        val mucDich =
+            danhSachMuc[
                 viTriDich
             ]
 
         Log.d(
             TAG_FOCUS,
-            "NODE_DICH[$tenHuong] | " +
-                    "index=$viTriDich/${danhSachNode.lastIndex} | " +
-                    "class=${nodeDich.className} | " +
-                    "text=${nodeDich.text} | " +
-                    "desc=${nodeDich.contentDescription} | " +
-                    "clickable=${nodeDich.isClickable} | " +
-                    "focusable=${nodeDich.isFocusable}"
+            "MUC_DICH[$tenHuong] | " +
+                    "index=$viTriHienTai->$viTriDich/${danhSachMuc.lastIndex} | " +
+                    "window=${mucDich.nodeClick.windowId} | " +
+                    "label=${mucDich.nhan ?: "NONE"} | " +
+                    "focusClass=${mucDich.nodeFocus.className} | " +
+                    "clickClass=${mucDich.nodeClick.className}"
         )
 
-        val accessibilityThanhCong =
-            nodeDich.performAction(
-                AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS
+        val thanhCong =
+            datFocusVaoMuc(
+                muc = mucDich,
+                tenHuong = tenHuong,
+                nguon = "SEMANTIC_LIST"
             )
 
-        if (accessibilityThanhCong) {
+        if (thanhCong) {
+            luuNodeDieuHuongDangChon(
+                mucDich.nodeClick
+            )
+        }
+
+        return thanhCong
+    }
+
+    private fun layDanhSachRootDieuHuong():
+            List<AccessibilityNodeInfo> {
+
+        val ketQua =
+            mutableListOf<AccessibilityNodeInfo>()
+
+        val cacWindow =
+            windows
+                .filter {
+                    laWindowDieuHuongHopLe(
+                        it
+                    )
+                }
+                .sortedWith(
+                    compareByDescending<AccessibilityWindowInfo> {
+                        it.isFocused ||
+                                it.isActive
+                    }
+                        .thenByDescending {
+                            it.layer
+                        }
+                )
+
+        Log.d(
+            TAG_FOCUS,
+            "WINDOWS=" +
+                    cacWindow.joinToString(
+                        separator = " | "
+                    ) {
+                        "id=${it.id}," +
+                                "type=${it.type}," +
+                                "layer=${it.layer}," +
+                                "active=${it.isActive}," +
+                                "focused=${it.isFocused}"
+                    }
+        )
+
+        for (window in cacWindow) {
+            val root =
+                window.root
+                    ?: continue
+
+            if (!root.isVisibleToUser) {
+                continue
+            }
+
+            if (
+                ketQua.none {
+                    it.windowId ==
+                            root.windowId
+                }
+            ) {
+                ketQua.add(
+                    root
+                )
+            }
+        }
+
+        val rootActive =
+            rootInActiveWindow
+
+        if (
+            rootActive != null &&
+            rootActive.isVisibleToUser &&
+            ketQua.none {
+                it.windowId ==
+                        rootActive.windowId
+            }
+        ) {
+            ketQua.add(
+                rootActive
+            )
+        }
+
+        return ketQua
+    }
+
+    private fun laWindowDieuHuongHopLe(
+        window: AccessibilityWindowInfo
+    ): Boolean {
+
+        return when (window.type) {
+            AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY,
+            AccessibilityWindowInfo.TYPE_INPUT_METHOD ->
+                false
+
+            else ->
+                true
+        }
+    }
+
+    private fun timRootCoMucDieuHuong(
+        cacRoot: List<AccessibilityNodeInfo>
+    ): AccessibilityNodeInfo? {
+
+        for (root in cacRoot) {
+            if (
+                taoDanhSachMucDieuHuong(
+                    root
+                ).isNotEmpty()
+            ) {
+                return root
+            }
+        }
+
+        return null
+    }
+
+    private fun timNodeDangFocusTrongRoot(
+        root: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo? {
+
+        return root.findFocus(
+            AccessibilityNodeInfo.FOCUS_ACCESSIBILITY
+        )
+            ?: root.findFocus(
+                AccessibilityNodeInfo.FOCUS_INPUT
+            )
+    }
+
+    private fun timNodeTheoFocusSearch(
+        nodeDangFocus: AccessibilityNodeInfo,
+        huong: Int
+    ): AccessibilityNodeInfo? {
+
+        return try {
+            nodeDangFocus.focusSearch(
+                huong
+            )
+        } catch (
+            exception: Exception
+        ) {
+            Log.w(
+                TAG_FOCUS,
+                "focusSearch that bai",
+                exception
+            )
+
+            null
+        }
+    }
+
+    private fun taoDanhSachMucDieuHuong(
+        root: AccessibilityNodeInfo
+    ): List<MucDieuHuong> {
+
+        val ungVien =
+            mutableListOf<AccessibilityNodeInfo>()
+
+        thuThapNodeUngVienDieuHuong(
+            node = root,
+            ketQua = ungVien
+        )
+
+        val ketQua =
+            mutableListOf<MucDieuHuong>()
+
+        for (node in ungVien) {
+            val muc =
+                taoMucDieuHuongTuNode(
+                    node = node
+                )
+                    ?: continue
+
+            val daTonTai =
+                ketQua.any {
+                    laCungNode(
+                        a = it.nodeClick,
+                        b = muc.nodeClick
+                    )
+                }
+
+            if (!daTonTai) {
+                ketQua.add(
+                    muc
+                )
+            }
+        }
+
+        return ketQua
+    }
+
+    private fun taoMucDieuHuongTuNode(
+        node: AccessibilityNodeInfo,
+        nodeGoiYFocus: AccessibilityNodeInfo? = null
+    ): MucDieuHuong? {
+
+        if (!node.isVisibleToUser) {
+            return null
+        }
+
+        val nodeClick =
+            timNodeXacNhanDieuHuong(
+                node
+            )
+                ?: node
+
+        val nodeFocus =
+            nodeGoiYFocus
+                ?.takeIf {
+                    it.isVisibleToUser
+                }
+                ?: timNodeFocusSemantics(
+                    nodeClick
+                )
+
+        val bounds =
+            Rect().also {
+                nodeClick.getBoundsInScreen(
+                    it
+                )
+            }
+
+        if (
+            bounds.isEmpty ||
+            bounds.width() <= 0 ||
+            bounds.height() <= 0
+        ) {
+            return null
+        }
+
+        val nhan =
+            layNhanNodeDieuHuong(
+                nodeFocus
+            )
+                ?: layNhanNodeDieuHuong(
+                    nodeClick
+                )
+                ?: timNhanTrongCayCon(
+                    nodeClick
+                )
+
+        return MucDieuHuong(
+            nodeFocus = nodeFocus,
+            nodeClick = nodeClick,
+            bounds = Rect(bounds),
+            nhan = nhan
+        )
+    }
+
+    private fun timNodeFocusSemantics(
+        nodeGoc: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo {
+
+        var nodeTotNhat =
+            nodeGoc
+
+        var diemTotNhat =
+            chamDiemNodeFocusSemantics(
+                nodeGoc
+            )
+
+        fun duyet(
+            node: AccessibilityNodeInfo
+        ) {
+            if (!node.isVisibleToUser) {
+                return
+            }
+
+            val diem =
+                chamDiemNodeFocusSemantics(
+                    node
+                )
+
+            if (diem > diemTotNhat) {
+                diemTotNhat =
+                    diem
+
+                nodeTotNhat =
+                    node
+            }
+
+            for (
+            index in 0 until
+                    node.childCount
+            ) {
+                val child =
+                    node.getChild(
+                        index
+                    )
+                        ?: continue
+
+                duyet(
+                    child
+                )
+            }
+        }
+
+        duyet(
+            nodeGoc
+        )
+
+        return nodeTotNhat
+    }
+
+    private fun chamDiemNodeFocusSemantics(
+        node: AccessibilityNodeInfo
+    ): Int {
+
+        if (!node.isVisibleToUser) {
+            return Int.MIN_VALUE
+        }
+
+        var diem =
+            0
+
+        val coNhan =
+            layNhanNodeDieuHuong(
+                node
+            ) != null
+
+        if (coNhan) {
+            diem +=
+                500
+        }
+
+        if (
+            hoTroHanhDong(
+                node = node,
+                action = AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS
+            )
+        ) {
+            diem +=
+                900
+        }
+
+        if (node.isFocusable) {
+            diem +=
+                600
+        }
+
+        val tenLop =
+            node.className
+                ?.toString()
+                .orEmpty()
+
+        if (
+            tenLop.contains(
+                "TextView",
+                ignoreCase = true
+            ) ||
+            tenLop.contains(
+                "Button",
+                ignoreCase = true
+            )
+        ) {
+            diem +=
+                120
+        }
+
+        return diem
+    }
+
+    private fun layNhanNodeDieuHuong(
+        node: AccessibilityNodeInfo
+    ): String? {
+
+        return node.contentDescription
+            ?.toString()
+            ?.trim()
+            ?.takeIf {
+                it.isNotBlank()
+            }
+            ?: node.text
+                ?.toString()
+                ?.trim()
+                ?.takeIf {
+                    it.isNotBlank()
+                }
+    }
+
+    private fun timNhanTrongCayCon(
+        node: AccessibilityNodeInfo
+    ): String? {
+
+        val nhanHienTai =
+            layNhanNodeDieuHuong(
+                node
+            )
+
+        if (nhanHienTai != null) {
+            return nhanHienTai
+        }
+
+        for (
+        index in 0 until
+                node.childCount
+        ) {
+            val child =
+                node.getChild(
+                    index
+                )
+                    ?: continue
+
+            val nhan =
+                timNhanTrongCayCon(
+                    child
+                )
+
+            if (nhan != null) {
+                return nhan
+            }
+        }
+
+        return null
+    }
+
+    private fun datFocusVaoMuc(
+        muc: MucDieuHuong,
+        tenHuong: String,
+        nguon: String
+    ): Boolean {
+
+        if (
+            thuDatFocusVaoNode(
+                node = muc.nodeFocus,
+                tenHuong = tenHuong,
+                nguon = "$nguon/FOCUS_NODE"
+            )
+        ) {
+            anFocusDieuHuongOverlayNoiBo()
 
             Log.d(
                 TAG_FOCUS,
-                "THANH_CONG[$tenHuong]: ACTION_ACCESSIBILITY_FOCUS"
+                "SEMANTIC_FOCUS[$tenHuong] | " +
+                        "label=${muc.nhan ?: "NONE"} | native=FOCUS_NODE"
             )
 
             return true
         }
 
+        if (
+            !laCungNode(
+                a = muc.nodeFocus,
+                b = muc.nodeClick
+            ) &&
+            thuDatFocusVaoNode(
+                node = muc.nodeClick,
+                tenHuong = tenHuong,
+                nguon = "$nguon/CLICK_NODE"
+            )
+        ) {
+            anFocusDieuHuongOverlayNoiBo()
+
+            Log.d(
+                TAG_FOCUS,
+                "SEMANTIC_FOCUS[$tenHuong] | " +
+                        "label=${muc.nhan ?: "NONE"} | native=CLICK_NODE"
+            )
+
+            return true
+        }
+
+        val virtualFocusThanhCong =
+            hienThiFocusDieuHuongOverlayNoiBo(
+                muc.nodeClick
+            )
+
         Log.d(
             TAG_FOCUS,
-            "FALLBACK[$tenHuong]: ACTION_ACCESSIBILITY_FOCUS=false -> thu ACTION_FOCUS"
+            "VIRTUAL_FOCUS[$tenHuong] | " +
+                    "nguon=$nguon | " +
+                    "label=${muc.nhan ?: "NONE"} | " +
+                    "overlay=$virtualFocusThanhCong"
         )
 
+        return virtualFocusThanhCong
+    }
+
+    private fun thuDatFocusVaoNode(
+        node: AccessibilityNodeInfo,
+        tenHuong: String,
+        nguon: String
+    ): Boolean {
+
+        if (!node.isVisibleToUser) {
+            return false
+        }
+
+        val accessibilityThanhCong =
+            node.performAction(
+                AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS
+            )
+
+        if (accessibilityThanhCong) {
+            Log.d(
+                TAG_FOCUS,
+                "THANH_CONG[$tenHuong] | " +
+                        "nguon=$nguon | ACTION_ACCESSIBILITY_FOCUS"
+            )
+
+            return true
+        }
+
         val systemFocusThanhCong =
-            nodeDich.performAction(
+            node.performAction(
                 AccessibilityNodeInfo.ACTION_FOCUS
             )
 
         if (systemFocusThanhCong) {
-
             Log.d(
                 TAG_FOCUS,
-                "THANH_CONG[$tenHuong]: ACTION_FOCUS"
-            )
-
-        } else {
-
-            Log.e(
-                TAG_FOCUS,
-                "THAT_BAI[$tenHuong]: ca ACTION_ACCESSIBILITY_FOCUS va ACTION_FOCUS deu false"
+                "THANH_CONG[$tenHuong] | " +
+                        "nguon=$nguon | ACTION_FOCUS"
             )
         }
 
         return systemFocusThanhCong
     }
 
-    private fun thuThapNodeCoTheDieuHuong(
-        node: AccessibilityNodeInfo,
-        ketQua: MutableList<AccessibilityNodeInfo>
+    private fun hienThiFocusDieuHuongOverlayNoiBo(
+        node: AccessibilityNodeInfo
+    ): Boolean {
+
+        val bounds =
+            Rect().also {
+                node.getBoundsInScreen(
+                    it
+                )
+            }
+
+        if (
+            bounds.isEmpty ||
+            bounds.width() <= 0 ||
+            bounds.height() <= 0
+        ) {
+            return false
+        }
+
+        val windowManager =
+            windowManagerFocusDieuHuong
+                ?: (
+                        getSystemService(
+                            WINDOW_SERVICE
+                        ) as? WindowManager
+                        )
+                    ?.also {
+                        windowManagerFocusDieuHuong =
+                            it
+                    }
+                ?: return false
+
+        val focusView =
+            viewFocusDieuHuong
+                ?: taoViewFocusDieuHuong()
+                    .also {
+                        viewFocusDieuHuong =
+                            it
+                    }
+
+        val params =
+            WindowManager.LayoutParams(
+                bounds.width(),
+                bounds.height(),
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity =
+                    Gravity.TOP or
+                            Gravity.START
+
+                x =
+                    bounds.left
+
+                y =
+                    bounds.top
+            }
+
+        return try {
+            if (focusView.isAttachedToWindow) {
+                windowManager.updateViewLayout(
+                    focusView,
+                    params
+                )
+            } else {
+                windowManager.addView(
+                    focusView,
+                    params
+                )
+            }
+
+            true
+        } catch (
+            exception: Exception
+        ) {
+            Log.w(
+                TAG_FOCUS,
+                "Khong the hien thi virtual focus overlay",
+                exception
+            )
+
+            false
+        }
+    }
+
+    private fun taoViewFocusDieuHuong():
+            View {
+
+        val nen =
+            GradientDrawable().apply {
+                shape =
+                    GradientDrawable.RECTANGLE
+
+                cornerRadius =
+                    dp(
+                        8
+                    ).toFloat()
+
+                setColor(
+                    android.graphics.Color.TRANSPARENT
+                )
+
+                setStroke(
+                    dp(
+                        2
+                    ),
+                    ContextCompat.getColor(
+                        this@DichVuTruyCapFaceAccess,
+                        R.color.xanh_chinh
+                    )
+                )
+            }
+
+        return View(
+            this
+        ).apply {
+            background =
+                nen
+        }
+    }
+
+    private fun anFocusDieuHuongOverlayNoiBo() {
+
+        val focusView =
+            viewFocusDieuHuong
+                ?: return
+
+        val windowManager =
+            windowManagerFocusDieuHuong
+
+        if (
+            focusView.isAttachedToWindow &&
+            windowManager != null
+        ) {
+            try {
+                windowManager.removeView(
+                    focusView
+                )
+            } catch (
+                exception: Exception
+            ) {
+                Log.w(
+                    TAG_FOCUS,
+                    "Khong the remove virtual focus overlay",
+                    exception
+                )
+            }
+        }
+
+        viewFocusDieuHuong =
+            null
+    }
+
+    private fun luuNodeDieuHuongDangChon(
+        node: AccessibilityNodeInfo
     ) {
 
+        val bounds =
+            Rect().also {
+                node.getBoundsInScreen(
+                    it
+                )
+            }
+
+        dauVetNodeDieuHuongDangChon =
+            DauVetNodeDieuHuong(
+                windowId = node.windowId,
+                bounds = Rect(bounds),
+                viewId = node.viewIdResourceName,
+                className = node.className
+                    ?.toString(),
+                text = node.text
+                    ?.toString(),
+                contentDescription =
+                    node.contentDescription
+                        ?.toString()
+            )
+    }
+
+    private fun timViTriTheoDauVet(
+        danhSachMuc: List<MucDieuHuong>,
+        dauVet: DauVetNodeDieuHuong?
+    ): Int {
+
+        if (dauVet == null) {
+            return -1
+        }
+
+        return danhSachMuc.indexOfFirst {
+            laNodeKhopDauVet(
+                node = it.nodeClick,
+                dauVet = dauVet
+            )
+        }
+    }
+
+    private fun timNodeTheoDauVet(
+        root: AccessibilityNodeInfo,
+        dauVet: DauVetNodeDieuHuong?
+    ): AccessibilityNodeInfo? {
+
+        if (
+            dauVet == null ||
+            root.windowId !=
+            dauVet.windowId
+        ) {
+            return null
+        }
+
+        if (
+            laNodeKhopDauVet(
+                node = root,
+                dauVet = dauVet
+            )
+        ) {
+            return root
+        }
+
+        for (
+        index in 0 until
+                root.childCount
+        ) {
+            val child =
+                root.getChild(
+                    index
+                )
+                    ?: continue
+
+            val ketQua =
+                timNodeTheoDauVet(
+                    root = child,
+                    dauVet = dauVet
+                )
+
+            if (ketQua != null) {
+                return ketQua
+            }
+        }
+
+        return null
+    }
+
+    private fun laNodeKhopDauVet(
+        node: AccessibilityNodeInfo,
+        dauVet: DauVetNodeDieuHuong
+    ): Boolean {
+
+        if (
+            node.windowId !=
+            dauVet.windowId
+        ) {
+            return false
+        }
+
+        val bounds =
+            Rect().also {
+                node.getBoundsInScreen(
+                    it
+                )
+            }
+
+        if (
+            !dauVet.viewId.isNullOrBlank() &&
+            node.viewIdResourceName ==
+            dauVet.viewId &&
+            bounds ==
+            dauVet.bounds
+        ) {
+            return true
+        }
+
+        return bounds ==
+                dauVet.bounds &&
+                node.className
+                    ?.toString() ==
+                dauVet.className &&
+                node.text
+                    ?.toString() ==
+                dauVet.text &&
+                node.contentDescription
+                    ?.toString() ==
+                dauVet.contentDescription
+    }
+
+    private fun timViTriMucDangFocus(
+        nodeDangFocus: AccessibilityNodeInfo?,
+        danhSachMuc: List<MucDieuHuong>
+    ): Int {
+
+        if (nodeDangFocus == null) {
+            return -1
+        }
+
+        var nodeHienTai:
+                AccessibilityNodeInfo? =
+            nodeDangFocus
+
+        repeat(
+            SO_CAP_PARENT_FOCUS_TOI_DA
+        ) {
+            val hienTai =
+                nodeHienTai
+                    ?: return@repeat
+
+            val viTri =
+                danhSachMuc.indexOfFirst {
+                    laCungNode(
+                        a = it.nodeFocus,
+                        b = hienTai
+                    ) ||
+                            laCungNode(
+                                a = it.nodeClick,
+                                b = hienTai
+                            )
+                }
+
+            if (viTri >= 0) {
+                return viTri
+            }
+
+            nodeHienTai =
+                hienTai.parent
+        }
+
+        return -1
+    }
+
+    private fun laCungNode(
+        a: AccessibilityNodeInfo,
+        b: AccessibilityNodeInfo
+    ): Boolean {
+
+        if (a == b) {
+            return true
+        }
+
+        if (a.windowId != b.windowId) {
+            return false
+        }
+
+        val boundsA =
+            Rect().also {
+                a.getBoundsInScreen(
+                    it
+                )
+            }
+
+        val boundsB =
+            Rect().also {
+                b.getBoundsInScreen(
+                    it
+                )
+            }
+
+        if (boundsA != boundsB) {
+            return false
+        }
+
+        val idA =
+            a.viewIdResourceName
+
+        val idB =
+            b.viewIdResourceName
+
+        if (
+            !idA.isNullOrBlank() &&
+            !idB.isNullOrBlank()
+        ) {
+            return idA == idB
+        }
+
+        return a.className ==
+                b.className &&
+                a.text ==
+                b.text &&
+                a.contentDescription ==
+                b.contentDescription
+    }
+
+    private fun tinhViTriDich(
+        huong: Int,
+        viTriHienTai: Int,
+        soLuong: Int
+    ): Int {
+
+        if (soLuong <= 1) {
+            return 0
+        }
+
+        if (viTriHienTai < 0) {
+            return if (
+                huong ==
+                View.FOCUS_FORWARD
+            ) {
+                0
+            } else {
+                soLuong - 1
+            }
+        }
+
+        return if (
+            huong ==
+            View.FOCUS_FORWARD
+        ) {
+            (
+                    viTriHienTai + 1
+                    ) % soLuong
+        } else {
+            (
+                    viTriHienTai - 1 +
+                            soLuong
+                    ) % soLuong
+        }
+    }
+
+    private fun laNodeUngVienDieuHuong(
+        node: AccessibilityNodeInfo
+    ): Boolean {
+
         if (!node.isVisibleToUser) {
-            return
+            return false
         }
 
         val coNhan =
-            !node.text.isNullOrBlank() ||
-                    !node.contentDescription.isNullOrBlank()
+            layNhanNodeDieuHuong(
+                node
+            ) != null
 
         val laDichTuongTacTrucTiep =
-            node.isClickable ||
+            coActionClick(
+                node
+            ) ||
                     node.isCheckable ||
                     node.isEditable
 
@@ -2199,12 +3468,35 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     coNhan &&
                     !node.isScrollable
 
-        val coTheDieuHuong =
-            laDichTuongTacTrucTiep ||
-                    laFocusableCoYNgia
+        return laDichTuongTacTrucTiep ||
+                laFocusableCoYNgia
+    }
 
-        if (coTheDieuHuong) {
+    private fun coActionClick(
+        node: AccessibilityNodeInfo
+    ): Boolean {
 
+        return node.isClickable ||
+                node.actionList.any {
+                    it.id ==
+                            AccessibilityNodeInfo.ACTION_CLICK
+                }
+    }
+
+    private fun thuThapNodeUngVienDieuHuong(
+        node: AccessibilityNodeInfo,
+        ketQua: MutableList<AccessibilityNodeInfo>
+    ) {
+
+        if (!node.isVisibleToUser) {
+            return
+        }
+
+        if (
+            laNodeUngVienDieuHuong(
+                node
+            )
+        ) {
             ketQua.add(
                 node
             )
@@ -2214,14 +3506,13 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         index in 0 until
                 node.childCount
         ) {
-
             val child =
                 node.getChild(
                     index
                 )
                     ?: continue
 
-            thuThapNodeCoTheDieuHuong(
+            thuThapNodeUngVienDieuHuong(
                 node = child,
                 ketQua = ketQua
             )
@@ -2715,11 +4006,344 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         }
     }
 
+    private class BoQuanLyTrangThaiOverlayNoiBo(
+        private val accessibilityService: AccessibilityService
+    ) {
+
+        private val mainHandler =
+            Handler(
+                Looper.getMainLooper()
+            )
+
+        private val windowManager =
+            accessibilityService.getSystemService(
+                AccessibilityService.WINDOW_SERVICE
+            ) as WindowManager
+
+        private var viewTrangThai:
+                LinearLayout? =
+            null
+
+        private var txtChamTrangThai:
+                TextView? =
+            null
+
+        private var txtCheDo:
+                TextView? =
+            null
+
+        fun hienThi(
+            cheDo: CheDoDieuKhien,
+            coKhuonMat: Boolean
+        ): Boolean {
+
+            if (
+                Looper.myLooper() !=
+                Looper.getMainLooper()
+            ) {
+                mainHandler.post {
+                    hienThiNoiBo(
+                        cheDo = cheDo,
+                        coKhuonMat = coKhuonMat
+                    )
+                }
+
+                return true
+            }
+
+            return hienThiNoiBo(
+                cheDo = cheDo,
+                coKhuonMat = coKhuonMat
+            )
+        }
+
+        fun an(): Boolean {
+
+            if (
+                Looper.myLooper() !=
+                Looper.getMainLooper()
+            ) {
+                mainHandler.post {
+                    anNoiBo()
+                }
+
+                return true
+            }
+
+            return anNoiBo()
+        }
+
+        fun dong() {
+
+            if (
+                Looper.myLooper() !=
+                Looper.getMainLooper()
+            ) {
+                mainHandler.post {
+                    anNoiBo()
+                }
+
+                return
+            }
+
+            anNoiBo()
+        }
+
+        private fun hienThiNoiBo(
+            cheDo: CheDoDieuKhien,
+            coKhuonMat: Boolean
+        ): Boolean {
+
+            val view =
+                viewTrangThai
+                    ?: taoViewTrangThai().also {
+                        viewTrangThai = it
+                    }
+
+            capNhatNoiDung(
+                cheDo = cheDo,
+                coKhuonMat = coKhuonMat
+            )
+
+            if (view.isAttachedToWindow) {
+                return true
+            }
+
+            return try {
+                windowManager.addView(
+                    view,
+                    taoLayoutParams()
+                )
+
+                true
+            } catch (
+                exception: Exception
+            ) {
+                Log.w(
+                    TAG_THONG_BAO,
+                    "Khong the hien thi status overlay",
+                    exception
+                )
+
+                viewTrangThai = null
+                txtChamTrangThai = null
+                txtCheDo = null
+
+                false
+            }
+        }
+
+        private fun anNoiBo(): Boolean {
+
+            val view =
+                viewTrangThai
+                    ?: return true
+
+            if (view.isAttachedToWindow) {
+                try {
+                    windowManager.removeView(
+                        view
+                    )
+                } catch (
+                    exception: Exception
+                ) {
+                    Log.w(
+                        TAG_THONG_BAO,
+                        "Khong the an status overlay",
+                        exception
+                    )
+
+                    return false
+                }
+            }
+
+            viewTrangThai = null
+            txtChamTrangThai = null
+            txtCheDo = null
+
+            return true
+        }
+
+        private fun taoViewTrangThai():
+                LinearLayout {
+
+            val chamTrangThai =
+                TextView(
+                    accessibilityService
+                ).apply {
+                    text = "●"
+                    textSize = 9f
+                    includeFontPadding = false
+                }
+
+            val cheDo =
+                TextView(
+                    accessibilityService
+                ).apply {
+                    textSize = 12f
+                    includeFontPadding = false
+
+                    setTextColor(
+                        ContextCompat.getColor(
+                            accessibilityService,
+                            R.color.chu_phu
+                        )
+                    )
+
+                    typeface =
+                        Typeface.create(
+                            "sans-serif-medium",
+                            Typeface.NORMAL
+                        )
+                }
+
+            txtChamTrangThai =
+                chamTrangThai
+
+            txtCheDo =
+                cheDo
+
+            return LinearLayout(
+                accessibilityService
+            ).apply {
+                orientation =
+                    LinearLayout.HORIZONTAL
+
+                gravity =
+                    Gravity.CENTER_VERTICAL
+
+                addView(
+                    chamTrangThai,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                addView(
+                    cheDo,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        marginStart =
+                            dpNoiBo(
+                                6
+                            )
+                    }
+                )
+            }
+        }
+
+        private fun taoLayoutParams():
+                WindowManager.LayoutParams {
+
+            return WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity =
+                    Gravity.TOP or
+                            Gravity.START
+
+                x =
+                    dpNoiBo(
+                        16
+                    )
+
+                y =
+                    layChieuCaoThanhTrangThai() +
+                            dpNoiBo(
+                                6
+                            )
+            }
+        }
+
+        private fun capNhatNoiDung(
+            cheDo: CheDoDieuKhien,
+            coKhuonMat: Boolean
+        ) {
+
+            txtChamTrangThai
+                ?.setTextColor(
+                    ContextCompat.getColor(
+                        accessibilityService,
+                        if (coKhuonMat) {
+                            R.color.xanh_trang_thai
+                        } else {
+                            R.color.do_trang_thai
+                        }
+                    )
+                )
+
+            txtCheDo?.text =
+                when (cheDo) {
+                    CheDoDieuKhien.DIEU_HUONG ->
+                        "Điều hướng"
+
+                    CheDoDieuKhien.MEDIA ->
+                        "Media"
+
+                    CheDoDieuKhien.HO_TRO ->
+                        "Hỗ trợ"
+
+                    CheDoDieuKhien.CON_TRO ->
+                        "Con trỏ"
+                }
+        }
+
+        private fun layChieuCaoThanhTrangThai():
+                Int {
+
+            val resourceId =
+                accessibilityService
+                    .resources
+                    .getIdentifier(
+                        "status_bar_height",
+                        "dimen",
+                        "android"
+                    )
+
+            return if (resourceId > 0) {
+                accessibilityService
+                    .resources
+                    .getDimensionPixelSize(
+                        resourceId
+                    )
+            } else {
+                dpNoiBo(
+                    24
+                )
+            }
+        }
+
+        private fun dpNoiBo(
+            giaTri: Int
+        ): Int {
+
+            return (
+                    giaTri *
+                            accessibilityService
+                                .resources
+                                .displayMetrics
+                                .density
+                    ).toInt()
+        }
+    }
+
     companion object {
         private const val TAG_CON_TRO = "FaceAccessCursorTarget"
 
         private const val THOI_GIAN_TAP_CON_TRO_MS =
             60L
+
+        private const val THOI_GIAN_TAP_DIEU_HUONG_MS =
+            70L
 
         private const val KHOANG_TAI_NHAN_DIEN_TARGET_DP =
             48
@@ -2735,6 +4359,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         private const val SO_CAP_PARENT_CLICK_TOI_DA =
             6
+
+        private const val SO_CAP_PARENT_FOCUS_TOI_DA =
+            8
 
         private const val TAG =
             "DichVuTruyCap"

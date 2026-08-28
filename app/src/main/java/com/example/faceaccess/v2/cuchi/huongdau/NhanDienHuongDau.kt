@@ -13,30 +13,22 @@ class NhanDienHuongDau(
 
     private enum class TrangThai {
 
-        /**
-         * Đang ở tư thế trung tính và sẵn sàng
-         * nhận một cử chỉ mới.
-         */
+        // Đang ở tư thế trung tính và sẵn sàng
+        // nhận một cử chỉ mới.
         SAN_SANG,
 
-        /**
-         * Đã phát hiện một hướng hợp lệ và
-         * đang chờ người dùng giữ đủ thời gian.
-         */
+        // Đã phát hiện một hướng hợp lệ và
+        // đang chờ người dùng giữ đủ thời gian.
         DANG_GIU,
 
-        /**
-         * Đã phát event đúng một lần.
-         * Phải quay về trung tính mới re-arm.
-         */
+        // Đã phát event đúng một lần.
+        // Phải quay về trung tính mới re-arm.
         DA_KICH_HOAT,
 
-        /**
-         * Candidate bị đổi hướng / mất điều kiện
-         * khi đầu vẫn chưa về trung tính.
-         *
-         * Không cho nhận hướng mới ngay lập tức.
-         */
+        // Candidate bị đổi hướng / mất điều kiện
+        // khi đầu vẫn chưa về trung tính.
+        //
+        // Không cho nhận hướng mới ngay lập tức.
         CHO_TRUNG_TINH
     }
 
@@ -68,10 +60,8 @@ class NhanDienHuongDau(
         thoiGianMs: Long
     ) {
 
-        /*
-         * Thiếu pose thì reset toàn bộ.
-         * Không giữ candidate cũ khi tracking mất.
-         */
+        // Thiếu pose thì reset toàn bộ.
+        // Không giữ candidate cũ khi tracking mất.
         if (
             roll == null ||
             yaw == null ||
@@ -156,14 +146,12 @@ class NhanDienHuongDau(
                     )
 
 
-                /*
-                 * Hướng thay đổi giữa chừng:
-                 *
-                 * Ví dụ candidate TRAI rồi chuyển sang LEN
-                 * khi chưa về trung tính.
-                 *
-                 * Không cho "đổi gesture giữa đường".
-                 */
+                // Hướng thay đổi giữa chừng:
+                //
+                // Ví dụ candidate TRAI rồi chuyển sang LEN
+                // khi chưa về trung tính.
+                //
+                // Không cho "đổi gesture giữa đường".
                 if (
                     huongHienTai != null &&
                     huongHienTai != huongDangGiu
@@ -205,10 +193,8 @@ class NhanDienHuongDau(
                                 ?: return
 
 
-                        /*
-                         * One-shot:
-                         * phát event đúng một lần.
-                         */
+                        // One-shot:
+                        // phát event đúng một lần.
                         khiNhanDienHuong(
                             huongPhat
                         )
@@ -225,12 +211,10 @@ class NhanDienHuongDau(
                 }
 
 
-                /*
-                 * Candidate có thể mất trong vài frame do
-                 * nhiễu MediaPipe.
-                 *
-                 * Cho một khoảng grace nhỏ thay vì reset ngay.
-                 */
+                // Candidate có thể mất trong vài frame do
+                // nhiễu MediaPipe.
+                //
+                // Cho một khoảng grace nhỏ thay vì reset ngay.
                 val thoiGianMatDieuKien =
                     thoiGianMs -
                             thoiDiemHopLeCuoi
@@ -298,12 +282,10 @@ class NhanDienHuongDau(
             abs(pitch)
 
 
-        /*
-         * YAW phải thắng cả PITCH và ROLL.
-         *
-         * Điều này giúp xoay trái/phải không "ăn" vào
-         * detector ROLL nghiêng đầu đang có.
-         */
+        // YAW phải thắng cả PITCH và ROLL.
+        //
+        // Điều này giúp xoay trái/phải không "ăn" vào
+        // detector ROLL nghiêng đầu đang có.
         val yawChiPhoi =
             absYaw >= NGUONG_YAW &&
                     absYaw >=
@@ -314,12 +296,10 @@ class NhanDienHuongDau(
 
         if (yawChiPhoi) {
 
-            /*
-             * Dấu đã được xác nhận từ pipeline hiện tại:
-             *
-             * physical LEFT  -> yaw dương
-             * physical RIGHT -> yaw âm
-             */
+            // Dấu đã được xác nhận từ pipeline hiện tại:
+            //
+            // physical LEFT  -> yaw dương
+            // physical RIGHT -> yaw âm
             return if (yaw > 0f) {
 
                 HuongDau.TRAI
@@ -331,9 +311,7 @@ class NhanDienHuongDau(
         }
 
 
-        /*
-         * PITCH phải thắng cả YAW và ROLL.
-         */
+        // PITCH phải thắng cả YAW và ROLL.
         val pitchChiPhoi =
             absPitch >= NGUONG_PITCH &&
                     absPitch >=
@@ -344,12 +322,10 @@ class NhanDienHuongDau(
 
         if (pitchChiPhoi) {
 
-            /*
-             * Dấu đã được xác nhận từ pipeline hiện tại:
-             *
-             * nhìn lên   -> pitch dương
-             * nhìn xuống -> pitch âm
-             */
+            // Dấu đã được xác nhận từ pipeline hiện tại:
+            //
+            // nhìn lên   -> pitch dương
+            // nhìn xuống -> pitch âm
             return if (pitch > 0f) {
 
                 HuongDau.LEN
@@ -495,13 +471,11 @@ class NhanDienHuongDau(
 
     fun datLai() {
 
-        /*
-         * Sau camera handoff / tracking loss không cho nhận
-         * gesture ngay từ frame đầu tiên vì head pose có thể
-         * còn dao động.
-         *
-         * Yêu cầu một khoảng neutral rất ngắn trước khi re-arm.
-         */
+        // Sau camera handoff / tracking loss không cho nhận
+        // gesture ngay từ frame đầu tiên vì head pose có thể
+        // còn dao động.
+        //
+        // Yêu cầu một khoảng neutral rất ngắn trước khi re-arm.
         chuyenSangChoTrungTinh()
     }
 
@@ -511,44 +485,27 @@ class NhanDienHuongDau(
     // =========================================================
 
     companion object {
-
-        /**
-         * YAW trái/phải.
-         *
-         * Dữ liệu runtime trước đó cho thấy xoay rõ
-         * thường vượt khoảng 30 độ.
-         *
-         * Dùng 19 độ để thao tác tự nhiên hơn nhưng vẫn có
-         * khoảng cách với chuyển động đầu nhỏ.
-         */
+        // YAW thấp hơn để phản hồi trái/phải nhanh và tự nhiên hơn.
         private const val NGUONG_YAW =
-            19f
+            16f
 
-        /**
-         * PITCH có biên độ tự nhiên nhỏ hơn YAW.
-         *
-         * Giảm từ 14 xuống 11 độ để ngẩng/cúi nhẹ
-         * cũng được nhận tự nhiên hơn.
-         */
+        // PITCH có biên độ tự nhiên nhỏ hơn YAW.
+        //
+        // Giảm từ 14 xuống 11 độ để ngẩng/cúi nhẹ
+        // cũng được nhận tự nhiên hơn.
         private const val NGUONG_PITCH =
             11f
 
-        /**
-         * Giữ YAW chặt hơn để không ăn vào ROLL.
-         */
+        // Giữ dominance đủ để hạn chế nhầm với ROLL/PITCH.
         private const val TY_LE_CHI_PHOI_YAW =
-            1.10f
+            1.05f
 
-        /**
-         * PITCH được nới nhẹ dominance để thao tác
-         * ngẩng/cúi không cần quá "thẳng trục".
-         */
+        // PITCH được nới nhẹ dominance để thao tác
+        // ngẩng/cúi không cần quá "thẳng trục".
         private const val TY_LE_CHI_PHOI_PITCH =
             1.05f
 
-        /**
-         * Neutral window để re-arm.
-         */
+        // Neutral window để re-arm.
         private const val NGUONG_ROLL_TRUNG_TINH =
             8f
 
@@ -557,31 +514,21 @@ class NhanDienHuongDau(
 
         private const val NGUONG_PITCH_TRUNG_TINH =
             9f
-
-        /**
-         * YAW đã khá ổn nên chỉ giảm hold vừa phải
-         * để phản hồi nhanh hơn mà không quá nhạy.
-         */
+        // Hold YAW ngắn hơn để phản hồi gần với PITCH.
         private const val THOI_GIAN_GIU_YAW_MS =
-            140L
+            110L
 
-        /**
-         * PITCH cần cảm giác nhanh và tự nhiên hơn.
-         */
+        // PITCH cần cảm giác nhanh và tự nhiên hơn.
         private const val THOI_GIAN_GIU_PITCH_MS =
             120L
 
-        /**
-         * Vẫn giữ grace đủ lớn để không mất candidate
-         * chỉ vì 1-2 frame MediaPipe nhiễu.
-         */
+        // Vẫn giữ grace đủ lớn để không mất candidate
+        // chỉ vì 1-2 frame MediaPipe nhiễu.
         private const val THOI_GIAN_GRACE_MS =
             200L
 
-        /**
-         * Neutral ổn định ngắn hơn để re-arm nhanh,
-         * đồng thời giúp startup/handoff sẵn sàng sớm.
-         */
+        // Neutral ổn định ngắn hơn để re-arm nhanh,
+        // đồng thời giúp startup/handoff sẵn sàng sớm.
         private const val THOI_GIAN_TRUNG_TINH_MS =
             80L
     }

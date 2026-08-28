@@ -13,7 +13,8 @@ class BoChonMucTieuConTro {
         val bounds: Rect,
         val nhan: String?,
         val viewId: String?,
-        val tenLop: String?
+        val tenLop: String?,
+        val windowId: Int
     )
 
     fun timMucTieu(
@@ -24,15 +25,35 @@ class BoChonMucTieuConTro {
         chieuCaoManHinh: Int,
         matDo: Float
     ): KetQua? {
+        return timMucTieu(
+            roots = listOf(root),
+            viTriConTro = viTriConTro,
+            lenh = lenh,
+            chieuRongManHinh = chieuRongManHinh,
+            chieuCaoManHinh = chieuCaoManHinh,
+            matDo = matDo
+        )
+    }
+
+    fun timMucTieu(
+        roots: List<AccessibilityNodeInfo>,
+        viTriConTro: Point,
+        lenh: LenhConTro,
+        chieuRongManHinh: Int,
+        chieuCaoManHinh: Int,
+        matDo: Float
+    ): KetQua? {
         val ungVien =
             mutableListOf<UngVien>()
 
-        thuThapUngVien(
-            node = root,
-            ketQua = ungVien,
-            chieuRongManHinh = chieuRongManHinh,
-            chieuCaoManHinh = chieuCaoManHinh
-        )
+        for (root in roots) {
+            thuThapUngVien(
+                node = root,
+                ketQua = ungVien,
+                chieuRongManHinh = chieuRongManHinh,
+                chieuCaoManHinh = chieuCaoManHinh
+            )
+        }
 
         val khoangCachToiDa =
             dp(
@@ -74,7 +95,8 @@ class BoChonMucTieuConTro {
                     bounds = Rect(it.ungVien.bounds),
                     nhan = it.ungVien.nhan,
                     viewId = it.ungVien.viewId,
-                    tenLop = it.ungVien.tenLop
+                    tenLop = it.ungVien.tenLop,
+                    windowId = it.ungVien.windowId
                 )
             }
     }
@@ -103,22 +125,21 @@ class BoChonMucTieuConTro {
             )
         ) {
             val nhan =
-                node.contentDescription
-                    ?.toString()
-                    ?.takeIf { it.isNotBlank() }
-                    ?: node.text
-                        ?.toString()
-                        ?.takeIf { it.isNotBlank() }
+                layNhanNode(node)
+                    ?: timNhanTrongCayCon(node)
 
-            ketQua.add(
-                UngVien(
-                    bounds = bounds,
-                    nhan = nhan,
-                    viewId = node.viewIdResourceName,
-                    tenLop =
-                        node.className
-                            ?.toString()
-                )
+            themUngVienNeuChuaCo(
+                ketQua = ketQua,
+                ungVien =
+                    UngVien(
+                        bounds = Rect(bounds),
+                        nhan = nhan,
+                        viewId = node.viewIdResourceName,
+                        tenLop =
+                            node.className
+                                ?.toString(),
+                        windowId = node.windowId
+                    )
             )
         }
 
@@ -133,6 +154,35 @@ class BoChonMucTieuConTro {
                 chieuRongManHinh = chieuRongManHinh,
                 chieuCaoManHinh = chieuCaoManHinh
             )
+        }
+    }
+
+    private fun themUngVienNeuChuaCo(
+        ketQua: MutableList<UngVien>,
+        ungVien: UngVien
+    ) {
+        val viTriTrung =
+            ketQua.indexOfFirst {
+                it.windowId ==
+                        ungVien.windowId &&
+                        it.bounds ==
+                        ungVien.bounds
+            }
+
+        if (viTriTrung < 0) {
+            ketQua.add(ungVien)
+            return
+        }
+
+        val ungVienCu =
+            ketQua[viTriTrung]
+
+        if (
+            ungVienCu.nhan.isNullOrBlank() &&
+            !ungVien.nhan.isNullOrBlank()
+        ) {
+            ketQua[viTriTrung] =
+                ungVien
         }
     }
 
@@ -153,11 +203,18 @@ class BoChonMucTieuConTro {
         }
 
         val coNhan =
-            !node.text.isNullOrBlank() ||
-                    !node.contentDescription.isNullOrBlank()
+            layNhanNode(node) != null ||
+                    timNhanTrongCayCon(node) != null
+
+        val coActionClick =
+            node.isClickable ||
+                    node.actionList.any {
+                        it.id ==
+                                AccessibilityNodeInfo.ACTION_CLICK
+                    }
 
         val tuongTacTrucTiep =
-            node.isClickable ||
+            coActionClick ||
                     node.isCheckable ||
                     node.isEditable
 
@@ -191,6 +248,43 @@ class BoChonMucTieuConTro {
         }
 
         return true
+    }
+
+    private fun layNhanNode(
+        node: AccessibilityNodeInfo
+    ): String? {
+        return node.contentDescription
+            ?.toString()
+            ?.trim()
+            ?.takeIf {
+                it.isNotBlank()
+            }
+            ?: node.text
+                ?.toString()
+                ?.trim()
+                ?.takeIf {
+                    it.isNotBlank()
+                }
+    }
+
+    private fun timNhanTrongCayCon(
+        node: AccessibilityNodeInfo
+    ): String? {
+        for (index in 0 until node.childCount) {
+            val child =
+                node.getChild(index)
+                    ?: continue
+
+            val nhan =
+                layNhanNode(child)
+                    ?: timNhanTrongCayCon(child)
+
+            if (nhan != null) {
+                return nhan
+            }
+        }
+
+        return null
     }
 
     private fun chamDiem(
@@ -258,7 +352,8 @@ class BoChonMucTieuConTro {
                     dienTichNode.toDouble() /
                             dienTichManHinh.toDouble() *
                             PHAT_KICH_THUOC
-                    ).toFloat()
+                    )
+                .toFloat()
 
         val diem =
             trucChinh +
@@ -279,14 +374,16 @@ class BoChonMucTieuConTro {
         return (
                 giaTri *
                         matDo
-                ).toInt()
+                )
+            .toInt()
     }
 
     private data class UngVien(
         val bounds: Rect,
         val nhan: String?,
         val viewId: String?,
-        val tenLop: String?
+        val tenLop: String?,
+        val windowId: Int
     )
 
     private data class UngVienCoDiem(

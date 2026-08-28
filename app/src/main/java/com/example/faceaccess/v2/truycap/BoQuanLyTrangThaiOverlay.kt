@@ -27,13 +27,16 @@ class BoQuanLyTrangThaiOverlay(
             AccessibilityService.WINDOW_SERVICE
         ) as WindowManager
 
-    private var viewTrangThai: LinearLayout? =
+    private var viewTrangThai:
+            LinearLayout? =
         null
 
-    private var txtChamTrangThai: TextView? =
+    private var txtChamTrangThai:
+            TextView? =
         null
 
-    private var txtCheDo: TextView? =
+    private var txtCheDo:
+            TextView? =
         null
 
     fun hienThi(
@@ -114,16 +117,13 @@ class BoQuanLyTrangThaiOverlay(
         }
 
         return try {
-
             windowManager.addView(
                 view,
                 taoLayoutParams()
             )
 
             true
-
         } catch (_: Exception) {
-
             viewTrangThai = null
             txtChamTrangThai = null
             txtCheDo = null
@@ -162,7 +162,6 @@ class BoQuanLyTrangThaiOverlay(
             TextView(
                 accessibilityService
             ).apply {
-
                 text = "●"
                 textSize = 9f
                 includeFontPadding = false
@@ -172,7 +171,6 @@ class BoQuanLyTrangThaiOverlay(
             TextView(
                 accessibilityService
             ).apply {
-
                 textSize = 12f
                 includeFontPadding = false
 
@@ -199,7 +197,6 @@ class BoQuanLyTrangThaiOverlay(
         return LinearLayout(
             accessibilityService
         ).apply {
-
             orientation =
                 LinearLayout.HORIZONTAL
 
@@ -239,9 +236,9 @@ class BoQuanLyTrangThaiOverlay(
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-
             gravity =
-                Gravity.TOP or Gravity.START
+                Gravity.TOP or
+                        Gravity.START
 
             x =
                 dp(16)
@@ -271,7 +268,6 @@ class BoQuanLyTrangThaiOverlay(
 
         txtCheDo?.text =
             when (cheDo) {
-
                 CheDoDieuKhien.DIEU_HUONG ->
                     "Điều hướng"
 
@@ -299,13 +295,11 @@ class BoQuanLyTrangThaiOverlay(
                 )
 
         return if (resourceId > 0) {
-
             accessibilityService
                 .resources
                 .getDimensionPixelSize(
                     resourceId
                 )
-
         } else {
             dp(24)
         }

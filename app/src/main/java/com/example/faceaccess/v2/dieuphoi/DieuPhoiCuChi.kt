@@ -3,6 +3,7 @@ package com.example.faceaccess.v2.dieuphoi
 import android.util.Log
 import com.example.faceaccess.v2.chedo.CheDoDieuKhien
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
+import com.example.faceaccess.v2.cuchi.mieng.TrangThaiCuChiMieng
 import com.example.faceaccess.v2.dieuphoi.contro.LenhConTro
 import com.example.faceaccess.v2.dieuphoi.dieuhuong.LenhDieuHuong
 import com.example.faceaccess.v2.dieuphoi.hotro.LenhHoTro
@@ -33,16 +34,24 @@ class DieuPhoiCuChi(
         (LenhToanCuc) -> Unit
 ) {
 
-    fun xuLy(suKien: SuKienCuChi) {
+    fun xuLy(
+        suKien: SuKienCuChi
+    ) {
         when (suKien) {
             SuKienCuChi.NghiengTrai ->
-                khiCoLenh(LenhToanCuc.HOME)
+                khiCoLenh(
+                    LenhToanCuc.HOME
+                )
 
             SuKienCuChi.NghiengPhai ->
-                khiCoLenh(LenhToanCuc.DOI_CHE_DO)
+                khiCoLenh(
+                    LenhToanCuc.DOI_CHE_DO
+                )
 
             SuKienCuChi.MoMieng ->
-                khiCoLenh(LenhToanCuc.BACK)
+                khiCoLenh(
+                    LenhToanCuc.BACK
+                )
 
             SuKienCuChi.NhamHaiMat ->
                 xuLyNhamHaiMat()
@@ -51,7 +60,9 @@ class DieuPhoiCuChi(
                 xuLyMoMiengHaiLan()
 
             is SuKienCuChi.DieuHuongDau ->
-                xuLyHuongDau(suKien.huong)
+                xuLyHuongDau(
+                    suKien.huong
+                )
         }
     }
 
@@ -86,9 +97,13 @@ class DieuPhoiCuChi(
     }
 
     private fun xuLyMoMiengHaiLan() {
-        val cheDo = layCheDoHienTai()
+        val cheDo =
+            layCheDoHienTai()
 
-        if (cheDo == CheDoDieuKhien.CON_TRO) {
+        if (
+            cheDo ==
+            CheDoDieuKhien.CON_TRO
+        ) {
             khiCoLenh(
                 LenhToanCuc.DOI_KHOA_CON_TRO
             )
@@ -100,8 +115,25 @@ class DieuPhoiCuChi(
         )
     }
 
-    private fun xuLyHuongDau(huong: HuongDau) {
-        val cheDo = layCheDoHienTai()
+    private fun xuLyHuongDau(
+        huong: HuongDau
+    ) {
+        val cheDo =
+            layCheDoHienTai()
+
+        if (
+            cheDo ==
+            CheDoDieuKhien.CON_TRO &&
+            TrangThaiCuChiMieng
+                .dangChanHuongDau()
+        ) {
+            Log.d(
+                TAG,
+                "MODE=$cheDo | HUONG=$huong | BO_QUA_DO_CU_CHI_MIENG"
+            )
+
+            return
+        }
 
         khiCoHuongTheoCheDo(
             cheDo,
@@ -136,43 +168,84 @@ class DieuPhoiCuChi(
         )
     }
 
-    private fun HuongDau.toLenhDieuHuong(): LenhDieuHuong {
+    private fun HuongDau
+            .toLenhDieuHuong():
+            LenhDieuHuong {
+
         return when (this) {
-            HuongDau.TRAI -> LenhDieuHuong.TRUOC
-            HuongDau.PHAI -> LenhDieuHuong.TIEP_THEO
-            HuongDau.LEN -> LenhDieuHuong.CUON_XUONG
-            HuongDau.XUONG -> LenhDieuHuong.CUON_LEN
+            HuongDau.TRAI ->
+                LenhDieuHuong.TRUOC
+
+            HuongDau.PHAI ->
+                LenhDieuHuong.TIEP_THEO
+
+            HuongDau.LEN ->
+                LenhDieuHuong.CUON_XUONG
+
+            HuongDau.XUONG ->
+                LenhDieuHuong.CUON_LEN
         }
     }
 
-    private fun HuongDau.toLenhMedia(): LenhMedia {
+    private fun HuongDau
+            .toLenhMedia():
+            LenhMedia {
+
         return when (this) {
-            HuongDau.TRAI -> LenhMedia.TRUOC
-            HuongDau.PHAI -> LenhMedia.TIEP_THEO
-            HuongDau.LEN -> LenhMedia.TANG_AM_LUONG
-            HuongDau.XUONG -> LenhMedia.GIAM_AM_LUONG
+            HuongDau.TRAI ->
+                LenhMedia.TRUOC
+
+            HuongDau.PHAI ->
+                LenhMedia.TIEP_THEO
+
+            HuongDau.LEN ->
+                LenhMedia.TANG_AM_LUONG
+
+            HuongDau.XUONG ->
+                LenhMedia.GIAM_AM_LUONG
         }
     }
 
-    private fun HuongDau.toLenhHoTro(): LenhHoTro {
+    private fun HuongDau
+            .toLenhHoTro():
+            LenhHoTro {
+
         return when (this) {
-            HuongDau.TRAI -> LenhHoTro.NGUOI_TRUOC
-            HuongDau.PHAI -> LenhHoTro.NGUOI_TIEP_THEO
-            HuongDau.LEN -> LenhHoTro.XAC_NHAN_LIEN_HE
-            HuongDau.XUONG -> LenhHoTro.HUY_LIEN_HE
+            HuongDau.TRAI ->
+                LenhHoTro.NGUOI_TRUOC
+
+            HuongDau.PHAI ->
+                LenhHoTro.NGUOI_TIEP_THEO
+
+            HuongDau.LEN ->
+                LenhHoTro.XAC_NHAN_LIEN_HE
+
+            HuongDau.XUONG ->
+                LenhHoTro.HUY_LIEN_HE
         }
     }
 
-    private fun HuongDau.toLenhConTro(): LenhConTro {
+    private fun HuongDau
+            .toLenhConTro():
+            LenhConTro {
+
         return when (this) {
-            HuongDau.TRAI -> LenhConTro.TRAI
-            HuongDau.PHAI -> LenhConTro.PHAI
-            HuongDau.LEN -> LenhConTro.LEN
-            HuongDau.XUONG -> LenhConTro.XUONG
+            HuongDau.TRAI ->
+                LenhConTro.TRAI
+
+            HuongDau.PHAI ->
+                LenhConTro.PHAI
+
+            HuongDau.LEN ->
+                LenhConTro.LEN
+
+            HuongDau.XUONG ->
+                LenhConTro.XUONG
         }
     }
 
     companion object {
-        private const val TAG = "DieuPhoiCuChi"
+        private const val TAG =
+            "DieuPhoiCuChi"
     }
 }
