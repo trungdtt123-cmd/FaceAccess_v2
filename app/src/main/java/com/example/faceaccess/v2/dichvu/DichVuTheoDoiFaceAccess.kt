@@ -15,7 +15,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.example.faceaccess.v2.R
+import com.example.faceaccess.v2.ai.hieuchinh.BoChuanHoaDuLieuKhuonMat
 import com.example.faceaccess.v2.camera.QuanLyCamera
+import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNhanDienCuChi
+import com.example.faceaccess.v2.cuchi.cauhinh.KhoCauHinhNhanDienCuChi
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
@@ -65,6 +68,17 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var trichXuatDuLieuKhuonMat:
             TrichXuatDuLieuKhuonMat
+
+    // CẤU HÌNH NHẬN DIỆN CÁ NHÂN
+
+    private lateinit var khoCauHinhNhanDienCuChi:
+            KhoCauHinhNhanDienCuChi
+
+    private lateinit var cauHinhNhanDienCuChi:
+            CauHinhNhanDienCuChi
+
+    private lateinit var boChuanHoaDuLieuKhuonMat:
+            BoChuanHoaDuLieuKhuonMat
 
     private lateinit var nhanDienNghiengDau:
             NhanDienNghiengDau
@@ -151,6 +165,8 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoBoDieuKhienLienHeHoTroNen()
 
         khoiTaoDieuPhoiCuChiNen()
+
+        khoiTaoCauHinhNhanDienNen()
 
         khoiTaoNhanDienCuChiNen()
 
@@ -619,6 +635,57 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
+    // CẤU HÌNH NHẬN DIỆN CÁ NHÂN
+
+    private fun khoiTaoCauHinhNhanDienNen() {
+
+        khoCauHinhNhanDienCuChi =
+            KhoCauHinhNhanDienCuChi(
+                applicationContext
+            )
+
+        cauHinhNhanDienCuChi =
+            khoCauHinhNhanDienCuChi
+                .layCauHinh()
+
+        boChuanHoaDuLieuKhuonMat =
+            BoChuanHoaDuLieuKhuonMat(
+                cauHinhNhanDienCuChi.chuanHoa
+            )
+    }
+
+    // Đọc lại profile trước khi Camera nền hoạt động
+    private fun taiLaiCauHinhNhanDienNen() {
+
+        cauHinhNhanDienCuChi =
+            khoCauHinhNhanDienCuChi
+                .layCauHinh()
+
+        boChuanHoaDuLieuKhuonMat =
+            BoChuanHoaDuLieuKhuonMat(
+                cauHinhNhanDienCuChi.chuanHoa
+            )
+
+        khoiTaoNhanDienCuChiNen()
+
+        khoiTaoNhanDienMoMiengNen()
+
+        khoiTaoNhanDienMoMiengHaiLanNen()
+
+        khoiTaoNhanDienHuongDauNen()
+
+        khoiTaoNhanDienNhamHaiMatNen()
+
+        Log.d(
+            TAG_CU_CHI_NEN,
+            if (khoCauHinhNhanDienCuChi.daHieuChinh()) {
+                "NEN: Da tai cau hinh ca nhan"
+            } else {
+                "NEN: Dang dung cau hinh mac dinh"
+            }
+        )
+    }
+
     // NHẬN DIỆN CỬ CHỈ NỀN
 
     private fun khoiTaoNhanDienCuChiNen() {
@@ -627,7 +694,10 @@ class DichVuTheoDoiFaceAccess :
             TrichXuatDuLieuKhuonMat()
 
         nhanDienNghiengDau =
-            NhanDienNghiengDau { huong ->
+            NhanDienNghiengDau(
+                cauHinh =
+                    cauHinhNhanDienCuChi.nghiengDau
+            ) { huong ->
 
                 when (huong) {
 
@@ -663,7 +733,10 @@ class DichVuTheoDoiFaceAccess :
     private fun khoiTaoNhanDienMoMiengNen() {
 
         nhanDienMoMieng =
-            NhanDienMoMieng {
+            NhanDienMoMieng(
+                cauHinh =
+                    cauHinhNhanDienCuChi.moMieng
+            ) {
 
                 Log.d(
                     TAG_CU_CHI_MIENG,
@@ -679,6 +752,8 @@ class DichVuTheoDoiFaceAccess :
     private fun khoiTaoNhanDienMoMiengHaiLanNen() {
         nhanDienMoMiengHaiLan =
             NhanDienMoMiengHaiLan(
+                cauHinh =
+                    cauHinhNhanDienCuChi.moMiengHaiLan,
                 khiMoMotLan = {
                     Log.d(
                         TAG_CU_CHI_MIENG,
@@ -715,7 +790,10 @@ class DichVuTheoDoiFaceAccess :
     private fun khoiTaoNhanDienHuongDauNen() {
 
         nhanDienHuongDau =
-            NhanDienHuongDau { huong ->
+            NhanDienHuongDau(
+                cauHinh =
+                    cauHinhNhanDienCuChi.huongDau
+            ) { huong ->
 
                 val tenHuong =
                     when (huong) {
@@ -754,7 +832,10 @@ class DichVuTheoDoiFaceAccess :
 
     private fun khoiTaoNhanDienNhamHaiMatNen() {
         nhanDienNhamHaiMat =
-            NhanDienNhamHaiMat {
+            NhanDienNhamHaiMat(
+                cauHinh =
+                    cauHinhNhanDienCuChi.nhamHaiMat
+            ) {
                 dieuPhoiCuChi.xuLy(
                     SuKienCuChi.NhamHaiMat
                 )
@@ -793,9 +874,16 @@ class DichVuTheoDoiFaceAccess :
                             val hienTai =
                                 SystemClock.uptimeMillis()
 
-                            val duLieu =
+                            val duLieuGoc =
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
+
+                            // Bù lệch tư thế trung tính
+                            val duLieu =
+                                boChuanHoaDuLieuKhuonMat
+                                    .chuanHoa(
+                                        duLieuGoc
+                                    )
 
                             capNhatTrangThaiKhuonMatOverlayNen(
                                 true
@@ -999,6 +1087,9 @@ class DichVuTheoDoiFaceAccess :
 
             return
         }
+
+        // Đọc profile mới nhất trước khi chạy Camera nền
+        taiLaiCauHinhNhanDienNen()
 
         cameraNenDangKhoiDong =
             true

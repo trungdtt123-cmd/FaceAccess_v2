@@ -1,10 +1,18 @@
 package com.example.faceaccess.v2.cuchi.nghiengdau
 
+import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNghiengDau
 import kotlin.math.abs
 
 class NhanDienNghiengDau(
+
+    // Cấu hình nhận diện nghiêng đầu
+    private val cauHinh: CauHinhNghiengDau =
+        CauHinhNghiengDau(),
+
+    // Callback khi nhận diện thành công
     private val khiNhanDien:
         (HuongNghiengDau) -> Unit
+
 ) {
 
     private enum class TrangThai {
@@ -20,9 +28,8 @@ class NhanDienNghiengDau(
     private var thoiGianBatDauGiu =
         0L
 
-    /**
-     * Gọi hàm này mỗi khi có dữ liệu khuôn mặt mới.
-     */
+
+    // Cập nhật dữ liệu khuôn mặt mới
     fun capNhat(
         roll: Float?,
         yaw: Float?,
@@ -91,7 +98,7 @@ class NhanDienNghiengDau(
                 if (
                     thoiGianMs -
                     thoiGianBatDauGiu >=
-                    THOI_GIAN_GIU_MS
+                    cauHinh.thoiGianGiuMs
                 ) {
 
                     khiNhanDien(
@@ -122,7 +129,7 @@ class NhanDienNghiengDau(
                 if (
                     thoiGianMs -
                     thoiGianBatDauGiu >=
-                    THOI_GIAN_GIU_MS
+                    cauHinh.thoiGianGiuMs
                 ) {
 
                     khiNhanDien(
@@ -136,13 +143,7 @@ class NhanDienNghiengDau(
 
             TrangThai.DA_KICH_HOAT -> {
 
-                /*
-                 * Sau khi đã nhận một gesture,
-                 * phải đưa đầu về gần trung tâm.
-                 *
-                 * Không cho giữ đầu nghiêng và
-                 * kích hoạt liên tục.
-                 */
+                // Phải về trung tính mới nhận cử chỉ tiếp theo
                 if (laTrungTinh(roll)) {
 
                     trangThai =
@@ -152,16 +153,15 @@ class NhanDienNghiengDau(
         }
     }
 
-    /**
-     * Tránh nhầm quay đầu YAW thành nghiêng ROLL.
-     */
+
+    // Kiểm tra nghiêng đầu sang trái
     private fun laNghiengTrai(
         roll: Float,
         yaw: Float,
         pitch: Float
     ): Boolean {
 
-        if (roll > NGUONG_TRAI) {
+        if (roll > cauHinh.nguongTrai) {
             return false
         }
 
@@ -172,13 +172,15 @@ class NhanDienNghiengDau(
         )
     }
 
+
+    // Kiểm tra nghiêng đầu sang phải
     private fun laNghiengPhai(
         roll: Float,
         yaw: Float,
         pitch: Float
     ): Boolean {
 
-        if (roll < NGUONG_PHAI) {
+        if (roll < cauHinh.nguongPhai) {
             return false
         }
 
@@ -189,13 +191,8 @@ class NhanDienNghiengDau(
         )
     }
 
-    /**
-     * ROLL phải là chuyển động chính.
-     *
-     * Ta không yêu cầu tuyệt đối quá chặt
-     * vì khi người thật nghiêng đầu,
-     * YAW/PITCH vẫn có thể thay đổi nhẹ.
-     */
+
+    // Roll phải là chuyển động chính
     private fun rollChiPhoi(
         roll: Float,
         yaw: Float,
@@ -213,24 +210,27 @@ class NhanDienNghiengDau(
 
         return (
                 rollAbs >=
-                        yawAbs * TY_LE_CHI_PHOI
+                        yawAbs *
+                        cauHinh.tyLeChiPhoi
                         &&
                         rollAbs >=
-                        pitchAbs * TY_LE_CHI_PHOI
+                        pitchAbs *
+                        cauHinh.tyLeChiPhoi
                 )
     }
 
+
+    // Kiểm tra đầu đã trở về trung tính
     private fun laTrungTinh(
         roll: Float
     ): Boolean {
 
         return abs(roll) <=
-                NGUONG_TRUNG_TINH
+                cauHinh.nguongTrungTinh
     }
 
-    /**
-     * Dùng khi camera dừng hoặc mất session.
-     */
+
+    // Reset khi camera dừng hoặc mất session
     fun datLai() {
 
         trangThai =
@@ -238,44 +238,5 @@ class NhanDienNghiengDau(
 
         thoiGianBatDauGiu =
             0L
-    }
-
-    companion object {
-
-        /*
-         * Dữ liệu thực tế:
-         *
-         * trái thường khoảng <= -20
-         * phải thường khoảng >= +20
-         *
-         * Ta dùng +/-16 để thao tác
-         * tự nhiên hơn và ít phải gồng.
-         */
-
-        private const val NGUONG_TRAI =
-            -16f
-
-        private const val NGUONG_PHAI =
-            16f
-
-        /*
-         * Phải về gần trung tâm mới re-arm.
-         */
-        private const val NGUONG_TRUNG_TINH =
-            7f
-
-        /*
-         * 260ms đủ để phân biệt gesture
-         * có chủ đích với rung/chuyển động nhanh.
-         */
-        private const val THOI_GIAN_GIU_MS =
-            260L
-
-        /*
-         * Không quá nghiêm để người dùng
-         * có thể nghiêng tự nhiên.
-         */
-        private const val TY_LE_CHI_PHOI =
-            0.75f
     }
 }
