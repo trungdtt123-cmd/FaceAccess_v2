@@ -40,10 +40,10 @@ class XuLyKhuonMat(
                     .setMinFacePresenceConfidence(0.5f)
                     .setMinTrackingConfidence(0.5f)
 
-                    // Sau này dùng cho mắt và miệng.
+                    // Dùng cho mắt và miệng.
                     .setOutputFaceBlendshapes(true)
 
-                    // Sau này dùng tính ROLL / YAW / PITCH.
+                    // Dùng tính ROLL / YAW / PITCH.
                     .setOutputFacialTransformationMatrixes(true)
 
                     .setResultListener { result, inputImage ->
@@ -89,9 +89,6 @@ class XuLyKhuonMat(
         }
     }
 
-    /**
-     * Sau này QuanLyCamera sẽ gửi frame camera vào hàm này.
-     */
     fun xuLyAnh(
         mpImage: MPImage,
         thoiGianMs: Long
@@ -154,9 +151,6 @@ class XuLyKhuonMat(
         )
     }
 
-    /**
-     * Giải phóng MediaPipe.
-     */
     fun dong() {
 
         faceLandmarker?.close()
@@ -192,6 +186,6 @@ class XuLyKhuonMat(
             "XuLyKhuonMat"
 
         private const val TEN_MODEL =
-            "models/face_landmarker (1).task"
+            "face_landmarker (1).task"
     }
 }

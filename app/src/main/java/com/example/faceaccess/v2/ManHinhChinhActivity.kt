@@ -1,20 +1,26 @@
-
+package com.example.faceaccess.v2
 
 import com.example.faceaccess.v2.R
 import android.Manifest
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.provider.Settings
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
+import android.view.accessibility.AccessibilityManager
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
@@ -75,6 +81,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     @Volatile
     private var dangChoCameraNenNhaQuyen = false
+
+    @Volatile
+    private var dangChoBatDichVuTruyCap = false
 
     private var daDangKyBoNhanBanGiaoCamera = false
 
@@ -1400,6 +1409,169 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
     }
 
+    // TRỢ NĂNG
+
+    private fun dichVuTruyCapDaBat(): Boolean {
+
+        val accessibilityManager =
+            getSystemService(
+                AccessibilityManager::class.java
+            )
+
+        val componentFaceAccess =
+            ComponentName(
+                this,
+                DichVuTruyCapFaceAccess::class.java
+            )
+
+        return accessibilityManager
+            .getEnabledAccessibilityServiceList(
+                AccessibilityServiceInfo.FEEDBACK_ALL_MASK
+            )
+            .any { thongTinDichVu ->
+
+                val serviceInfo =
+                    thongTinDichVu
+                        .resolveInfo
+                        .serviceInfo
+
+                ComponentName(
+                    serviceInfo.packageName,
+                    serviceInfo.name
+                ) == componentFaceAccess
+            }
+    }
+
+    private fun moTrangBatDichVuTruyCap() {
+
+        val componentFaceAccess =
+            ComponentName(
+                this,
+                DichVuTruyCapFaceAccess::class.java
+            )
+
+        val intentChiTiet =
+            Intent(
+                ACTION_ACCESSIBILITY_DETAILS_SETTINGS
+            ).apply {
+
+                putExtra(
+                    Intent.EXTRA_COMPONENT_NAME,
+                    componentFaceAccess
+                )
+            }
+
+        try {
+
+            startActivity(
+                intentChiTiet
+            )
+
+            return
+
+        } catch (
+            exception: ActivityNotFoundException
+        ) {
+
+            Log.w(
+                TAG_TRUY_CAP,
+                "May khong co trang chi tiet Accessibility",
+                exception
+            )
+
+        } catch (
+            exception: SecurityException
+        ) {
+
+            Log.w(
+                TAG_TRUY_CAP,
+                "May chan mo trang chi tiet Accessibility",
+                exception
+            )
+        }
+
+        try {
+
+            startActivity(
+                Intent(
+                    Settings.ACTION_ACCESSIBILITY_SETTINGS
+                )
+            )
+
+            Toast.makeText(
+                this,
+                "Hãy chọn FaceAccess_v2 và bật dịch vụ",
+                Toast.LENGTH_LONG
+            ).show()
+
+        } catch (
+            exception: ActivityNotFoundException
+        ) {
+
+            dangChoBatDichVuTruyCap =
+                false
+
+            capNhatTrangThaiHeThong(
+                "● Không thể mở cài đặt Trợ năng trên thiết bị này"
+            )
+        }
+    }
+
+    private fun tiepTucTheoDoiSauKhiBatTruyCap(
+        lanThu: Int = 0
+    ) {
+
+        if (!dangChoBatDichVuTruyCap) {
+            return
+        }
+
+        if (dichVuTruyCapDaBat()) {
+
+            dangChoBatDichVuTruyCap =
+                false
+
+            window.decorView.postDelayed(
+                {
+
+                    if (
+                        !cameraDangBat &&
+                        !theoDoiDangHoatDong
+                    ) {
+
+                        kiemTraVaBatCamera()
+                    }
+
+                },
+                350L
+            )
+
+            return
+        }
+
+        if (lanThu < SO_LAN_CHO_DICH_VU_TRUY_CAP) {
+
+            window.decorView.postDelayed(
+                {
+
+                    tiepTucTheoDoiSauKhiBatTruyCap(
+                        lanThu + 1
+                    )
+
+                },
+                THOI_GIAN_CHO_DICH_VU_TRUY_CAP_MS
+            )
+
+            return
+        }
+
+        dangChoBatDichVuTruyCap =
+            false
+
+        capNhatTrangThaiHeThong(
+            "● FaceAccess_v2 chưa được bật trong Trợ năng"
+        )
+    }
+
     // SỰ KIỆN UI
 
     private fun ganSuKien() {
@@ -1410,10 +1582,24 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 tatCamera()
 
-            } else {
-
-                kiemTraVaBatCamera()
+                return@setOnClickListener
             }
+
+            if (!dichVuTruyCapDaBat()) {
+
+                dangChoBatDichVuTruyCap =
+                    true
+
+                capNhatTrangThaiHeThong(
+                    "● Hãy bật FaceAccess_v2 trong Trợ năng"
+                )
+
+                moTrangBatDichVuTruyCap()
+
+                return@setOnClickListener
+            }
+
+            kiemTraVaBatCamera()
         }
 
         cardHoTro.setOnClickListener {
@@ -2401,6 +2587,15 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     // ACTIVITY LIFECYCLE - BÀN GIAO CAMERA
 
+    override fun onResume() {
+        super.onResume()
+
+        if (dangChoBatDichVuTruyCap) {
+
+            tiepTucTheoDoiSauKhiBatTruyCap()
+        }
+    }
+
     override fun onStart() {
         super.onStart()
 
@@ -2506,6 +2701,15 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     companion object {
 
+        private const val ACTION_ACCESSIBILITY_DETAILS_SETTINGS =
+            "android.settings.ACCESSIBILITY_DETAILS_SETTINGS"
+
+        private const val SO_LAN_CHO_DICH_VU_TRUY_CAP =
+            5
+
+        private const val THOI_GIAN_CHO_DICH_VU_TRUY_CAP_MS =
+            300L
+
         // Khoảng nghỉ ngắn trước khi chuyển sang bước tiếp theo
         private const val THOI_GIAN_CHUYEN_BUOC_HIEU_CHINH_MS =
             650L
@@ -2524,6 +2728,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_DICH_VU =
             "DichVuTheoDoi"
+
+        private const val TAG_TRUY_CAP =
+            "FaceAccessAccessibility"
 
         private const val TAG_CON_TRO =
             "FaceAccessCursor"
