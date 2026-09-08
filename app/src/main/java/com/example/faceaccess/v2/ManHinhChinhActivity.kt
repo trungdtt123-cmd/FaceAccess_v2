@@ -1,3 +1,5 @@
+
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 package com.example.faceaccess.v2
 
 import com.example.faceaccess.v2.R
@@ -32,7 +34,9 @@ import com.example.faceaccess.v2.ai.hieuchinh.BoHocNguongThichNghi
 import com.example.faceaccess.v2.ai.hieuchinh.BoThuThapMauHieuChinh
 import com.example.faceaccess.v2.ai.hieuchinh.BuocHieuChinh
 import com.example.faceaccess.v2.ai.hieuchinh.TrangThaiHieuChinh
+import com.example.faceaccess.v2.caidat.CaiDatActivity
 import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNhanDienCuChi
+import com.example.faceaccess.v2.cuchi.cauhinh.HanhDongTuyChinhCuChi
 import com.example.faceaccess.v2.cuchi.cauhinh.KhoCauHinhNhanDienCuChi
 import com.example.faceaccess.v2.camera.QuanLyCamera
 import com.example.faceaccess.v2.chedo.BoDinhTuyenCheDo
@@ -116,13 +120,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     cauHinhNhanDienCuChi.moMiengHaiLan,
                 khiMoMotLan = {
 
+                    // Mở giữ do detector đơn xử lý
                     Log.d(
                         TAG_CU_CHI_MIENG,
-                        "APP: MO MIENG MOT LAN - BACK"
-                    )
-
-                    dieuPhoiCuChi.xuLy(
-                        SuKienCuChi.MoMieng
+                        "APP: MO MIENG GIU - DETECTOR DON"
                     )
                 },
                 khiMoHaiLan = {
@@ -137,6 +138,27 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     )
                 }
             )
+    }
+
+    private fun canTheoDoiMoMiengHaiLan(
+        cheDoHienTai: CheDoDieuKhien
+    ): Boolean {
+
+        return when (
+            cauHinhNhanDienCuChi
+                .hanhDong
+                .moMiengHaiLan
+        ) {
+            HanhDongTuyChinhCuChi.KHONG_SU_DUNG ->
+                false
+
+            HanhDongTuyChinhCuChi.THEO_CHE_DO ->
+                cheDoHienTai ==
+                        CheDoDieuKhien.CON_TRO
+
+            else ->
+                true
+        }
     }
 
     private fun datLaiNhanDienMieng() {
@@ -302,7 +324,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var btnBatDauTheoDoi: Button
 
-    private lateinit var btnHieuChinh: Button
+    private lateinit var navTrangChu: TextView
+
+    private lateinit var navHieuChinh: TextView
+
+    private lateinit var navCaiDat: TextView
 
     private lateinit var txtTrangThaiHeThong: TextView
 
@@ -313,6 +339,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
     // GIAO DIỆN HIỆU CHỈNH
 
     private lateinit var khungHieuChinh: View
+
+    private lateinit var khungChuanBiHieuChinh: View
+
+    private lateinit var khungTienTrinhHieuChinh: View
+
+    private lateinit var btnBatDauHieuChinh: Button
 
     private lateinit var txtBuocHieuChinh: TextView
 
@@ -359,6 +391,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private var dangThayKhuonMat: Boolean? = null
 
     private var thoiGianCapNhatUiGanNhat = 0L
+
+    private var dangChoHieuChinhTuCaiDat = false
+
+    private var dangMoTrangHieuChinh = false
 
     // FOREGROUND TRACKING SERVICE + BÀN GIAO CAMERA
 
@@ -533,6 +569,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             } else {
 
+                dangChoHieuChinhTuCaiDat =
+                    false
+
                 hienThiCameraDaDung(
                     "CAMERA\nChưa được cấp quyền"
                 )
@@ -577,6 +616,39 @@ class ManHinhChinhActivity : AppCompatActivity() {
             }
         }
     }
+
+    private val moManHinhCaiDat =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { ketQua ->
+
+            if (ketQua.resultCode != RESULT_OK) {
+                return@registerForActivityResult
+            }
+
+            val duLieu =
+                ketQua.data
+
+            val cauHinhDaThayDoi =
+                duLieu?.getBooleanExtra(
+                    CaiDatActivity.EXTRA_CAU_HINH_DA_THAY_DOI,
+                    false
+                ) == true
+
+            val yeuCauHieuChinh =
+                duLieu?.getBooleanExtra(
+                    CaiDatActivity.EXTRA_YEU_CAU_HIEU_CHINH,
+                    false
+                ) == true
+
+            if (cauHinhDaThayDoi) {
+                taiLaiCauHinhNhanDien()
+            }
+
+            if (yeuCauHieuChinh) {
+                moTrangHieuChinh()
+            }
+        }
 
     // ON CREATE
 
@@ -624,6 +696,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
 
         datLaiThongTinNhanDien()
+
+        capNhatMenuDuoi(
+            dangHieuChinh = false
+        )
     }
 
     // ÁNH XẠ UI
@@ -641,8 +717,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
         btnBatDauTheoDoi =
             findViewById(R.id.btnBatDauTheoDoi)
 
-        btnHieuChinh =
-            findViewById(R.id.btnHieuChinh)
+        navTrangChu =
+            findViewById(R.id.navTrangChu)
+
+        navHieuChinh =
+            findViewById(R.id.navHieuChinh)
+
+        navCaiDat =
+            findViewById(R.id.navCaiDat)
 
         txtTrangThaiHeThong =
             findViewById(R.id.txtTrangThaiHeThong)
@@ -656,6 +738,15 @@ class ManHinhChinhActivity : AppCompatActivity() {
         // Hiệu chỉnh
         khungHieuChinh =
             findViewById(R.id.khungHieuChinh)
+
+        khungChuanBiHieuChinh =
+            findViewById(R.id.khungChuanBiHieuChinh)
+
+        khungTienTrinhHieuChinh =
+            findViewById(R.id.khungTienTrinhHieuChinh)
+
+        btnBatDauHieuChinh =
+            findViewById(R.id.btnBatDauHieuChinh)
 
         txtBuocHieuChinh =
             findViewById(R.id.txtBuocHieuChinh)
@@ -855,6 +946,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                     boDinhTuyenCheDo
                         .layCheDoHienTai()
+                },
+                layCauHinhHanhDong = {
+                    cauHinhNhanDienCuChi.hanhDong
                 },
                 khiCoHuongTheoCheDo = {
                         cheDo,
@@ -1282,9 +1376,19 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 boDinhTuyenCheDo
                                     .layCheDoHienTai()
 
+                            // Mở giữ hoạt động ở mọi chế độ
+                            nhanDienMoMieng.capNhat(
+                                doMoMieng =
+                                    duLieu.doMoMieng,
+                                thoiGianMs =
+                                    thoiGianHienTai
+                            )
+
+                            // Mở hai lần chỉ chạy khi cần
                             if (
-                                cheDoHienTai ==
-                                CheDoDieuKhien.CON_TRO
+                                canTheoDoiMoMiengHaiLan(
+                                    cheDoHienTai
+                                )
                             ) {
                                 nhanDienMoMiengHaiLan.capNhat(
                                     doMoMieng =
@@ -1293,12 +1397,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                         thoiGianHienTai
                                 )
                             } else {
-                                nhanDienMoMieng.capNhat(
-                                    doMoMieng =
-                                        duLieu.doMoMieng,
-                                    thoiGianMs =
-                                        thoiGianHienTai
-                                )
+                                nhanDienMoMiengHaiLan.datLai()
                             }
 
                             val thoiGianXacNhanNhamMat =
@@ -1310,8 +1409,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                     CheDoDieuKhien.DIEU_HUONG,
                                     CheDoDieuKhien.MEDIA,
                                     CheDoDieuKhien.CON_TRO ->
-                                        NhanDienNhamHaiMat
-                                            .THOI_GIAN_NHAM_XAC_NHAN_MS
+                                        cauHinhNhanDienCuChi
+                                            .nhamHaiMat
+                                            .thoiGianNhamXacNhanMs
                                 }
 
                             if (thoiGianXacNhanNhamMat != null) {
@@ -1612,15 +1712,139 @@ class ManHinhChinhActivity : AppCompatActivity() {
             )
         }
 
-        btnHieuChinh.setOnClickListener {
+        navTrangChu.setOnClickListener {
 
-            batDauHieuChinh()
+            when {
+                dangHieuChinh ->
+                    huyHieuChinh()
+
+                dangMoTrangHieuChinh ->
+                    anGiaoDienHieuChinh()
+            }
+        }
+
+        navHieuChinh.setOnClickListener {
+
+            if (
+                !dangHieuChinh &&
+                !dangMoTrangHieuChinh
+            ) {
+                moTrangHieuChinh()
+            }
+        }
+
+        navCaiDat.setOnClickListener {
+
+            when {
+                dangHieuChinh ->
+                    huyHieuChinh()
+
+                dangMoTrangHieuChinh ->
+                    anGiaoDienHieuChinh()
+            }
+
+            moManHinhCaiDat.launch(
+                Intent(
+                    this,
+                    CaiDatActivity::class.java
+                )
+            )
+        }
+
+        btnBatDauHieuChinh.setOnClickListener {
+
+            if (dangHieuChinh) {
+                return@setOnClickListener
+            }
+
+            if (cameraDangBat) {
+
+                batDauHieuChinh()
+
+            } else {
+
+                dangChoHieuChinhTuCaiDat =
+                    true
+
+                kiemTraVaBatCamera()
+            }
         }
 
         btnHuyHieuChinh.setOnClickListener {
 
             huyHieuChinh()
         }
+    }
+
+    private fun taiLaiCauHinhNhanDien() {
+
+        cauHinhNhanDienCuChi =
+            khoCauHinhNhanDienCuChi
+                .layCauHinh()
+
+        boChuanHoaDuLieuKhuonMat =
+            BoChuanHoaDuLieuKhuonMat(
+                cauHinhNhanDienCuChi.chuanHoa
+            )
+
+        khoiTaoNhanDienNghiengDau()
+        khoiTaoNhanDienMoMieng()
+        khoiTaoNhanDienMoMiengHaiLan()
+        khoiTaoNhanDienHuongDau()
+        khoiTaoNhanDienNhamHaiMat()
+
+        Log.d(
+            TAG_CAI_DAT,
+            "Da tai lai cau hinh nhan dien"
+        )
+    }
+
+    private fun moTrangHieuChinh() {
+
+        if (dangHieuChinh) {
+            return
+        }
+
+        dangMoTrangHieuChinh =
+            true
+
+        dangChoHieuChinhTuCaiDat =
+            false
+
+        khungTrangThaiHeThong.visibility =
+            View.GONE
+
+        noiDungChinh.visibility =
+            View.GONE
+
+        khungHieuChinh.visibility =
+            View.VISIBLE
+
+        khungChuanBiHieuChinh.visibility =
+            View.VISIBLE
+
+        khungTienTrinhHieuChinh.visibility =
+            View.GONE
+
+        capNhatMenuDuoi(
+            dangHieuChinh = true
+        )
+    }
+
+    private fun batDauHieuChinhTuCaiDat() {
+
+        if (
+            !dangChoHieuChinhTuCaiDat ||
+            !cameraDangBat ||
+            dangHieuChinh
+        ) {
+            return
+        }
+
+        dangChoHieuChinhTuCaiDat =
+            false
+
+        batDauHieuChinh()
     }
 
     // HIỆU CHỈNH
@@ -1869,13 +2093,103 @@ class ManHinhChinhActivity : AppCompatActivity() {
             return
         }
 
+        val cauHinhHienTai =
+            cauHinhNhanDienCuChi
+
+        val cauHinhDaHopNhat =
+            cauHinhMoi.copy(
+
+                huongDau =
+                    cauHinhMoi.huongDau.copy(
+                        thoiGianGiuYawMs =
+                            cauHinhHienTai
+                                .huongDau
+                                .thoiGianGiuYawMs,
+                        thoiGianGiuPitchMs =
+                            cauHinhHienTai
+                                .huongDau
+                                .thoiGianGiuPitchMs,
+                        thoiGianGraceMs =
+                            cauHinhHienTai
+                                .huongDau
+                                .thoiGianGraceMs,
+                        thoiGianTrungTinhMs =
+                            cauHinhHienTai
+                                .huongDau
+                                .thoiGianTrungTinhMs
+                    ),
+
+                nghiengDau =
+                    cauHinhMoi.nghiengDau.copy(
+                        thoiGianGiuMs =
+                            cauHinhHienTai
+                                .nghiengDau
+                                .thoiGianGiuMs
+                    ),
+
+                nhamHaiMat =
+                    cauHinhMoi.nhamHaiMat.copy(
+                        thoiGianNhamXacNhanMs =
+                            cauHinhHienTai
+                                .nhamHaiMat
+                                .thoiGianNhamXacNhanMs,
+                        thoiGianMoDeRearmMs =
+                            cauHinhHienTai
+                                .nhamHaiMat
+                                .thoiGianMoDeRearmMs,
+                        thoiGianNhieuChoPhepMs =
+                            cauHinhHienTai
+                                .nhamHaiMat
+                                .thoiGianNhieuChoPhepMs
+                    ),
+
+                moMieng =
+                    cauHinhMoi.moMieng.copy(
+                        thoiGianGiuBackMs =
+                            cauHinhHienTai
+                                .moMieng
+                                .thoiGianGiuBackMs,
+                        thoiGianDongDeRearmMs =
+                            cauHinhHienTai
+                                .moMieng
+                                .thoiGianDongDeRearmMs
+                    ),
+
+                moMiengHaiLan =
+                    cauHinhMoi.moMiengHaiLan.copy(
+                        thoiGianGiuBackMs =
+                            cauHinhHienTai
+                                .moMiengHaiLan
+                                .thoiGianGiuBackMs,
+                        thoiGianMoNganToiThieuMs =
+                            cauHinhHienTai
+                                .moMiengHaiLan
+                                .thoiGianMoNganToiThieuMs,
+                        khoangChoLanHaiMs =
+                            cauHinhHienTai
+                                .moMiengHaiLan
+                                .khoangChoLanHaiMs,
+                        thoiGianDongDeRearmMs =
+                            cauHinhHienTai
+                                .moMiengHaiLan
+                                .thoiGianDongDeRearmMs,
+                        thoiGianNhieuChoPhepMs =
+                            cauHinhHienTai
+                                .moMiengHaiLan
+                                .thoiGianNhieuChoPhepMs
+                    ),
+
+                hanhDong =
+                    cauHinhHienTai.hanhDong
+            )
+
         khoCauHinhNhanDienCuChi
             .luuCauHinh(
-                cauHinhMoi
+                cauHinhDaHopNhat
             )
 
         cauHinhNhanDienCuChi =
-            cauHinhMoi
+            cauHinhDaHopNhat
 
         boChuanHoaDuLieuKhuonMat =
             BoChuanHoaDuLieuKhuonMat(
@@ -1976,6 +2290,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         runOnUiThread {
 
+            dangMoTrangHieuChinh =
+                true
+
             khungTrangThaiHeThong.visibility =
                 View.GONE
 
@@ -1984,10 +2301,32 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             khungHieuChinh.visibility =
                 View.VISIBLE
+
+            khungChuanBiHieuChinh.visibility =
+                View.GONE
+
+            khungTienTrinhHieuChinh.visibility =
+                View.VISIBLE
+
+            capNhatMenuDuoi(
+                dangHieuChinh = true
+            )
         }
     }
 
     private fun anGiaoDienHieuChinh() {
+
+        dangMoTrangHieuChinh =
+            false
+
+        dangChoHieuChinhTuCaiDat =
+            false
+
+        khungChuanBiHieuChinh.visibility =
+            View.VISIBLE
+
+        khungTienTrinhHieuChinh.visibility =
+            View.GONE
 
         khungHieuChinh.visibility =
             View.GONE
@@ -1997,6 +2336,67 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         noiDungChinh.visibility =
             View.VISIBLE
+
+        capNhatMenuDuoi(
+            dangHieuChinh = false
+        )
+    }
+
+    private fun capNhatMenuDuoi(
+        dangHieuChinh: Boolean
+    ) {
+
+        val mauDangChon =
+            ContextCompat.getColor(
+                this,
+                R.color.xanh_chinh
+            )
+
+        val mauThuong =
+            ContextCompat.getColor(
+                this,
+                R.color.chu_phu
+            )
+
+        navTrangChu.setTextColor(
+            if (dangHieuChinh) {
+                mauThuong
+            } else {
+                mauDangChon
+            }
+        )
+
+        navTrangChu.setBackgroundResource(
+            if (dangHieuChinh) {
+                R.drawable.nen_che_do_thuong
+            } else {
+                R.drawable.nen_che_do_dang_chon
+            }
+        )
+
+        navHieuChinh.setTextColor(
+            if (dangHieuChinh) {
+                mauDangChon
+            } else {
+                mauThuong
+            }
+        )
+
+        navHieuChinh.setBackgroundResource(
+            if (dangHieuChinh) {
+                R.drawable.nen_che_do_dang_chon
+            } else {
+                R.drawable.nen_che_do_thuong
+            }
+        )
+
+        navCaiDat.setTextColor(
+            mauThuong
+        )
+
+        navCaiDat.setBackgroundResource(
+            R.drawable.nen_che_do_thuong
+        )
     }
 
     // QUYỀN CAMERA
@@ -2082,9 +2482,16 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 btnBatDauTheoDoi.isEnabled =
                     true
+
+                runOnUiThread {
+                    batDauHieuChinhTuCaiDat()
+                }
             },
 
             khiLoi = { exception ->
+
+                dangChoHieuChinhTuCaiDat =
+                    false
 
                 tatDichVuTheoDoi()
 
@@ -2186,6 +2593,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                     btnBatDauTheoDoi.isEnabled =
                         true
+
+                    batDauHieuChinhTuCaiDat()
                 }
 
                 Log.d(
@@ -2195,6 +2604,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
             },
 
             khiLoi = { exception ->
+
+                dangChoHieuChinhTuCaiDat =
+                    false
 
                 cameraDangBat =
                     false
@@ -2728,6 +3140,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val TAG_DICH_VU =
             "DichVuTheoDoi"
+
+        private const val TAG_CAI_DAT =
+            "FaceAccessSettings"
 
         private const val TAG_TRUY_CAP =
             "FaceAccessAccessibility"

@@ -1,31 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
+
+
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ================================================= -->
-    <!-- QUYỀN CAMERA -->
-    <!-- ================================================= -->
-
     <uses-permission android:name="android.permission.CAMERA" />
-
-
-    <!-- ================================================= -->
-    <!-- QUYỀN FOREGROUND SERVICE -->
-    <!-- ================================================= -->
-
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE" />
-
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
-
-    <uses-permission
-        android:name="android.permission.POST_NOTIFICATIONS" />
-
-
-    <!-- ================================================= -->
-    <!-- PHẦN CỨNG CAMERA -->
-    <!-- ================================================= -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -34,11 +17,6 @@
     <uses-feature
         android:name="android.hardware.camera.front"
         android:required="false" />
-
-
-    <!-- ================================================= -->
-    <!-- APPLICATION -->
-    <!-- ================================================= -->
 
     <application
         android:allowBackup="true"
@@ -50,32 +28,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FaceAccess_v2">
 
-
-        <!-- ================================================= -->
-        <!-- MÀN HÌNH CHÍNH -->
-        <!-- ================================================= -->
-
         <activity
             android:name=".ManHinhChinhActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
 
             <intent-filter>
-
-                <action
-                    android:name="android.intent.action.MAIN" />
-
-                <category
-                    android:name="android.intent.category.LAUNCHER" />
-
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
         </activity>
 
-
-        <!-- ================================================= -->
-        <!-- QUẢN LÝ LIÊN HỆ HỖ TRỢ -->
-        <!-- ================================================= -->
+        <activity
+            android:name=".caidat.CaiDatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".dieuphoi.hotro.DanhSachLienHeHoTroActivity"
@@ -92,25 +60,11 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-
-        <!-- ================================================= -->
-        <!-- CĂN CHỈNH ẢNH ĐẠI DIỆN -->
-        <!-- ================================================= -->
-
-        <!--
-            Activity riêng của FaceAccess kế thừa UCropActivity.
-            Có UI tối đồng bộ và nút XÁC NHẬN ẢNH rõ ràng.
-        -->
         <activity
             android:name=".dieuphoi.hotro.CanChinhAnhLienHeActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-
-
-        <!-- ================================================= -->
-        <!-- ACCESSIBILITY SERVICE -->
-        <!-- ================================================= -->
 
         <service
             android:name=".truycap.DichVuTruyCapFaceAccess"
@@ -118,10 +72,7 @@
             android:exported="true">
 
             <intent-filter>
-
-                <action
-                    android:name="android.accessibilityservice.AccessibilityService" />
-
+                <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
 
             <meta-data
@@ -130,16 +81,10 @@
 
         </service>
 
-
-        <!-- ================================================= -->
-        <!-- FOREGROUND TRACKING SERVICE -->
-        <!-- ================================================= -->
-
         <service
             android:name=".dichvu.DichVuTheoDoiFaceAccess"
             android:exported="false"
             android:foregroundServiceType="camera" />
-
 
     </application>
 

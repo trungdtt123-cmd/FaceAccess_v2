@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung -->
+
 <resources>
     <string name="app_name">FaceAccess_v2</string>
     <string name="mo_ta_dich_vu_truy_cap">

@@ -1,213 +1,251 @@
+
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 package com.example.faceaccess.v2.cuchi.cauhinh
 
-// Cấu hình chung cho toàn bộ nhận diện cử chỉ
 data class CauHinhNhanDienCuChi(
-
-    val chuanHoa: CauHinhChuanHoa =
-        CauHinhChuanHoa(),
-
-    val huongDau: CauHinhHuongDau =
-        CauHinhHuongDau(),
-
-    val nghiengDau: CauHinhNghiengDau =
-        CauHinhNghiengDau(),
-
-    val nhamHaiMat: CauHinhNhamHaiMat =
-        CauHinhNhamHaiMat(),
-
-    val moMieng: CauHinhMoMieng =
-        CauHinhMoMieng(),
-
-    val moMiengHaiLan: CauHinhMoMiengHaiLan =
-        CauHinhMoMiengHaiLan()
-
+    val chuanHoa: CauHinhChuanHoa = CauHinhChuanHoa(),
+    val huongDau: CauHinhHuongDau = CauHinhHuongDau(),
+    val nghiengDau: CauHinhNghiengDau = CauHinhNghiengDau(),
+    val nhamHaiMat: CauHinhNhamHaiMat = CauHinhNhamHaiMat(),
+    val moMieng: CauHinhMoMieng = CauHinhMoMieng(),
+    val moMiengHaiLan: CauHinhMoMiengHaiLan = CauHinhMoMiengHaiLan(),
+    val hanhDong: CauHinhHanhDongCuChi = CauHinhHanhDongCuChi()
 ) {
 
-    companion object {
+    fun datLaiHuongDau() =
+        copy(
+            huongDau = CauHinhHuongDau()
+        )
 
-        // Trả về bộ cấu hình mặc định
-        fun macDinh(): CauHinhNhanDienCuChi {
-            return CauHinhNhanDienCuChi()
-        }
+    fun datLaiNghiengDau() =
+        copy(
+            nghiengDau = CauHinhNghiengDau()
+        )
+
+    fun datLaiNhamHaiMat() =
+        copy(
+            nhamHaiMat = CauHinhNhamHaiMat()
+        )
+
+    fun datLaiMoMieng() =
+        copy(
+            moMieng = CauHinhMoMieng()
+        )
+
+    fun datLaiMoMiengHaiLan() =
+        copy(
+            moMiengHaiLan = CauHinhMoMiengHaiLan()
+        )
+
+    fun datLaiThongSoNhanDien() =
+        copy(
+            huongDau = CauHinhHuongDau(),
+            nghiengDau = CauHinhNghiengDau(),
+            nhamHaiMat = CauHinhNhamHaiMat(),
+            moMieng = CauHinhMoMieng(),
+            moMiengHaiLan = CauHinhMoMiengHaiLan()
+        )
+
+    fun datLaiHanhDong() =
+        copy(
+            hanhDong = CauHinhHanhDongCuChi()
+        )
+
+    companion object {
+        fun macDinh(): CauHinhNhanDienCuChi =
+            CauHinhNhanDienCuChi()
     }
 }
 
-
-// Giá trị trung tính dùng để bù lệch tư thế khuôn mặt
 data class CauHinhChuanHoa(
-
-    val lechRollTrungTinh: Float =
-        0f,
-
-    val lechYawTrungTinh: Float =
-        0f,
-
-    val lechPitchTrungTinh: Float =
-        0f
+    val lechRollTrungTinh: Float = 0f,
+    val lechYawTrungTinh: Float = 0f,
+    val lechPitchTrungTinh: Float = 0f
 )
 
-
-// Cấu hình quay, ngẩng và cúi đầu
 data class CauHinhHuongDau(
+    val nguongYaw: Float = 16f,
+    val nguongPitch: Float = 11f,
+    val tyLeChiPhoiYaw: Float = 1.05f,
+    val tyLeChiPhoiPitch: Float = 1.05f,
+    val nguongRollTrungTinh: Float = 8f,
+    val nguongYawTrungTinh: Float = 11f,
+    val nguongPitchTrungTinh: Float = 9f,
+    val thoiGianGiuYawMs: Long = 110L,
+    val thoiGianGiuPitchMs: Long = 120L,
+    val thoiGianGraceMs: Long = 200L,
+    val thoiGianTrungTinhMs: Long = 80L,
 
-    // Ngưỡng quay đầu trái/phải
-    val nguongYaw: Float =
-        16f,
-
-    // Ngưỡng ngẩng/cúi đầu
-    val nguongPitch: Float =
-        11f,
-
-    // Tỷ lệ ưu tiên chuyển động ngang
-    val tyLeChiPhoiYaw: Float =
-        1.05f,
-
-    // Tỷ lệ ưu tiên chuyển động dọc
-    val tyLeChiPhoiPitch: Float =
-        1.05f,
-
-    // Ngưỡng roll được xem là trung tính
-    val nguongRollTrungTinh: Float =
-        8f,
-
-    // Ngưỡng yaw được xem là trung tính
-    val nguongYawTrungTinh: Float =
-        11f,
-
-    // Ngưỡng pitch được xem là trung tính
-    val nguongPitchTrungTinh: Float =
-        9f,
-
-    // Thời gian giữ cử chỉ quay đầu
-    val thoiGianGiuYawMs: Long =
-        110L,
-
-    // Thời gian giữ cử chỉ ngẩng/cúi
-    val thoiGianGiuPitchMs: Long =
-        120L,
-
-    // Thời gian cho phép dao động ngắn
-    val thoiGianGraceMs: Long =
-        200L,
-
-    // Thời gian giữ trạng thái trung tính
-    val thoiGianTrungTinhMs: Long =
-        80L
-)
-
-
-// Cấu hình nhận diện nghiêng đầu
-data class CauHinhNghiengDau(
-
-    // Ngưỡng nghiêng trái
-    val nguongTrai: Float =
-        -16f,
-
-    // Ngưỡng nghiêng phải
-    val nguongPhai: Float =
-        16f,
-
-    // Ngưỡng trở về trung tính
-    val nguongTrungTinh: Float =
-        7f,
-
-    // Thời gian giữ cử chỉ
-    val thoiGianGiuMs: Long =
-        260L,
-
-    // Tỷ lệ ưu tiên chuyển động nghiêng
-    val tyLeChiPhoi: Float =
-        0.75f
-)
-
-
-// Cấu hình nhận diện nhắm hai mắt
-data class CauHinhNhamHaiMat(
-
-    // Ngưỡng xác định mắt đóng
-    val nguongDong: Float =
-        0.65f,
-
-    // Ngưỡng xác định mắt mở
-    val nguongMo: Float =
-        0.35f,
-
-    // Thời gian nhắm để xác nhận cử chỉ
-    val thoiGianNhamXacNhanMs: Long =
-        THOI_GIAN_NHAM_XAC_NHAN_MAC_DINH_MS,
-
-    // Thời gian mở mắt để nhận cử chỉ tiếp theo
-    val thoiGianMoDeRearmMs: Long =
-        THOI_GIAN_MO_DE_REARM_MAC_DINH_MS,
-
-    // Thời gian cho phép nhiễu
-    val thoiGianNhieuChoPhepMs: Long =
-        100L
-
+    // null = dùng ngưỡng nhóm cũ
+    val nguongQuayTrai: Float? = null,
+    val nguongQuayPhai: Float? = null,
+    val nguongNhinLen: Float? = null,
+    val nguongNhinXuong: Float? = null
 ) {
 
-    companion object {
+    fun layNguongQuayTrai(): Float =
+        nguongQuayTrai ?: nguongYaw
 
-        // Thời gian nhắm mặc định
+    fun layNguongQuayPhai(): Float =
+        nguongQuayPhai ?: nguongYaw
+
+    fun layNguongNhinLen(): Float =
+        nguongNhinLen ?: nguongPitch
+
+    fun layNguongNhinXuong(): Float =
+        nguongNhinXuong ?: nguongPitch
+}
+
+data class CauHinhNghiengDau(
+    val nguongTrai: Float = -16f,
+    val nguongPhai: Float = 16f,
+    val nguongTrungTinh: Float = 7f,
+    val thoiGianGiuMs: Long = 260L,
+    val tyLeChiPhoi: Float = 0.75f
+)
+
+data class CauHinhNhamHaiMat(
+    val nguongDong: Float = 0.65f,
+    val nguongMo: Float = 0.35f,
+    val thoiGianNhamXacNhanMs: Long =
+        THOI_GIAN_NHAM_XAC_NHAN_MAC_DINH_MS,
+    val thoiGianMoDeRearmMs: Long =
+        THOI_GIAN_MO_DE_REARM_MAC_DINH_MS,
+    val thoiGianNhieuChoPhepMs: Long = 100L
+) {
+    companion object {
         const val THOI_GIAN_NHAM_XAC_NHAN_MAC_DINH_MS =
             400L
 
-        // Thời gian mở lại mặc định
         const val THOI_GIAN_MO_DE_REARM_MAC_DINH_MS =
             150L
     }
 }
 
-
-// Cấu hình nhận diện mở miệng giữ
 data class CauHinhMoMieng(
-
-    // Ngưỡng xác định miệng mở
-    val nguongMo: Float =
-        0.35f,
-
-    // Ngưỡng xác định miệng đóng
-    val nguongDong: Float =
-        0.10f,
-
-    // Thời gian giữ để thực hiện Back
-    val thoiGianGiuBackMs: Long =
-        500L,
-
-    // Thời gian đóng miệng để nhận lại cử chỉ
-    val thoiGianDongDeRearmMs: Long =
-        150L
+    val nguongMo: Float = 0.35f,
+    val nguongDong: Float = 0.10f,
+    val thoiGianGiuBackMs: Long = 500L,
+    val thoiGianDongDeRearmMs: Long = 150L
 )
 
-
-// Cấu hình nhận diện mở miệng hai lần
 data class CauHinhMoMiengHaiLan(
-
-    // Ngưỡng xác định miệng mở
-    val nguongMo: Float =
-        0.30f,
-
-    // Ngưỡng xác định miệng đóng
-    val nguongDong: Float =
-        0.18f,
-
-    // Thời gian giữ để thực hiện Back
-    val thoiGianGiuBackMs: Long =
-        500L,
-
-    // Thời gian mở tối thiểu
-    val thoiGianMoNganToiThieuMs: Long =
-        60L,
-
-    // Khoảng chờ lần mở thứ hai
-    val khoangChoLanHaiMs: Long =
-        700L,
-
-    // Thời gian đóng để nhận lại cử chỉ
-    val thoiGianDongDeRearmMs: Long =
-        120L,
-
-    // Thời gian cho phép nhiễu
-    val thoiGianNhieuChoPhepMs: Long =
-        140L
+    val nguongMo: Float = 0.30f,
+    val nguongDong: Float = 0.18f,
+    val thoiGianGiuBackMs: Long = 500L,
+    val thoiGianMoNganToiThieuMs: Long = 60L,
+    val khoangChoLanHaiMs: Long = 700L,
+    val thoiGianDongDeRearmMs: Long = 120L,
+    val thoiGianNhieuChoPhepMs: Long = 140L
 )
+
+data class CauHinhHanhDongCuChi(
+    val quayTrai: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.THEO_CHE_DO,
+
+    val quayPhai: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.THEO_CHE_DO,
+
+    val nhinLen: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.THEO_CHE_DO,
+
+    val nhinXuong: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.THEO_CHE_DO,
+
+    val nghiengTrai: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.HOME,
+
+    val nghiengPhai: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.DOI_CHE_DO,
+
+    val nhamHaiMat: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.THEO_CHE_DO,
+
+    val moMieng: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.BACK,
+
+    val moMiengHaiLan: HanhDongTuyChinhCuChi =
+        HanhDongTuyChinhCuChi.THEO_CHE_DO
+) {
+
+    fun chuanHoaChoCuChiToanCuc():
+            CauHinhHanhDongCuChi {
+
+        val hopLe =
+            setOf(
+                HanhDongTuyChinhCuChi.BACK,
+                HanhDongTuyChinhCuChi.HOME,
+                HanhDongTuyChinhCuChi.DOI_CHE_DO
+            )
+
+        val boBa =
+            listOf(
+                nghiengTrai,
+                nghiengPhai,
+                moMieng
+            )
+
+        val hopLeVaKhongTrung =
+            boBa.all {
+                it in hopLe
+            } &&
+                    boBa.toSet().size == 3
+
+        val hanhDongNghiengTrai =
+            if (hopLeVaKhongTrung) {
+                nghiengTrai
+            } else {
+                HanhDongTuyChinhCuChi.HOME
+            }
+
+        val hanhDongNghiengPhai =
+            if (hopLeVaKhongTrung) {
+                nghiengPhai
+            } else {
+                HanhDongTuyChinhCuChi.DOI_CHE_DO
+            }
+
+        val hanhDongMoMieng =
+            if (hopLeVaKhongTrung) {
+                moMieng
+            } else {
+                HanhDongTuyChinhCuChi.BACK
+            }
+
+        return copy(
+            quayTrai =
+                HanhDongTuyChinhCuChi.THEO_CHE_DO,
+            quayPhai =
+                HanhDongTuyChinhCuChi.THEO_CHE_DO,
+            nhinLen =
+                HanhDongTuyChinhCuChi.THEO_CHE_DO,
+            nhinXuong =
+                HanhDongTuyChinhCuChi.THEO_CHE_DO,
+            nghiengTrai =
+                hanhDongNghiengTrai,
+            nghiengPhai =
+                hanhDongNghiengPhai,
+            nhamHaiMat =
+                HanhDongTuyChinhCuChi.THEO_CHE_DO,
+            moMieng =
+                hanhDongMoMieng,
+            moMiengHaiLan =
+                HanhDongTuyChinhCuChi.THEO_CHE_DO
+        )
+    }
+}
+
+enum class HanhDongTuyChinhCuChi(
+    val tenHienThi: String
+) {
+    THEO_CHE_DO("THEO CHẾ ĐỘ"),
+    CLICK("CLICK"),
+    BACK("BACK"),
+    HOME("HOME"),
+    CUON_LEN("CUỘN LÊN"),
+    CUON_XUONG("CUỘN XUỐNG"),
+    DOI_CHE_DO("ĐỔI CHẾ ĐỘ"),
+    DOI_KHOA_CON_TRO("BẬT/TẮT CON TRỎ"),
+    KHONG_SU_DUNG("KHÔNG SỬ DỤNG")
+}

@@ -1,35 +1,22 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 package com.example.faceaccess.v2.cuchi.huongdau
 
 import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhHuongDau
 import kotlin.math.abs
 
 class NhanDienHuongDau(
-
-    // Cấu hình nhận diện hướng đầu
-    private val cauHinh: CauHinhHuongDau =
-        CauHinhHuongDau(),
-
-    // Callback khi nhận diện thành công
-    private val khiNhanDienHuong:
-        (HuongDau) -> Unit
-
+    private val cauHinh: CauHinhHuongDau = CauHinhHuongDau(),
+    private val khiNhanDienHuong: (HuongDau) -> Unit
 ) {
 
     private enum class TrangThai {
-
-        // Sẵn sàng nhận cử chỉ
         SAN_SANG,
-
-        // Đang giữ một hướng
         DANG_GIU,
-
-        // Đã phát cử chỉ
         DA_KICH_HOAT,
-
-        // Chờ đầu về trung tính
         CHO_TRUNG_TINH
     }
-
 
     private var trangThai =
         TrangThai.CHO_TRUNG_TINH
@@ -46,7 +33,6 @@ class NhanDienHuongDau(
     private var thoiDiemBatDauTrungTinh =
         0L
 
-
     fun capNhat(
         roll: Float?,
         yaw: Float?,
@@ -54,18 +40,14 @@ class NhanDienHuongDau(
         thoiGianMs: Long
     ) {
 
-        // Thiếu pose thì reset
         if (
             roll == null ||
             yaw == null ||
             pitch == null
         ) {
-
             datLai()
-
             return
         }
-
 
         val dangTrungTinh =
             laTrungTinh(
@@ -74,19 +56,15 @@ class NhanDienHuongDau(
                 pitch = pitch
             )
 
-
         when (trangThai) {
 
             TrangThai.SAN_SANG -> {
 
                 if (dangTrungTinh) {
-
                     thoiDiemBatDauTrungTinh =
                         0L
-
                     return
                 }
-
 
                 val huong =
                     timHuongHopLe(
@@ -94,7 +72,6 @@ class NhanDienHuongDau(
                         yaw = yaw,
                         pitch = pitch
                     )
-
 
                 if (huong != null) {
 
@@ -112,16 +89,12 @@ class NhanDienHuongDau(
                 }
             }
 
-
             TrangThai.DANG_GIU -> {
 
                 if (dangTrungTinh) {
-
                     datLaiVeSanSang()
-
                     return
                 }
-
 
                 val huongHienTai =
                     timHuongHopLe(
@@ -130,18 +103,13 @@ class NhanDienHuongDau(
                         pitch = pitch
                     )
 
-
-                // Không đổi cử chỉ giữa chừng
                 if (
                     huongHienTai != null &&
                     huongHienTai != huongDangGiu
                 ) {
-
                     chuyenSangChoTrungTinh()
-
                     return
                 }
-
 
                 if (
                     huongHienTai ==
@@ -151,17 +119,14 @@ class NhanDienHuongDau(
                     thoiDiemHopLeCuoi =
                         thoiGianMs
 
-
                     val thoiGianDaGiu =
                         thoiGianMs -
                                 thoiDiemBatDauGiu
-
 
                     val thoiGianGiuCanThiet =
                         layThoiGianGiuCanThiet(
                             huongDangGiu
                         )
-
 
                     if (
                         thoiGianDaGiu >=
@@ -172,12 +137,9 @@ class NhanDienHuongDau(
                             huongDangGiu
                                 ?: return
 
-
-                        // Chỉ phát cử chỉ một lần
                         khiNhanDienHuong(
                             huongPhat
                         )
-
 
                         trangThai =
                             TrangThai.DA_KICH_HOAT
@@ -189,46 +151,33 @@ class NhanDienHuongDau(
                     return
                 }
 
-
-                // Cho phép nhiễu MediaPipe ngắn
                 val thoiGianMatDieuKien =
                     thoiGianMs -
                             thoiDiemHopLeCuoi
-
 
                 if (
                     thoiGianMatDieuKien >
                     cauHinh.thoiGianGraceMs
                 ) {
-
                     chuyenSangChoTrungTinh()
                 }
             }
 
-
             TrangThai.DA_KICH_HOAT -> {
-
                 capNhatChoTrungTinh(
-                    dangTrungTinh =
-                        dangTrungTinh,
-                    thoiGianMs =
-                        thoiGianMs
+                    dangTrungTinh = dangTrungTinh,
+                    thoiGianMs = thoiGianMs
                 )
             }
 
-
             TrangThai.CHO_TRUNG_TINH -> {
-
                 capNhatChoTrungTinh(
-                    dangTrungTinh =
-                        dangTrungTinh,
-                    thoiGianMs =
-                        thoiGianMs
+                    dangTrungTinh = dangTrungTinh,
+                    thoiGianMs = thoiGianMs
                 )
             }
         }
     }
-
 
     private fun timHuongHopLe(
         roll: Float,
@@ -245,11 +194,15 @@ class NhanDienHuongDau(
         val absPitch =
             abs(pitch)
 
+        val nguongYawCanThiet =
+            if (yaw > 0f) {
+                cauHinh.layNguongQuayTrai()
+            } else {
+                cauHinh.layNguongQuayPhai()
+            }
 
-        // Yaw phải chi phối pitch và roll
         val yawChiPhoi =
-            absYaw >=
-                    cauHinh.nguongYaw &&
+            absYaw >= nguongYawCanThiet &&
                     absYaw >=
                     absPitch *
                     cauHinh.tyLeChiPhoiYaw &&
@@ -257,25 +210,24 @@ class NhanDienHuongDau(
                     absRoll *
                     cauHinh.tyLeChiPhoiYaw
 
-
         if (yawChiPhoi) {
 
-            // Yaw dương: trái, yaw âm: phải
             return if (yaw > 0f) {
-
                 HuongDau.TRAI
-
             } else {
-
                 HuongDau.PHAI
             }
         }
 
+        val nguongPitchCanThiet =
+            if (pitch > 0f) {
+                cauHinh.layNguongNhinLen()
+            } else {
+                cauHinh.layNguongNhinXuong()
+            }
 
-        // Pitch phải chi phối yaw và roll
         val pitchChiPhoi =
-            absPitch >=
-                    cauHinh.nguongPitch &&
+            absPitch >= nguongPitchCanThiet &&
                     absPitch >=
                     absYaw *
                     cauHinh.tyLeChiPhoiPitch &&
@@ -283,24 +235,17 @@ class NhanDienHuongDau(
                     absRoll *
                     cauHinh.tyLeChiPhoiPitch
 
-
         if (pitchChiPhoi) {
 
-            // Pitch dương: lên, pitch âm: xuống
             return if (pitch > 0f) {
-
                 HuongDau.LEN
-
             } else {
-
                 HuongDau.XUONG
             }
         }
 
-
         return null
     }
-
 
     private fun layThoiGianGiuCanThiet(
         huong: HuongDau?
@@ -321,7 +266,6 @@ class NhanDienHuongDau(
         }
     }
 
-
     private fun laTrungTinh(
         roll: Float,
         yaw: Float,
@@ -338,47 +282,37 @@ class NhanDienHuongDau(
                 )
     }
 
-
     private fun capNhatChoTrungTinh(
         dangTrungTinh: Boolean,
         thoiGianMs: Long
     ) {
 
         if (!dangTrungTinh) {
-
             thoiDiemBatDauTrungTinh =
                 0L
-
             return
         }
-
 
         if (
             thoiDiemBatDauTrungTinh ==
             0L
         ) {
-
             thoiDiemBatDauTrungTinh =
                 thoiGianMs
-
             return
         }
-
 
         val thoiGianDaTrungTinh =
             thoiGianMs -
                     thoiDiemBatDauTrungTinh
 
-
         if (
             thoiGianDaTrungTinh >=
             cauHinh.thoiGianTrungTinhMs
         ) {
-
             datLaiVeSanSang()
         }
     }
-
 
     private fun chuyenSangChoTrungTinh() {
 
@@ -398,7 +332,6 @@ class NhanDienHuongDau(
             0L
     }
 
-
     private fun datLaiVeSanSang() {
 
         trangThai =
@@ -417,10 +350,7 @@ class NhanDienHuongDau(
             0L
     }
 
-
     fun datLai() {
-
-        // Chờ trung tính trước khi nhận lại
         chuyenSangChoTrungTinh()
     }
 }

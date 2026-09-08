@@ -1,3 +1,6 @@
+
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 package com.example.faceaccess.v2.ai.hieuchinh
 
 import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNhanDienCuChi
@@ -131,18 +134,36 @@ class BoHocNguongThichNghi {
             )
 
 
-        // Học ngưỡng quay đầu
+        // Biên độ từng hướng
+        val bienDoQuayTrai =
+            yawTrai?.minus(
+                yawTrungTinh
+            )
+
+        val bienDoQuayPhai =
+            yawPhai?.let {
+                yawTrungTinh - it
+            }
+
+        val bienDoNhinLen =
+            pitchLen?.minus(
+                pitchTrungTinh
+            )
+
+        val bienDoNhinXuong =
+            pitchXuong?.let {
+                pitchTrungTinh - it
+            }
+
+
+        // Ngưỡng chung để tương thích
         val nguongYaw =
             hocNguongHaiPhia(
                 bienDoPhiaDuong =
-                    yawTrai?.minus(
-                        yawTrungTinh
-                    ),
+                    bienDoQuayTrai,
 
                 bienDoPhiaAm =
-                    yawPhai?.let {
-                        yawTrungTinh - it
-                    },
+                    bienDoQuayPhai,
 
                 macDinh =
                     macDinh.huongDau.nguongYaw,
@@ -151,19 +172,63 @@ class BoHocNguongThichNghi {
                 toiDa = 18f
             )
 
-
-        // Học ngưỡng ngẩng và cúi
         val nguongPitch =
             hocNguongHaiPhia(
                 bienDoPhiaDuong =
-                    pitchLen?.minus(
-                        pitchTrungTinh
-                    ),
+                    bienDoNhinLen,
 
                 bienDoPhiaAm =
-                    pitchXuong?.let {
-                        pitchTrungTinh - it
-                    },
+                    bienDoNhinXuong,
+
+                macDinh =
+                    macDinh.huongDau.nguongPitch,
+
+                toiThieu = 6f,
+                toiDa = 14f
+            )
+
+
+        // Ngưỡng riêng từng hướng
+        val nguongQuayTrai =
+            hocNguongMotPhia(
+                bienDo =
+                    bienDoQuayTrai,
+
+                macDinh =
+                    macDinh.huongDau.nguongYaw,
+
+                toiThieu = 8f,
+                toiDa = 18f
+            )
+
+        val nguongQuayPhai =
+            hocNguongMotPhia(
+                bienDo =
+                    bienDoQuayPhai,
+
+                macDinh =
+                    macDinh.huongDau.nguongYaw,
+
+                toiThieu = 8f,
+                toiDa = 18f
+            )
+
+        val nguongNhinLen =
+            hocNguongMotPhia(
+                bienDo =
+                    bienDoNhinLen,
+
+                macDinh =
+                    macDinh.huongDau.nguongPitch,
+
+                toiThieu = 6f,
+                toiDa = 14f
+            )
+
+        val nguongNhinXuong =
+            hocNguongMotPhia(
+                bienDo =
+                    bienDoNhinXuong,
 
                 macDinh =
                     macDinh.huongDau.nguongPitch,
@@ -301,7 +366,19 @@ class BoHocNguongThichNghi {
                         nguongYaw,
 
                     nguongPitch =
-                        nguongPitch
+                        nguongPitch,
+
+                    nguongQuayTrai =
+                        nguongQuayTrai,
+
+                    nguongQuayPhai =
+                        nguongQuayPhai,
+
+                    nguongNhinLen =
+                        nguongNhinLen,
+
+                    nguongNhinXuong =
+                        nguongNhinXuong
                 ),
 
 
