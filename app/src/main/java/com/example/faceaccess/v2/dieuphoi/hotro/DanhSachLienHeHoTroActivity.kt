@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 package com.example.faceaccess.v2.dieuphoi.hotro
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -21,30 +24,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.example.faceaccess.v2.R
 import java.util.Locale
 
-/**
- * Màn hình quản lý liên hệ hỗ trợ.
- *
- * Checkpoint 1 đã có:
- * - danh sách không giới hạn cứng;
- * - thêm liên hệ;
- * - tìm theo tên / số điện thoại;
- * - xóa nhiều liên hệ cùng lúc;
- * - avatar chữ cái đầu khi chưa có ảnh.
- *
- * Đã nối:
- * - nhấn liên hệ -> mở màn hình chi tiết;
- * - cập nhật tên/số điện thoại/mô tả ở màn hình chi tiết.
- *
- * Đã nối thêm:
- * - ảnh đại diện thật được hiển thị ngay trong danh sách;
- * - nếu không có ảnh hoặc URI lỗi thì fallback về chữ cái đầu.
- *
- * Checkpoint sau:
- * - kết nối danh sách này với gesture HO_TRO.
- */
+// Quản lý danh sách liên hệ hỗ trợ.
 class DanhSachLienHeHoTroActivity :
     AppCompatActivity() {
 
@@ -101,6 +85,7 @@ class DanhSachLienHeHoTroActivity :
             R.layout.activity_danh_sach_lien_he_ho_tro
         )
 
+        cauHinhThanhHeThong()
 
         khoLienHe =
             KhoLienHeHoTro(
@@ -109,6 +94,8 @@ class DanhSachLienHeHoTroActivity :
 
 
         anhXa()
+
+        apDungPhongCachNut()
 
         ganSuKien()
     }
@@ -293,11 +280,11 @@ class DanhSachLienHeHoTroActivity :
         txtTongLienHe.text =
             if (tuKhoa.isBlank()) {
 
-                "Tổng: ${danhSachGoc.size} liên hệ"
+                "${danhSachGoc.size} liên hệ"
 
             } else {
 
-                "Tìm thấy: ${ketQua.size}/${danhSachGoc.size} liên hệ"
+                "${ketQua.size} kết quả"
             }
     }
 
@@ -355,7 +342,7 @@ class DanhSachLienHeHoTroActivity :
                 background =
                     ContextCompat.getDrawable(
                         this@DanhSachLienHeHoTroActivity,
-                        R.drawable.nen_the
+                        R.drawable.fa_support_card
                     )
 
                 layoutParams =
@@ -397,7 +384,7 @@ class DanhSachLienHeHoTroActivity :
                 background =
                     ContextCompat.getDrawable(
                         this@DanhSachLienHeHoTroActivity,
-                        R.drawable.nen_avatar_lien_he
+                        R.drawable.fa_support_avatar
                     )
 
                 scaleType =
@@ -442,7 +429,7 @@ class DanhSachLienHeHoTroActivity :
                 background =
                     ContextCompat.getDrawable(
                         this@DanhSachLienHeHoTroActivity,
-                        R.drawable.nen_avatar_lien_he
+                        R.drawable.fa_support_avatar
                     )
 
                 layoutParams =
@@ -528,10 +515,14 @@ class DanhSachLienHeHoTroActivity :
                 textSize =
                     17f
 
+                setTypeface(
+                    typeface,
+                    android.graphics.Typeface.BOLD
+                )
+
                 setTextColor(
-                    ContextCompat.getColor(
-                        this@DanhSachLienHeHoTroActivity,
-                        R.color.chu_chinh
+                    Color.parseColor(
+                        "#173D33"
                     )
                 )
             }
@@ -547,9 +538,8 @@ class DanhSachLienHeHoTroActivity :
                     14f
 
                 setTextColor(
-                    ContextCompat.getColor(
-                        this@DanhSachLienHeHoTroActivity,
-                        R.color.chu_phu
+                    Color.parseColor(
+                        "#71847C"
                     )
                 )
             }
@@ -562,6 +552,61 @@ class DanhSachLienHeHoTroActivity :
         thongTin.addView(
             txtSo
         )
+
+
+        val nutGoi =
+            ImageView(this).apply {
+
+                val kichThuoc =
+                    (44 * scale).toInt()
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        kichThuoc,
+                        kichThuoc
+                    ).apply {
+                        marginStart =
+                            (8 * scale).toInt()
+                    }
+
+                background =
+                    ContextCompat.getDrawable(
+                        this@DanhSachLienHeHoTroActivity,
+                        R.drawable.fa_support_icon_circle
+                    )
+
+                setImageResource(
+                    R.drawable.ic_support_phone
+                )
+
+                setPadding(
+                    (11 * scale).toInt(),
+                    (11 * scale).toInt(),
+                    (11 * scale).toInt(),
+                    (11 * scale).toInt()
+                )
+
+                contentDescription =
+                    "Gọi ${nguoi.ten}"
+
+                visibility =
+                    if (cheDoXoa) {
+                        View.GONE
+                    } else {
+                        View.VISIBLE
+                    }
+
+                ganHieuUngNhan(
+                    this
+                )
+
+                setOnClickListener {
+
+                    moTrinhQuaySo(
+                        nguoi.soDienThoai
+                    )
+                }
+            }
 
 
         val checkBox =
@@ -609,6 +654,10 @@ class DanhSachLienHeHoTroActivity :
         )
 
         row.addView(
+            nutGoi
+        )
+
+        row.addView(
             checkBox
         )
 
@@ -636,6 +685,114 @@ class DanhSachLienHeHoTroActivity :
 
 
         return row
+    }
+
+
+    private fun cauHinhThanhHeThong() {
+
+        window.statusBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        window.navigationBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        WindowCompat
+            .getInsetsController(
+                window,
+                window.decorView
+            )
+            .apply {
+                isAppearanceLightStatusBars =
+                    true
+                isAppearanceLightNavigationBars =
+                    true
+            }
+    }
+
+
+    private fun apDungPhongCachNut() {
+
+        listOf(
+            btnThem,
+            btnXoa,
+            btnHuyXoa,
+            btnQuayLai
+        ).forEach { nut ->
+
+            nut.backgroundTintList =
+                null
+
+            nut.isAllCaps =
+                false
+
+            ganHieuUngNhan(
+                nut
+            )
+        }
+    }
+
+
+    private fun ganHieuUngNhan(
+        view: View
+    ) {
+
+        view.setOnTouchListener {
+                v,
+                event ->
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN -> {
+
+                    v.animate()
+                        .scaleX(0.96f)
+                        .scaleY(0.96f)
+                        .setDuration(80L)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+
+                    v.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(110L)
+                        .start()
+                }
+            }
+
+            false
+        }
+    }
+
+
+    private fun moTrinhQuaySo(
+        soDienThoai: String
+    ) {
+
+        if (soDienThoai.isBlank()) {
+            return
+        }
+
+        startActivity(
+            Intent(
+                Intent.ACTION_DIAL,
+                Uri.parse(
+                    "tel:${
+                        Uri.encode(
+                            soDienThoai
+                        )
+                    }"
+                )
+            )
+        )
     }
 
 
@@ -672,7 +829,7 @@ class DanhSachLienHeHoTroActivity :
             true
 
         btnXoa.text =
-            "XÓA LIÊN HỆ"
+            "Xóa liên hệ"
 
         hienThiTheoTimKiem()
     }
@@ -681,7 +838,7 @@ class DanhSachLienHeHoTroActivity :
     private fun capNhatNutXoa() {
 
         btnXoa.text =
-            "XÓA ĐÃ CHỌN (${idsDaChon.size})"
+            "Xóa đã chọn (${idsDaChon.size})"
     }
 
 

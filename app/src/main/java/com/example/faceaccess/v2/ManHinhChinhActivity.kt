@@ -1,4 +1,4 @@
-
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 package com.example.faceaccess.v2
 
@@ -16,8 +16,11 @@ import android.provider.Settings
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.graphics.Color
 import android.util.Log
 import android.view.View
+import android.view.MotionEvent
+import kotlin.math.abs
 import android.view.accessibility.AccessibilityManager
 import android.widget.Button
 import android.widget.ProgressBar
@@ -27,7 +30,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
+import com.example.faceaccess.v2.huongdan.CheDoHuongDan
+import com.example.faceaccess.v2.huongdan.DuLieuHuongDanCuChi
+import com.example.faceaccess.v2.huongdan.MucHuongDanCuChi
+import com.airbnb.lottie.LottieAnimationView
 import com.example.faceaccess.v2.ai.hieuchinh.BoChuanHoaDuLieuKhuonMat
 import com.example.faceaccess.v2.ai.hieuchinh.BoDieuKhienHieuChinh
 import com.example.faceaccess.v2.ai.hieuchinh.BoHocNguongThichNghi
@@ -326,6 +334,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var navTrangChu: TextView
 
+    private lateinit var navHuongDan: TextView
+
     private lateinit var navHieuChinh: TextView
 
     private lateinit var navCaiDat: TextView
@@ -334,7 +344,50 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var khungTrangThaiHeThong: View
 
+    private lateinit var khungTieuDeCamera: View
+
+    private lateinit var khungCameraContainer: View
+
+    private lateinit var khungCameraChinh: View
+
+    private lateinit var noiDungCuonManHinhChinh: View
+
     private lateinit var noiDungChinh: View
+
+    // GIAO DIỆN HƯỚNG DẪN
+
+    private lateinit var khungHeaderChinh: View
+
+    private lateinit var khungHuongDan: View
+
+    private lateinit var guideDieuHuong: TextView
+
+    private lateinit var guideMedia: TextView
+
+    private lateinit var guideHoTro: TextView
+
+    private lateinit var guideConTro: TextView
+
+    private lateinit var khungTheHuongDan: View
+
+    private lateinit var txtSoThuTuCuChi: TextView
+
+    private lateinit var txtTenCuChi: TextView
+
+    private lateinit var txtMoTaCuChi: TextView
+
+    private lateinit var txtNhanCheDo: TextView
+
+    private lateinit var txtHanhDongCuChi: TextView
+
+    private lateinit var txtGoiYCuChi: TextView
+
+    private lateinit var txtTrangHuongDan: TextView
+
+    private lateinit var animationHuongDan: LottieAnimationView
+
+    private var chamHuongDan: List<View> =
+        emptyList()
 
     // GIAO DIỆN HIỆU CHỈNH
 
@@ -395,6 +448,17 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private var dangChoHieuChinhTuCaiDat = false
 
     private var dangMoTrangHieuChinh = false
+
+    private var dangMoTrangHuongDan = false
+
+    private var cheDoHuongDanDangXem =
+        CheDoDieuKhien.DIEU_HUONG
+
+    private var viTriCuChiHuongDan = 0
+
+    private var danhSachHuongDan:
+            List<MucHuongDanCuChi> =
+        emptyList()
 
     // FOREGROUND TRACKING SERVICE + BÀN GIAO CAMERA
 
@@ -556,6 +620,135 @@ class ManHinhChinhActivity : AppCompatActivity() {
             false
     }
 
+    private fun capNhatGiaoDienNutTheoDoi(
+        dangTheoDoi: Boolean
+    ) {
+        btnBatDauTheoDoi.text =
+            if (dangTheoDoi) {
+                "DỪNG THEO DÕI"
+            } else {
+                "BẮT ĐẦU THEO DÕI"
+            }
+
+        // Bỏ tint mặc định của theme
+        btnBatDauTheoDoi.backgroundTintList =
+            null
+
+        btnBatDauTheoDoi.setBackgroundResource(
+            R.drawable.fa_home_button_tracking
+        )
+
+        btnBatDauTheoDoi.setTextColor(
+            Color.WHITE
+        )
+
+        btnBatDauTheoDoi.alpha = 1f
+        btnBatDauTheoDoi.scaleX = 1f
+        btnBatDauTheoDoi.scaleY = 1f
+    }
+
+    private fun ganHieuUngNhanNutTheoDoi() {
+        btnBatDauTheoDoi.setOnTouchListener { view, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    view.animate()
+                        .scaleX(0.955f)
+                        .scaleY(0.955f)
+                        .alpha(0.78f)
+                        .setDuration(90L)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    view.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .alpha(1f)
+                        .setDuration(130L)
+                        .start()
+                }
+            }
+
+            false
+        }
+    }
+
+    private fun cauHinhGiaoDienHieuChinh() {
+
+        fun datNutXanh(
+            nut: Button
+        ) {
+            // Bỏ màu mặc định của theme
+            nut.backgroundTintList =
+                null
+
+            nut.setBackgroundResource(
+                R.drawable.fa_calibration_button
+            )
+
+            nut.setTextColor(
+                Color.WHITE
+            )
+
+            nut.alpha =
+                1f
+
+            nut.scaleX =
+                1f
+
+            nut.scaleY =
+                1f
+        }
+
+        fun ganHieuUngNhan(
+            view: View
+        ) {
+            view.setOnTouchListener { nut, event ->
+
+                when (event.action) {
+
+                    MotionEvent.ACTION_DOWN -> {
+                        nut.animate()
+                            .scaleX(0.96f)
+                            .scaleY(0.96f)
+                            .alpha(0.78f)
+                            .setDuration(90L)
+                            .start()
+                    }
+
+                    MotionEvent.ACTION_UP,
+                    MotionEvent.ACTION_CANCEL -> {
+                        nut.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .alpha(1f)
+                            .setDuration(130L)
+                            .start()
+                    }
+                }
+
+                false
+            }
+        }
+
+        datNutXanh(
+            btnBatDauHieuChinh
+        )
+
+        datNutXanh(
+            btnHuyHieuChinh
+        )
+
+        ganHieuUngNhan(
+            btnBatDauHieuChinh
+        )
+
+        ganHieuUngNhan(
+            btnHuyHieuChinh
+        )
+    }
+
     // QUYỀN CAMERA
 
     private val yeuCauQuyenCamera =
@@ -641,12 +834,87 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     false
                 ) == true
 
+            val yeuCauHuongDan =
+                duLieu?.getBooleanExtra(
+                    CaiDatActivity.EXTRA_YEU_CAU_HUONG_DAN,
+                    false
+                ) == true
+
+            val yeuCauTrangChu =
+                duLieu?.getBooleanExtra(
+                    CaiDatActivity.EXTRA_YEU_CAU_TRANG_CHU,
+                    false
+                ) == true
+
             if (cauHinhDaThayDoi) {
                 taiLaiCauHinhNhanDien()
+
+                if (dangMoTrangHuongDan) {
+                    capNhatNoiDungHuongDan(
+                        cheDoHuongDanDangXem
+                    )
+                }
             }
 
-            if (yeuCauHieuChinh) {
-                moTrangHieuChinh()
+            when {
+
+                yeuCauTrangChu -> {
+
+                    val dangOTrangChu =
+                        !dangHieuChinh &&
+                                !dangMoTrangHieuChinh &&
+                                !dangMoTrangHuongDan
+
+                    when {
+                        dangHieuChinh ->
+                            huyHieuChinh()
+
+                        dangMoTrangHieuChinh ->
+                            anGiaoDienHieuChinh()
+
+                        dangMoTrangHuongDan ->
+                            anGiaoDienHuongDan()
+
+                        dangOTrangChu ->
+                            taoHieuUngMoNoiDungManHinhChinh()
+                    }
+                }
+
+                yeuCauHieuChinh -> {
+
+                    if (dangMoTrangHuongDan) {
+                        anGiaoDienHuongDan()
+                    }
+
+                    if (
+                        !dangHieuChinh &&
+                        !dangMoTrangHieuChinh
+                    ) {
+                        moTrangHieuChinh()
+                    } else if (
+                        !dangHieuChinh &&
+                        dangMoTrangHieuChinh
+                    ) {
+                        taoHieuUngMoNoiDungManHinhChinh()
+                    }
+                }
+
+                yeuCauHuongDan -> {
+
+                    when {
+                        dangHieuChinh ->
+                            huyHieuChinh()
+
+                        dangMoTrangHieuChinh ->
+                            anGiaoDienHieuChinh()
+                    }
+
+                    if (!dangMoTrangHuongDan) {
+                        moTrangHuongDan()
+                    } else {
+                        taoHieuUngMoNoiDungManHinhChinh()
+                    }
+                }
             }
         }
 
@@ -655,9 +923,21 @@ class ManHinhChinhActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        cauHinhThanhHeThong()
+
         setContentView(R.layout.activity_main)
 
         anhXaGiaoDien()
+
+        khoiTaoHuongDanCuChi()
+
+        cauHinhGiaoDienHieuChinh()
+
+        capNhatGiaoDienNutTheoDoi(
+            dangTheoDoi = false
+        )
+
+        ganHieuUngNhanNutTheoDoi()
 
         dangKyBoNhanBanGiaoCamera()
 
@@ -702,6 +982,33 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
+    private fun cauHinhThanhHeThong() {
+
+        window.statusBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        window.navigationBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        WindowCompat
+            .getInsetsController(
+                window,
+                window.decorView
+            )
+            .apply {
+                isAppearanceLightStatusBars =
+                    true
+
+                isAppearanceLightNavigationBars =
+                    true
+            }
+    }
+
+
     // ÁNH XẠ UI
 
     private fun anhXaGiaoDien() {
@@ -720,6 +1027,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
         navTrangChu =
             findViewById(R.id.navTrangChu)
 
+        navHuongDan =
+            findViewById(R.id.navHuongDan)
+
         navHieuChinh =
             findViewById(R.id.navHieuChinh)
 
@@ -732,8 +1042,78 @@ class ManHinhChinhActivity : AppCompatActivity() {
         khungTrangThaiHeThong =
             findViewById(R.id.khungTrangThaiHeThong)
 
+        khungTieuDeCamera =
+            findViewById(R.id.khungTieuDeCamera)
+
+        khungCameraContainer =
+            findViewById(R.id.khungCameraContainer)
+
+        khungCameraChinh =
+            findViewById(R.id.khungCameraChinh)
+
+        noiDungCuonManHinhChinh =
+            findViewById(R.id.noiDungCuonManHinhChinh)
+
         noiDungChinh =
             findViewById(R.id.noiDungChinh)
+
+        // Hướng dẫn
+        khungHeaderChinh =
+            findViewById(R.id.khungHeaderChinh)
+
+        khungHuongDan =
+            findViewById(R.id.khungHuongDan)
+
+        guideDieuHuong =
+            findViewById(R.id.guideDieuHuong)
+
+        guideMedia =
+            findViewById(R.id.guideMedia)
+
+        guideHoTro =
+            findViewById(R.id.guideHoTro)
+
+        guideConTro =
+            findViewById(R.id.guideConTro)
+
+        khungTheHuongDan =
+            findViewById(R.id.khungTheHuongDan)
+
+        txtSoThuTuCuChi =
+            findViewById(R.id.txtSoThuTuCuChi)
+
+        txtTenCuChi =
+            findViewById(R.id.txtTenCuChi)
+
+        txtMoTaCuChi =
+            findViewById(R.id.txtMoTaCuChi)
+
+        txtNhanCheDo =
+            findViewById(R.id.txtNhanCheDo)
+
+        txtHanhDongCuChi =
+            findViewById(R.id.txtHanhDongCuChi)
+
+        txtGoiYCuChi =
+            findViewById(R.id.txtGoiYCuChi)
+
+        txtTrangHuongDan =
+            findViewById(R.id.txtTrangHuongDan)
+
+        animationHuongDan =
+            findViewById(R.id.animationHuongDan)
+
+        chamHuongDan =
+            listOf(
+                findViewById(R.id.dotHuongDan1),
+                findViewById(R.id.dotHuongDan2),
+                findViewById(R.id.dotHuongDan3),
+                findViewById(R.id.dotHuongDan4),
+                findViewById(R.id.dotHuongDan5),
+                findViewById(R.id.dotHuongDan6),
+                findViewById(R.id.dotHuongDan7),
+                findViewById(R.id.dotHuongDan8)
+            )
 
         // Hiệu chỉnh
         khungHieuChinh =
@@ -805,6 +1185,180 @@ class ManHinhChinhActivity : AppCompatActivity() {
             findViewById(R.id.txtTrangThaiMieng)
     }
 
+    private fun khoiTaoHuongDanCuChi() {
+
+        val nguongVuotPx =
+            56f * resources.displayMetrics.density
+
+        var xBatDau = 0f
+        var yBatDau = 0f
+
+        khungTheHuongDan.setOnTouchListener { view, event ->
+
+            when (event.actionMasked) {
+
+                MotionEvent.ACTION_DOWN -> {
+                    xBatDau = event.x
+                    yBatDau = event.y
+                    view.parent
+                        .requestDisallowInterceptTouchEvent(false)
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    val dx =
+                        event.x - xBatDau
+
+                    val dy =
+                        event.y - yBatDau
+
+                    if (
+                        abs(dx) > abs(dy) &&
+                        abs(dx) > 12f * resources.displayMetrics.density
+                    ) {
+                        view.parent
+                            .requestDisallowInterceptTouchEvent(true)
+                    } else {
+                        view.parent
+                            .requestDisallowInterceptTouchEvent(false)
+                    }
+
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    view.parent
+                        .requestDisallowInterceptTouchEvent(false)
+
+                    val dx =
+                        event.x - xBatDau
+
+                    val dy =
+                        event.y - yBatDau
+
+                    if (
+                        abs(dx) >= nguongVuotPx &&
+                        abs(dx) > abs(dy)
+                    ) {
+                        if (dx < 0f) {
+                            chuyenCuChiHuongDan(1)
+                        } else {
+                            chuyenCuChiHuongDan(-1)
+                        }
+                    }
+
+                    view.performClick()
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    view.parent
+                        .requestDisallowInterceptTouchEvent(false)
+                    true
+                }
+
+                else ->
+                    false
+            }
+        }
+
+        chamHuongDan.forEachIndexed { index, cham ->
+            cham.setOnClickListener {
+                if (index in danhSachHuongDan.indices) {
+                    viTriCuChiHuongDan = index
+                    hienThiCuChiHuongDan()
+                }
+            }
+        }
+    }
+
+    private fun chuyenCuChiHuongDan(
+        buoc: Int
+    ) {
+
+        if (danhSachHuongDan.isEmpty()) {
+            return
+        }
+
+        val tongSo =
+            danhSachHuongDan.size
+
+        viTriCuChiHuongDan =
+            (viTriCuChiHuongDan + buoc + tongSo) % tongSo
+
+        hienThiCuChiHuongDan()
+    }
+
+    private fun hienThiCuChiHuongDan() {
+
+        if (danhSachHuongDan.isEmpty()) {
+            return
+        }
+
+        viTriCuChiHuongDan =
+            viTriCuChiHuongDan.coerceIn(
+                0,
+                danhSachHuongDan.lastIndex
+            )
+
+        val muc =
+            danhSachHuongDan[viTriCuChiHuongDan]
+
+        txtSoThuTuCuChi.text =
+            muc.soThuTu.toString()
+
+        txtTenCuChi.text =
+            muc.tenCuChi
+
+        txtMoTaCuChi.text =
+            muc.moTaCuChi
+
+        txtNhanCheDo.text =
+            muc.nhanCheDo
+
+        txtHanhDongCuChi.text =
+            muc.hanhDongCuChi
+
+        txtGoiYCuChi.text =
+            muc.goiYCuChi
+
+        txtTrangHuongDan.text =
+            "${viTriCuChiHuongDan + 1} / ${danhSachHuongDan.size}"
+
+        capNhatChamHuongDan()
+
+        animationHuongDan.cancelAnimation()
+        animationHuongDan.setAnimation(
+            muc.animationResId
+        )
+        animationHuongDan.repeatCount =
+            if (muc.lapLaiAnimation) {
+                -1
+            } else {
+                0
+            }
+        animationHuongDan.progress = 0f
+        animationHuongDan.alpha = 0f
+        animationHuongDan.playAnimation()
+        animationHuongDan.animate()
+            .alpha(1f)
+            .setDuration(160L)
+            .start()
+    }
+
+    private fun capNhatChamHuongDan() {
+
+        chamHuongDan.forEachIndexed { index, cham ->
+            cham.setBackgroundResource(
+                if (index == viTriCuChiHuongDan) {
+                    R.drawable.hd_dot_active
+                } else {
+                    R.drawable.hd_dot_idle
+                }
+            )
+        }
+    }
+
     // TRÍCH XUẤT DỮ LIỆU
 
     private fun khoiTaoTrichXuatDuLieu() {
@@ -869,6 +1423,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 capNhatGiaoDienCheDo(
                     cheDoMoi
                 )
+
+                if (dangMoTrangHuongDan) {
+                    capNhatNoiDungHuongDan(
+                        cheDoMoi
+                    )
+                }
             }
 
         val cheDoBanDau =
@@ -1714,6 +2274,28 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         navTrangChu.setOnClickListener {
 
+            val dangOTrangChu =
+                !dangHieuChinh &&
+                        !dangMoTrangHieuChinh &&
+                        !dangMoTrangHuongDan
+
+            when {
+                dangHieuChinh ->
+                    huyHieuChinh()
+
+                dangMoTrangHieuChinh ->
+                    anGiaoDienHieuChinh()
+
+                dangMoTrangHuongDan ->
+                    anGiaoDienHuongDan()
+
+                dangOTrangChu ->
+                    taoHieuUngMoNoiDungManHinhChinh()
+            }
+        }
+
+        navHuongDan.setOnClickListener {
+
             when {
                 dangHieuChinh ->
                     huyHieuChinh()
@@ -1721,26 +2303,38 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 dangMoTrangHieuChinh ->
                     anGiaoDienHieuChinh()
             }
+
+            if (!dangMoTrangHuongDan) {
+                moTrangHuongDan()
+            } else {
+                taoHieuUngMoNoiDungManHinhChinh()
+            }
         }
 
         navHieuChinh.setOnClickListener {
+
+            if (dangMoTrangHuongDan) {
+                anGiaoDienHuongDan()
+            }
 
             if (
                 !dangHieuChinh &&
                 !dangMoTrangHieuChinh
             ) {
                 moTrangHieuChinh()
+            } else if (
+                !dangHieuChinh &&
+                dangMoTrangHieuChinh
+            ) {
+                taoHieuUngMoNoiDungManHinhChinh()
             }
         }
 
         navCaiDat.setOnClickListener {
 
-            when {
-                dangHieuChinh ->
-                    huyHieuChinh()
-
-                dangMoTrangHieuChinh ->
-                    anGiaoDienHieuChinh()
+            // Không chuyển màn hiện tại về Trang chủ trước khi mở Cài đặt
+            if (dangHieuChinh) {
+                huyHieuChinhKhiMoCaiDat()
             }
 
             moManHinhCaiDat.launch(
@@ -1748,6 +2342,34 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     this,
                     CaiDatActivity::class.java
                 )
+            )
+
+            // Giữ menu dưới không chạy theo transition Activity
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
+        }
+
+        guideDieuHuong.setOnClickListener {
+            capNhatNoiDungHuongDan(
+                CheDoDieuKhien.DIEU_HUONG
+            )
+        }
+
+        guideMedia.setOnClickListener {
+            capNhatNoiDungHuongDan(
+                CheDoDieuKhien.MEDIA
+            )
+        }
+
+        guideHoTro.setOnClickListener {
+            capNhatNoiDungHuongDan(
+                CheDoDieuKhien.HO_TRO
+            )
+        }
+
+        guideConTro.setOnClickListener {
+            capNhatNoiDungHuongDan(
+                CheDoDieuKhien.CON_TRO
             )
         }
 
@@ -1799,6 +2421,259 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
     }
 
+    private fun moTrangHuongDan() {
+
+        dangMoTrangHuongDan =
+            true
+
+        khungHeaderChinh.visibility =
+            View.GONE
+
+        khungTrangThaiHeThong.visibility =
+            View.GONE
+
+        // Ẩn toàn bộ card Camera để không còn ô trắng dư
+        khungCameraChinh.visibility =
+            View.GONE
+
+        khungTieuDeCamera.visibility =
+            View.GONE
+
+        khungCameraContainer.visibility =
+            View.GONE
+
+        noiDungChinh.visibility =
+            View.GONE
+
+        khungHieuChinh.visibility =
+            View.GONE
+
+        khungHuongDan.visibility =
+            View.VISIBLE
+
+        khungHuongDan.alpha =
+            1f
+
+        khungHuongDan.translationY =
+            0f
+
+        val cheDoHienTai =
+            boDinhTuyenCheDo
+                .layCheDoHienTai()
+
+        capNhatNoiDungHuongDan(
+            cheDoHienTai
+        )
+
+        capNhatMenuDuoi(
+            dangHieuChinh = false,
+            dangHuongDan = true
+        )
+
+        taoHieuUngMoNoiDungManHinhChinh()
+    }
+
+    private fun anGiaoDienHuongDan() {
+
+        dangMoTrangHuongDan =
+            false
+
+        if (::animationHuongDan.isInitialized) {
+            animationHuongDan.cancelAnimation()
+        }
+
+        danhSachHuongDan =
+            emptyList()
+
+        khungHuongDan.visibility =
+            View.GONE
+
+        khungHeaderChinh.visibility =
+            View.VISIBLE
+
+        khungTrangThaiHeThong.visibility =
+            View.VISIBLE
+
+        khungCameraChinh.visibility =
+            View.VISIBLE
+
+        khungTieuDeCamera.visibility =
+            View.VISIBLE
+
+        khungCameraContainer.visibility =
+            View.VISIBLE
+
+        noiDungChinh.visibility =
+            View.VISIBLE
+
+        capNhatMenuDuoi(
+            dangHieuChinh = false
+        )
+
+        taoHieuUngMoNoiDungManHinhChinh()
+    }
+
+    private fun capNhatNoiDungHuongDan(
+        cheDo: CheDoDieuKhien
+    ) {
+
+        cheDoHuongDanDangXem =
+            cheDo
+
+        val cheDoHuongDan =
+            when (cheDo) {
+                CheDoDieuKhien.DIEU_HUONG ->
+                    CheDoHuongDan.DIEU_HUONG
+
+                CheDoDieuKhien.MEDIA ->
+                    CheDoHuongDan.MEDIA
+
+                CheDoDieuKhien.HO_TRO ->
+                    CheDoHuongDan.HO_TRO
+
+                CheDoDieuKhien.CON_TRO ->
+                    CheDoHuongDan.CON_TRO
+            }
+
+        val hanhDongToanCuc =
+            cauHinhNhanDienCuChi
+                .hanhDong
+                .chuanHoaChoCuChiToanCuc()
+
+        danhSachHuongDan =
+            DuLieuHuongDanCuChi
+                .taoDanhSach(
+                    cheDoHuongDan
+                )
+                .map { muc ->
+
+                    when (muc.soThuTu) {
+
+                        5 ->
+                            muc.copy(
+                                hanhDongCuChi =
+                                    tenHanhDongHuongDan(
+                                        hanhDongToanCuc
+                                            .nghiengTrai
+                                    )
+                            )
+
+                        6 ->
+                            muc.copy(
+                                hanhDongCuChi =
+                                    tenHanhDongHuongDan(
+                                        hanhDongToanCuc
+                                            .nghiengPhai
+                                    )
+                            )
+
+                        8 ->
+                            muc.copy(
+                                hanhDongCuChi =
+                                    tenHanhDongHuongDan(
+                                        hanhDongToanCuc
+                                            .moMieng
+                                    )
+                            )
+
+                        else ->
+                            muc
+                    }
+                }
+
+        if (danhSachHuongDan.isNotEmpty()) {
+            viTriCuChiHuongDan =
+                viTriCuChiHuongDan.coerceIn(
+                    0,
+                    danhSachHuongDan.lastIndex
+                )
+
+            hienThiCuChiHuongDan()
+        }
+
+        capNhatNutCheDoHuongDan(
+            cheDo
+        )
+    }
+
+    private fun tenHanhDongHuongDan(
+        hanhDong: HanhDongTuyChinhCuChi
+    ): String =
+        when (hanhDong) {
+            HanhDongTuyChinhCuChi.BACK ->
+                "Quay lại"
+
+            HanhDongTuyChinhCuChi.HOME ->
+                "Về Home"
+
+            HanhDongTuyChinhCuChi.DOI_CHE_DO ->
+                "Đổi chế độ"
+
+            else ->
+                hanhDong.tenHienThi
+        }
+
+    private fun capNhatNutCheDoHuongDan(
+        cheDo: CheDoDieuKhien
+    ) {
+
+        val cacNut =
+            listOf(
+                guideDieuHuong to
+                        CheDoDieuKhien.DIEU_HUONG,
+                guideMedia to
+                        CheDoDieuKhien.MEDIA,
+                guideHoTro to
+                        CheDoDieuKhien.HO_TRO,
+                guideConTro to
+                        CheDoDieuKhien.CON_TRO
+            )
+
+        cacNut.forEach {
+                (nut, cheDoCuaNut) ->
+
+            val dangChon =
+                cheDo ==
+                        cheDoCuaNut
+
+            nut.setTextColor(
+                if (dangChon) {
+                    Color.WHITE
+                } else {
+                    Color.parseColor(
+                        "#61736C"
+                    )
+                }
+            )
+
+            nut.setBackgroundResource(
+                if (dangChon) {
+                    R.drawable.hd_pill_active
+                } else {
+                    R.drawable.hd_pill_idle
+                }
+            )
+
+            nut.animate()
+                .scaleX(
+                    if (dangChon) {
+                        1.03f
+                    } else {
+                        1f
+                    }
+                )
+                .scaleY(
+                    if (dangChon) {
+                        1.03f
+                    } else {
+                        1f
+                    }
+                )
+                .setDuration(150L)
+                .start()
+        }
+    }
+
     private fun moTrangHieuChinh() {
 
         if (dangHieuChinh) {
@@ -1810,6 +2685,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         dangChoHieuChinhTuCaiDat =
             false
+
+        khungHeaderChinh.visibility =
+            View.VISIBLE
 
         khungTrangThaiHeThong.visibility =
             View.GONE
@@ -1829,6 +2707,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
         capNhatMenuDuoi(
             dangHieuChinh = true
         )
+
+        taoHieuUngMoNoiDungManHinhChinh()
     }
 
     private fun batDauHieuChinhTuCaiDat() {
@@ -2214,6 +3094,70 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
     }
 
+    private fun huyHieuChinhKhiMoCaiDat() {
+
+        if (!dangHieuChinh) {
+            return
+        }
+
+        if (
+            ::boThuThapMauHieuChinh
+                .isInitialized
+        ) {
+            boThuThapMauHieuChinh
+                .datLai()
+        }
+
+        if (
+            ::boDieuKhienHieuChinh
+                .isInitialized
+        ) {
+            boDieuKhienHieuChinh
+                .datLai()
+        }
+
+        dangHieuChinh =
+            false
+
+        dangChuyenBuocHieuChinh =
+            false
+
+        viTriBuocHieuChinh =
+            0
+
+        btnBatDauTheoDoi.isEnabled =
+            true
+
+        progressHieuChinh.progress =
+            0
+
+        txtTienDoHieuChinh.text =
+            "0%"
+
+        txtDemNguocHieuChinh.text =
+            ""
+
+        txtPhanHoiHieuChinh.text =
+            ""
+
+        khungChuanBiHieuChinh.visibility =
+            View.VISIBLE
+
+        khungTienTrinhHieuChinh.visibility =
+            View.GONE
+
+        // Giữ nguyên trang Hiệu chỉnh phía sau Cài đặt
+        dangMoTrangHieuChinh =
+            true
+
+        khungHieuChinh.visibility =
+            View.VISIBLE
+
+        capNhatMenuDuoi(
+            dangHieuChinh = true
+        )
+    }
+
     private fun huyHieuChinh() {
 
         if (!dangHieuChinh) {
@@ -2299,6 +3243,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
             noiDungChinh.visibility =
                 View.GONE
 
+            khungHuongDan.visibility =
+                View.GONE
+
             khungHieuChinh.visibility =
                 View.VISIBLE
 
@@ -2340,62 +3287,118 @@ class ManHinhChinhActivity : AppCompatActivity() {
         capNhatMenuDuoi(
             dangHieuChinh = false
         )
+
+        taoHieuUngMoNoiDungManHinhChinh()
+    }
+
+    private fun taoHieuUngMoNoiDungManHinhChinh() {
+
+        noiDungCuonManHinhChinh
+            .animate()
+            .cancel()
+
+        noiDungCuonManHinhChinh
+            .scrollTo(
+                0,
+                0
+            )
+
+        noiDungCuonManHinhChinh.alpha =
+            0f
+
+        noiDungCuonManHinhChinh.translationY =
+            DO_DICH_CHUYEN_NOI_DUNG_DP *
+                    resources
+                        .displayMetrics
+                        .density
+
+        // Chỉ nội dung trượt lên, menu dưới đứng yên
+        noiDungCuonManHinhChinh
+            .animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(
+                THOI_GIAN_HIEU_UNG_NOI_DUNG_MS
+            )
+            .start()
     }
 
     private fun capNhatMenuDuoi(
-        dangHieuChinh: Boolean
+        dangHieuChinh: Boolean,
+        dangHuongDan: Boolean = false
     ) {
 
         val mauDangChon =
-            ContextCompat.getColor(
-                this,
-                R.color.xanh_chinh
+            Color.parseColor(
+                "#218A68"
             )
 
         val mauThuong =
-            ContextCompat.getColor(
-                this,
-                R.color.chu_phu
+            Color.parseColor(
+                "#7D8F88"
             )
 
-        navTrangChu.setTextColor(
-            if (dangHieuChinh) {
-                mauThuong
-            } else {
-                mauDangChon
-            }
+        val trangChuDangChon =
+            !dangHieuChinh &&
+                    !dangHuongDan
+
+        fun capNhatNut(
+            nut: TextView,
+            dangChon: Boolean
+        ) {
+
+            val mau =
+                if (dangChon) {
+                    mauDangChon
+                } else {
+                    mauThuong
+                }
+
+            nut.animate().cancel()
+
+            nut.setTextColor(
+                mau
+            )
+
+            nut.setBackgroundColor(
+                Color.TRANSPARENT
+            )
+
+            nut.compoundDrawablesRelative
+                .forEach { drawable ->
+                    drawable
+                        ?.mutate()
+                        ?.setTint(
+                            mau
+                        )
+                }
+
+            // Không phóng to hoặc dịch chuyển mục đang chọn
+            nut.alpha = 1f
+            nut.scaleX = 1f
+            nut.scaleY = 1f
+            nut.translationX = 0f
+            nut.translationY = 0f
+        }
+
+        capNhatNut(
+            navTrangChu,
+            trangChuDangChon
         )
 
-        navTrangChu.setBackgroundResource(
-            if (dangHieuChinh) {
-                R.drawable.nen_che_do_thuong
-            } else {
-                R.drawable.nen_che_do_dang_chon
-            }
+        capNhatNut(
+            navHuongDan,
+            dangHuongDan
         )
 
-        navHieuChinh.setTextColor(
-            if (dangHieuChinh) {
-                mauDangChon
-            } else {
-                mauThuong
-            }
+        capNhatNut(
+            navHieuChinh,
+            dangHieuChinh
         )
 
-        navHieuChinh.setBackgroundResource(
-            if (dangHieuChinh) {
-                R.drawable.nen_che_do_dang_chon
-            } else {
-                R.drawable.nen_che_do_thuong
-            }
-        )
-
-        navCaiDat.setTextColor(
-            mauThuong
-        )
-
-        navCaiDat.setBackgroundResource(
-            R.drawable.nen_che_do_thuong
+        capNhatNut(
+            navCaiDat,
+            false
         )
     }
 
@@ -2477,8 +3480,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     "● Camera đang hoạt động - đang tìm khuôn mặt"
                 )
 
-                btnBatDauTheoDoi.text =
-                    "DỪNG THEO DÕI"
+                capNhatGiaoDienNutTheoDoi(
+                    dangTheoDoi = true
+                )
 
                 btnBatDauTheoDoi.isEnabled =
                     true
@@ -2526,9 +3530,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             ?: "Không xác định"
                     }"
                 )
-
-                btnBatDauTheoDoi.text =
-                    "BẮT ĐẦU THEO DÕI"
+                capNhatGiaoDienNutTheoDoi(
+                    dangTheoDoi = false
+                )
 
                 btnBatDauTheoDoi.isEnabled =
                     true
@@ -2588,8 +3592,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         "● Camera đang hoạt động - đang tìm khuôn mặt"
                     )
 
-                    btnBatDauTheoDoi.text =
-                        "DỪNG THEO DÕI"
+                    capNhatGiaoDienNutTheoDoi(
+                        dangTheoDoi = true
+                    )
 
                     btnBatDauTheoDoi.isEnabled =
                         true
@@ -2687,8 +3692,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
             "● Đã dừng theo dõi"
         )
 
-        btnBatDauTheoDoi.text =
-            "BẮT ĐẦU THEO DÕI"
+        capNhatGiaoDienNutTheoDoi(
+            dangTheoDoi = false
+        )
     }
 
     // CẬP NHẬT GIAO DIỆN CHẾ ĐỘ
@@ -2743,16 +3749,40 @@ class ManHinhChinhActivity : AppCompatActivity() {
                     )
                 }
             }
+
+            txtCheDoHienTai
+                .animate()
+                .cancel()
+
+            txtCheDoHienTai.alpha =
+                0f
+
+            txtCheDoHienTai.translationY =
+                4f *
+                        resources
+                            .displayMetrics
+                            .density
+
+            txtCheDoHienTai
+                .animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(180L)
+                .start()
         }
     }
 
     private fun datTatCaCardVeTrangThaiThuong() {
 
         val mauChuThuong =
-            ContextCompat.getColor(
-                this,
-                R.color.chu_chinh
+            Color.parseColor(
+                "#61736C"
             )
+
+        val elevationThuong =
+            resources
+                .displayMetrics
+                .density
 
         val danhSachCard =
             listOf(
@@ -2764,13 +3794,34 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         danhSachCard.forEach { card ->
 
+            card.animate()
+                .cancel()
+
             card.setBackgroundResource(
-                R.drawable.nen_che_do_thuong
+                R.drawable.fa_home_mode_idle
             )
 
             card.setTextColor(
                 mauChuThuong
             )
+
+            card.compoundDrawablesRelative
+                .forEach { drawable ->
+                    drawable
+                        ?.mutate()
+                        ?.setTint(
+                            mauChuThuong
+                        )
+                }
+
+            card.scaleX =
+                1f
+
+            card.scaleY =
+                1f
+
+            card.elevation =
+                elevationThuong
         }
     }
 
@@ -2779,15 +3830,39 @@ class ManHinhChinhActivity : AppCompatActivity() {
     ) {
 
         card.setBackgroundResource(
-            R.drawable.nen_che_do_dang_chon
+            R.drawable.fa_home_mode_selected
         )
 
         card.setTextColor(
-            ContextCompat.getColor(
-                this,
-                R.color.xanh_chinh
-            )
+            Color.WHITE
         )
+
+        card.compoundDrawablesRelative
+            .forEach { drawable ->
+                drawable
+                    ?.mutate()
+                    ?.setTint(
+                        Color.WHITE
+                    )
+            }
+
+        card.elevation =
+            4f *
+                    resources
+                        .displayMetrics
+                        .density
+
+        card.scaleX =
+            0.97f
+
+        card.scaleY =
+            0.97f
+
+        card.animate()
+            .scaleX(1.035f)
+            .scaleY(1.035f)
+            .setDuration(180L)
+            .start()
     }
 
     // TRẠNG THÁI KHUÔN MẶT
@@ -3017,6 +4092,13 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 boDinhTuyenCheDo
                     .layCheDoHienTai()
             )
+
+            if (dangMoTrangHuongDan) {
+                capNhatNoiDungHuongDan(
+                    cheDoHuongDanDangXem
+                )
+
+            }
         }
 
         if (
@@ -3067,6 +4149,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     override fun onDestroy() {
 
+        if (::animationHuongDan.isInitialized) {
+            animationHuongDan.cancelAnimation()
+        }
+
         if (
             ::nhanDienNghiengDau.isInitialized
         ) {
@@ -3112,6 +4198,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
     // CONSTANT
 
     companion object {
+
+        private const val DO_DICH_CHUYEN_NOI_DUNG_DP =
+            10f
+
+        private const val THOI_GIAN_HIEU_UNG_NOI_DUNG_MS =
+            220L
 
         private const val ACTION_ACCESSIBILITY_DETAILS_SETTINGS =
             "android.settings.ACCESSIBILITY_DETAILS_SETTINGS"

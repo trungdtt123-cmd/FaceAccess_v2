@@ -1,4 +1,4 @@
-
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 
 package com.example.faceaccess.v2.caidat
@@ -9,9 +9,11 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.Button
 import android.widget.SeekBar
@@ -21,6 +23,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhHanhDongCuChi
 import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNhanDienCuChi
@@ -111,14 +114,22 @@ class CaiDatActivity : AppCompatActivity() {
     private lateinit var btnMoCaiDatTroNang: Button
     private lateinit var btnMoQuyenUngDung: Button
 
+    private lateinit var noiDungCuonCaiDat: View
+
     private lateinit var navTrangChu: TextView
+    private lateinit var navHuongDan: TextView
     private lateinit var navHieuChinh: TextView
     private lateinit var navCaiDat: TextView
+
+    private var noiDungDangMo: View? = null
+    private var muiTenDangMo: TextView? = null
 
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
         super.onCreate(savedInstanceState)
+
+        cauHinhThanhHeThong()
 
         setContentView(
             R.layout.activity_cai_dat
@@ -130,6 +141,9 @@ class CaiDatActivity : AppCompatActivity() {
             )
 
         anhXaGiaoDien()
+        apDungPhongCachNut()
+        capNhatMenuDuoiCaiDat()
+        thietLapMucThuGon()
 
         cauHinhBanDau =
             khoCauHinh.layCauHinh()
@@ -140,6 +154,7 @@ class CaiDatActivity : AppCompatActivity() {
 
         ganSuKien()
         capNhatTrangThai()
+        taoHieuUngMoNoiDungCaiDat()
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -151,6 +166,74 @@ class CaiDatActivity : AppCompatActivity() {
         )
     }
 
+    private fun cauHinhThanhHeThong() {
+
+        window.statusBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        window.navigationBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        WindowCompat
+            .getInsetsController(
+                window,
+                window.decorView
+            )
+            .apply {
+                isAppearanceLightStatusBars =
+                    true
+
+                isAppearanceLightNavigationBars =
+                    true
+            }
+    }
+
+
+    private fun taoHieuUngMoNoiDungCaiDat() {
+
+        noiDungCuonCaiDat
+            .animate()
+            .cancel()
+
+        noiDungCuonCaiDat
+            .scrollTo(
+                0,
+                0
+            )
+
+        noiDungCuonCaiDat.alpha =
+            0f
+
+        noiDungCuonCaiDat.translationY =
+            DO_DICH_CHUYEN_NOI_DUNG_DP *
+                    resources
+                        .displayMetrics
+                        .density
+
+        // Chỉ nội dung trượt lên, menu dưới đứng yên
+        noiDungCuonCaiDat
+            .animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(
+                THOI_GIAN_HIEU_UNG_NOI_DUNG_MS
+            )
+            .start()
+    }
+
+    private fun dongManHinhKhongHieuUng() {
+
+        finish()
+
+        // Không cho toàn bộ màn hình và menu chạy theo transition Activity
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
+    }
+
     override fun onResume() {
         super.onResume()
 
@@ -160,6 +243,9 @@ class CaiDatActivity : AppCompatActivity() {
     }
 
     private fun anhXaGiaoDien() {
+
+        noiDungCuonCaiDat =
+            findViewById(R.id.noiDungCuonCaiDat)
 
         txtTrangThaiLuu =
             findViewById(R.id.txtTrangThaiLuu)
@@ -305,11 +391,210 @@ class CaiDatActivity : AppCompatActivity() {
         navTrangChu =
             findViewById(R.id.navTrangChu)
 
+        navHuongDan =
+            findViewById(R.id.navHuongDan)
+
         navHieuChinh =
             findViewById(R.id.navHieuChinh)
 
         navCaiDat =
             findViewById(R.id.navCaiDat)
+    }
+
+    private fun thietLapMucThuGon() {
+
+        val cacMuc =
+            listOf(
+                Triple(
+                    R.id.mucHieuChinh,
+                    R.id.noiDungHieuChinh,
+                    R.id.muiTenHieuChinh
+                ),
+                Triple(
+                    R.id.mucDoNhay,
+                    R.id.noiDungDoNhay,
+                    R.id.muiTenDoNhay
+                ),
+                Triple(
+                    R.id.mucCuChiToanCuc,
+                    R.id.noiDungCuChiToanCuc,
+                    R.id.muiTenCuChiToanCuc
+                ),
+                Triple(
+                    R.id.mucPhanHoi,
+                    R.id.noiDungPhanHoi,
+                    R.id.muiTenPhanHoi
+                ),
+                Triple(
+                    R.id.mucDuLieu,
+                    R.id.noiDungDuLieu,
+                    R.id.muiTenDuLieu
+                ),
+                Triple(
+                    R.id.mucHeThong,
+                    R.id.noiDungHeThong,
+                    R.id.muiTenHeThong
+                )
+            )
+
+        cacMuc.forEach { (mucId, noiDungId, muiTenId) ->
+
+            val muc =
+                findViewById<View>(mucId)
+
+            val noiDung =
+                findViewById<View>(noiDungId)
+
+            val muiTen =
+                findViewById<TextView>(muiTenId)
+
+            noiDung.visibility =
+                View.GONE
+
+            muiTen.text =
+                "›"
+
+            muc.setOnClickListener {
+                doiTrangThaiMucThuGon(
+                    noiDung = noiDung,
+                    muiTen = muiTen
+                )
+            }
+        }
+    }
+
+    private fun doiTrangThaiMucThuGon(
+        noiDung: View,
+        muiTen: TextView
+    ) {
+
+        val dangMo =
+            noiDung.visibility == View.VISIBLE
+
+        if (dangMo) {
+            noiDung.visibility =
+                View.GONE
+
+            muiTen.text =
+                "›"
+
+            if (noiDungDangMo === noiDung) {
+                noiDungDangMo =
+                    null
+
+                muiTenDangMo =
+                    null
+            }
+
+            return
+        }
+
+        noiDungDangMo?.let {
+            it.visibility =
+                View.GONE
+        }
+
+        muiTenDangMo?.text =
+            "›"
+
+        noiDung.visibility =
+            View.VISIBLE
+
+        muiTen.text =
+            "⌄"
+
+        noiDungDangMo =
+            noiDung
+
+        muiTenDangMo =
+            muiTen
+    }
+
+
+    private fun apDungPhongCachNut() {
+
+        val cacNut =
+            listOf(
+                btnHieuChinhLai,
+                btnDatLaiDoNhay,
+                btnHanhDongNghiengTrai,
+                btnHanhDongNghiengPhai,
+                btnHanhDongMoMieng,
+                btnDatLaiCuChiToanCuc,
+                btnDatLaiPhanHoi,
+                btnLuuThayDoi,
+                btnTaiLenCauHinh,
+                btnTaiXuongCauHinh,
+                btnDatLaiTatCa,
+                btnMoCaiDatTroNang,
+                btnMoQuyenUngDung
+            )
+
+        cacNut.forEach { nut ->
+            nut.backgroundTintList = null
+            nut.isAllCaps = false
+        }
+    }
+
+    private fun capNhatMenuDuoiCaiDat() {
+
+        val mauDangChon =
+            Color.parseColor("#218A68")
+
+        val mauThuong =
+            Color.parseColor("#7D8F88")
+
+        fun capNhatNut(
+            nut: TextView,
+            dangChon: Boolean
+        ) {
+
+            val mau =
+                if (dangChon) {
+                    mauDangChon
+                } else {
+                    mauThuong
+                }
+
+            nut.animate().cancel()
+
+            nut.setTextColor(mau)
+            nut.setBackgroundColor(Color.TRANSPARENT)
+
+            nut.compoundDrawablesRelative
+                .forEach { drawable ->
+                    drawable
+                        ?.mutate()
+                        ?.setTint(mau)
+                }
+
+            // Giữ toàn bộ menu cố định
+            nut.alpha = 1f
+            nut.scaleX = 1f
+            nut.scaleY = 1f
+            nut.translationX = 0f
+            nut.translationY = 0f
+        }
+
+        capNhatNut(
+            navTrangChu,
+            false
+        )
+
+        capNhatNut(
+            navHuongDan,
+            false
+        )
+
+        capNhatNut(
+            navHieuChinh,
+            false
+        )
+
+        capNhatNut(
+            navCaiDat,
+            true
+        )
     }
 
     private fun ganSuKien() {
@@ -319,7 +604,11 @@ class CaiDatActivity : AppCompatActivity() {
         }
 
         navTrangChu.setOnClickListener {
-            xuLyQuayLai()
+            xuLyVeTrangChu()
+        }
+
+        navHuongDan.setOnClickListener {
+            ketThucVaYeuCauHuongDan()
         }
 
         navHieuChinh.setOnClickListener {
@@ -1494,6 +1783,39 @@ class CaiDatActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun xuLyVeTrangChu() {
+
+        if (!coThayDoiChuaLuu) {
+            ketThucVaYeuCauTrangChu()
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(
+                "Có thay đổi chưa lưu"
+            )
+            .setMessage(
+                "Bạn muốn lưu trước khi về Trang chủ?"
+            )
+            .setPositiveButton(
+                "LƯU"
+            ) { _, _ ->
+
+                luuThayDoi(false)
+                ketThucVaYeuCauTrangChu()
+            }
+            .setNeutralButton(
+                "BỎ THAY ĐỔI"
+            ) { _, _ ->
+                ketThucVaYeuCauTrangChu()
+            }
+            .setNegativeButton(
+                "Ở LẠI",
+                null
+            )
+            .show()
+    }
+
     private fun xuLyQuayLai() {
 
         if (!coThayDoiChuaLuu) {
@@ -1527,6 +1849,57 @@ class CaiDatActivity : AppCompatActivity() {
             .show()
     }
 
+
+    private fun ketThucVaYeuCauTrangChu() {
+
+        val duLieu =
+            Intent().apply {
+                putExtra(
+                    EXTRA_YEU_CAU_TRANG_CHU,
+                    true
+                )
+                putExtra(
+                    EXTRA_CAU_HINH_DA_THAY_DOI,
+                    cauHinhDaThayDoi
+                )
+            }
+
+        setResult(
+            RESULT_OK,
+            duLieu
+        )
+
+        dongManHinhKhongHieuUng()
+    }
+
+    private fun ketThucVaYeuCauHuongDan() {
+
+        if (coThayDoiChuaLuu) {
+            luuThayDoi(
+                hienThongBao = false
+            )
+        }
+
+        val duLieu =
+            Intent().apply {
+                putExtra(
+                    EXTRA_YEU_CAU_HUONG_DAN,
+                    true
+                )
+                putExtra(
+                    EXTRA_CAU_HINH_DA_THAY_DOI,
+                    cauHinhDaThayDoi
+                )
+            }
+
+        setResult(
+            RESULT_OK,
+            duLieu
+        )
+
+        dongManHinhKhongHieuUng()
+    }
+
     private fun ketThucVaYeuCauHieuChinh() {
 
         val duLieu =
@@ -1546,7 +1919,7 @@ class CaiDatActivity : AppCompatActivity() {
             duLieu
         )
 
-        finish()
+        dongManHinhKhongHieuUng()
     }
 
     private fun ketThucBinhThuong() {
@@ -1564,7 +1937,7 @@ class CaiDatActivity : AppCompatActivity() {
             duLieu
         )
 
-        finish()
+        dongManHinhKhongHieuUng()
     }
 
     private fun capNhatTrangThai() {
@@ -1996,11 +2369,23 @@ class CaiDatActivity : AppCompatActivity() {
 
     companion object {
 
+        private const val DO_DICH_CHUYEN_NOI_DUNG_DP =
+            10f
+
+        private const val THOI_GIAN_HIEU_UNG_NOI_DUNG_MS =
+            220L
+
         const val EXTRA_CAU_HINH_DA_THAY_DOI =
             "cau_hinh_da_thay_doi"
 
         const val EXTRA_YEU_CAU_HIEU_CHINH =
             "yeu_cau_hieu_chinh"
+
+        const val EXTRA_YEU_CAU_HUONG_DAN =
+            "yeu_cau_huong_dan"
+
+        const val EXTRA_YEU_CAU_TRANG_CHU =
+            "yeu_cau_trang_chu"
 
         private const val ACTION_ACCESSIBILITY_DETAILS_SETTINGS =
             "android.settings.ACCESSIBILITY_DETAILS_SETTINGS"

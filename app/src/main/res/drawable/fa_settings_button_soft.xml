@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#162A9D75">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#EEF4F1"/>
+            <corners android:radius="16dp"/>
+        </shape>
+    </item>
+</ripple>

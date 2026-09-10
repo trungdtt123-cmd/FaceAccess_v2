@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:background="@drawable/fa_settings_card" android:orientation="vertical" tools:ignore="HardcodedText" android:elevation="2dp">
+    <LinearLayout android:id="@+id/mucHieuChinh" android:layout_width="match_parent" android:layout_height="78dp" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="16dp" android:paddingEnd="14dp">
+        <ImageView android:layout_width="30dp" android:layout_height="30dp" android:contentDescription="" android:src="@drawable/ic_settings_calibration" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Hiệu chỉnh cá nhân" android:textColor="@color/chu_chinh" android:textSize="16sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:maxLines="1" android:ellipsize="end" android:text="Cập nhật hồ sơ nhận diện khuôn mặt" android:textColor="@color/chu_phu" android:textSize="12sp" />
+        </LinearLayout>
+        <TextView android:id="@+id/muiTenHieuChinh" android:layout_width="30dp" android:layout_height="42dp" android:gravity="center" android:text="›" android:textColor="#2A9D75" android:textSize="27sp" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/noiDungHieuChinh" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingStart="16dp" android:paddingTop="0dp" android:paddingEnd="16dp" android:paddingBottom="16dp" android:visibility="gone">
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginBottom="10dp" android:background="#E7EFEB" />
+        <TextView android:id="@+id/txtTrangThaiHieuChinh" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Đang kiểm tra..." android:textColor="@color/chu_phu" android:textSize="13sp" />
+        <Button android:id="@+id/btnHieuChinhLai" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="10dp" android:text="HIỆU CHỈNH LẠI" android:textColor="@android:color/white" android:textSize="12sp" android:textStyle="bold" android:background="@drawable/fa_settings_button_primary" android:stateListAnimator="@null" />
+    </LinearLayout>
+</LinearLayout>

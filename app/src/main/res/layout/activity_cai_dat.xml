@@ -1,4 +1,4 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 
 <!-- SPDX-License-Identifier: MIT -->
 <!-- Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung -->
@@ -8,74 +8,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/nen_man_hinh"
+    android:background="#F6FBF8"
     android:orientation="vertical"
     tools:ignore="HardcodedText">
 
-    <!-- Header -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="18dp"
-        android:paddingTop="14dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="10dp">
-
-        <TextView
-            android:id="@+id/btnQuayLai"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:text="‹"
-            android:textColor="@color/chu_chinh"
-            android:textSize="34sp" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Cài đặt"
-                android:textColor="@color/chu_chinh"
-                android:textSize="26sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Cá nhân hóa cử chỉ và hành động"
-                android:textColor="@color/chu_phu"
-                android:textSize="13sp" />
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/txtTrangThaiLuu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/nen_che_do_dang_chon"
-            android:paddingStart="10dp"
-            android:paddingTop="6dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="6dp"
-            android:text="Đã lưu"
-            android:textColor="@color/xanh_chinh"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-    </LinearLayout>
-
     <ScrollView
+        android:id="@+id/noiDungCuonCaiDat"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -87,18 +25,83 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingStart="16dp"
-            android:paddingTop="4dp"
+            android:paddingTop="14dp"
             android:paddingEnd="16dp"
             android:paddingBottom="20dp">
 
-            <!-- Hiệu chỉnh -->
+            <!-- Header -->
+            <LinearLayout
+                android:id="@+id/khungHeaderCaiDat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Logo FaceAccess"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_faceaccess_logo" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="FaceAccess"
+                        android:textColor="#073E32"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Điều khiển bằng khuôn mặt"
+                        android:textColor="#6D8179"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/hd_circle_blue"
+                    android:gravity="center"
+                    android:text="AI"
+                    android:textColor="#2E7695"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Tiêu đề trang -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/nen_the"
+                android:layout_marginTop="18dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="14dp">
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnQuayLai"
+                    android:layout_width="38dp"
+                    android:layout_height="46dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="start|center_vertical"
+                    android:text="‹"
+                    android:textColor="#173A30"
+                    android:textSize="32sp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -109,1178 +112,119 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Hiệu chỉnh cá nhân"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="16sp"
+                        android:text="Cài đặt"
+                        android:textColor="#103A2F"
+                        android:textSize="26sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/txtTrangThaiHieuChinh"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Đang kiểm tra..."
-                        android:textColor="@color/chu_phu"
+                        android:layout_marginTop="2dp"
+                        android:text="Chọn mục cần điều chỉnh, chỉ mở khi bạn cần."
+                        android:textColor="#6D8179"
                         android:textSize="13sp" />
 
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/btnHieuChinhLai"
+                <TextView
+                    android:id="@+id/txtTrangThaiLuu"
                     android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:backgroundTint="@color/xanh_chinh"
-                    android:minWidth="0dp"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="HIỆU CHỈNH"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/fa_settings_status_chip"
+                    android:paddingStart="11dp"
+                    android:paddingTop="7dp"
+                    android:paddingEnd="11dp"
+                    android:paddingBottom="7dp"
+                    android:text="Đã lưu"
+                    android:textColor="#218A68"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
             </LinearLayout>
 
-            <!-- Cử chỉ đầu -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Cử chỉ đầu"
-                android:textColor="@color/chu_chinh"
-                android:textSize="19sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/nen_the"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Điều chỉnh độ nhạy nhận diện. Chức năng quay/ngẩng/cúi giữ nguyên theo từng chế độ để tránh xung đột."
-                    android:textColor="@color/chu_phu"
-                    android:textSize="13sp" />
-
-                <!-- Quay trái -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Quay trái"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayQuayTrai"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayQuayTrai"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <!-- Quay phải -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Quay phải"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayQuayPhai"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayQuayPhai"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <!-- Ngẩng đầu -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Ngẩng đầu"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayNhinLen"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayNhinLen"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <!-- Cúi đầu -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Cúi đầu"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayNhinXuong"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayNhinXuong"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <!-- Nghiêng trái -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Nghiêng trái"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayNghiengTrai"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayNghiengTrai"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <!-- Nghiêng phải -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Nghiêng phải"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayNghiengPhai"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayNghiengPhai"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnDatLaiDoNhay"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="12dp"
-                    android:text="ĐẶT LẠI ĐỘ NHẠY"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <!-- Cử chỉ khuôn mặt -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Cử chỉ khuôn mặt"
-                android:textColor="@color/chu_chinh"
-                android:textSize="19sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/nen_the"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <!-- Nhắm mắt -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Nhắm hai mắt"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayNhamMat"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayNhamMat"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <!-- Há miệng -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Há miệng"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayMoMieng"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayMoMieng"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <!-- Há miệng hai lần -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Há miệng 2 lần"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <SeekBar
-                        android:id="@+id/seekDoNhayMoMiengHaiLan"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtDoNhayMoMiengHaiLan"
-                        android:layout_width="74dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="Cân bằng"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-
-            <!-- Cử chỉ toàn cục -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Cử chỉ toàn cục"
-                android:textColor="@color/chu_chinh"
-                android:textSize="19sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/nen_the"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Chỉ 3 chức năng BACK, HOME và ĐỔI CHẾ ĐỘ được hoán đổi cho nhau. Khi chọn một chức năng đang được dùng, FaceAccess sẽ tự đổi chỗ để không bị trùng."
-                    android:textColor="@color/chu_phu"
-                    android:textSize="13sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Nghiêng trái"
-                            android:textColor="@color/chu_chinh"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Cử chỉ toàn cục"
-                            android:textColor="@color/chu_phu"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnHanhDongNghiengTrai"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:backgroundTint="@color/nen_man_hinh"
-                        android:minWidth="0dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="HOME"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Nghiêng phải"
-                            android:textColor="@color/chu_chinh"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Cử chỉ toàn cục"
-                            android:textColor="@color/chu_phu"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnHanhDongNghiengPhai"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:backgroundTint="@color/nen_man_hinh"
-                        android:minWidth="0dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="ĐỔI CHẾ ĐỘ"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Há miệng"
-                            android:textColor="@color/chu_chinh"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Cử chỉ toàn cục"
-                            android:textColor="@color/chu_phu"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnHanhDongMoMieng"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:backgroundTint="@color/nen_man_hinh"
-                        android:minWidth="0dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="BACK"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnDatLaiCuChiToanCuc"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="12dp"
-                    android:text="ĐẶT LẠI CỬ CHỈ TOÀN CỤC"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <!-- Phản hồi -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Tốc độ phản hồi"
-                android:textColor="@color/chu_chinh"
-                android:textSize="19sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/nen_the"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="110dp"
-                        android:layout_height="wrap_content"
-                        android:text="Quay / ngẩng"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="13sp" />
-
-                    <SeekBar
-                        android:id="@+id/seekThoiGianHuongDau"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtThoiGianHuongDau"
-                        android:layout_width="64dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="110 ms"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="110dp"
-                        android:layout_height="wrap_content"
-                        android:text="Nghiêng đầu"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="13sp" />
-
-                    <SeekBar
-                        android:id="@+id/seekThoiGianNghiengDau"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtThoiGianNghiengDau"
-                        android:layout_width="64dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="260 ms"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="110dp"
-                        android:layout_height="wrap_content"
-                        android:text="Nhắm mắt"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="13sp" />
-
-                    <SeekBar
-                        android:id="@+id/seekThoiGianNhamMat"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtThoiGianNhamMat"
-                        android:layout_width="64dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="400 ms"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="110dp"
-                        android:layout_height="wrap_content"
-                        android:text="Há miệng"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="13sp" />
-
-                    <SeekBar
-                        android:id="@+id/seekThoiGianMoMieng"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtThoiGianMoMieng"
-                        android:layout_width="64dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="500 ms"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="110dp"
-                        android:layout_height="wrap_content"
-                        android:text="Há miệng 2 lần"
-                        android:textColor="@color/chu_chinh"
-                        android:textSize="13sp" />
-
-                    <SeekBar
-                        android:id="@+id/seekKhoangMoMiengHaiLan"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="100"
-                        android:progress="50" />
-
-                    <TextView
-                        android:id="@+id/txtKhoangMoMiengHaiLan"
-                        android:layout_width="64dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="end"
-                        android:text="700 ms"
-                        android:textColor="@color/xanh_chinh"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnDatLaiPhanHoi"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="8dp"
-                    android:text="ĐẶT LẠI PHẢN HỒI"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <!-- Cấu hình -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Cấu hình"
-                android:textColor="@color/chu_chinh"
-                android:textSize="19sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/nen_the"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <Button
-                    android:id="@+id/btnLuuThayDoi"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:backgroundTint="@color/xanh_chinh"
-                    android:text="LƯU THAY ĐỔI"
-                    android:textColor="@android:color/white"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnTaiLenCauHinh"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="TẠO BẢN SAO"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <Space
-                        android:layout_width="8dp"
-                        android:layout_height="1dp" />
-
-                    <Button
-                        android:id="@+id/btnTaiXuongCauHinh"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="KHÔI PHỤC"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/txtTrangThaiBanSao"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:gravity="center"
-                    android:text="Chưa có bản sao cấu hình"
-                    android:textColor="@color/chu_phu"
-                    android:textSize="12sp" />
-
-                <Button
-                    android:id="@+id/btnDatLaiTatCa"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="8dp"
-                    android:text="ĐẶT LẠI TOÀN BỘ"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <!-- Hệ thống -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Hệ thống"
-                android:textColor="@color/chu_chinh"
-                android:textSize="19sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/nen_the"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Trợ năng"
-                            android:textColor="@color/chu_chinh"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/txtTrangThaiTroNang"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Đang kiểm tra..."
-                            android:textColor="@color/chu_phu"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnMoCaiDatTroNang"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:minWidth="0dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="MỞ"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:background="@color/nen_man_hinh" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Camera"
-                            android:textColor="@color/chu_chinh"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/txtTrangThaiQuyenCamera"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Đang kiểm tra..."
-                            android:textColor="@color/chu_phu"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/btnMoQuyenUngDung"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:minWidth="0dp"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:text="MỞ"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-
+            <include layout="@layout/view_cai_dat_hieu_chinh" />
+            <include layout="@layout/view_cai_dat_do_nhay" />
+            <include layout="@layout/view_cai_dat_cu_chi_toan_cuc" />
+            <include layout="@layout/view_cai_dat_phan_hoi" />
+            <include layout="@layout/view_cai_dat_du_lieu" />
+            <include layout="@layout/view_cai_dat_he_thong" />
 
         </LinearLayout>
 
     </ScrollView>
 
-    <!-- Menu dưới -->
+    <!-- Menu dưới, đồng bộ Trang chủ -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="68dp"
-        android:background="@drawable/nen_the"
+        android:layout_height="82dp"
+        android:background="@drawable/fa_home_nav_surface"
+        android:elevation="18dp"
         android:gravity="center"
         android:orientation="horizontal"
-        android:paddingStart="12dp"
+        android:paddingStart="5dp"
         android:paddingTop="7dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="7dp">
+        android:paddingEnd="5dp"
+        android:paddingBottom="5dp">
 
         <TextView
             android:id="@+id/navTrangChu"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@drawable/nen_che_do_thuong"
+            android:background="@android:color/transparent"
             android:clickable="true"
+            android:drawableTop="@drawable/ic_nav_home"
+            android:drawablePadding="3dp"
             android:focusable="true"
             android:gravity="center"
-            android:text="⌂&#10;TRANG CHỦ"
-            android:textColor="@color/chu_phu"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            android:text="Trang chủ"
+            android:textColor="#7D8F88"
+            android:textSize="11sp" />
 
-        <Space
-            android:layout_width="8dp"
-            android:layout_height="1dp" />
+        <TextView
+            android:id="@+id/navHuongDan"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:clickable="true"
+            android:drawableTop="@drawable/ic_nav_guide"
+            android:drawablePadding="3dp"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="Hướng dẫn"
+            android:textColor="#7D8F88"
+            android:textSize="11sp" />
 
         <TextView
             android:id="@+id/navHieuChinh"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@drawable/nen_che_do_thuong"
+            android:background="@android:color/transparent"
             android:clickable="true"
+            android:drawableTop="@drawable/ic_nav_calibrate"
+            android:drawablePadding="3dp"
             android:focusable="true"
             android:gravity="center"
-            android:text="◎&#10;HIỆU CHỈNH"
-            android:textColor="@color/chu_phu"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <Space
-            android:layout_width="8dp"
-            android:layout_height="1dp" />
+            android:text="Hiệu chỉnh"
+            android:textColor="#7D8F88"
+            android:textSize="11sp" />
 
         <TextView
             android:id="@+id/navCaiDat"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@drawable/nen_che_do_dang_chon"
+            android:background="@android:color/transparent"
             android:clickable="true"
+            android:drawableTop="@drawable/ic_nav_settings"
+            android:drawablePadding="3dp"
             android:focusable="true"
             android:gravity="center"
-            android:text="⚙&#10;CÀI ĐẶT"
-            android:textColor="@color/xanh_chinh"
+            android:text="Cài đặt"
+            android:textColor="#218A68"
             android:textSize="11sp"
             android:textStyle="bold" />
 
