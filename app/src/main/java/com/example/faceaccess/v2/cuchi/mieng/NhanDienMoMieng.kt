@@ -1,7 +1,18 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 package com.example.faceaccess.v2.cuchi.mieng
 
+import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhMoMieng
+
 class NhanDienMoMieng(
+
+    // Cấu hình nhận diện mở miệng
+    private val cauHinh: CauHinhMoMieng =
+        CauHinhMoMieng(),
+
+    // Callback khi nhận diện thành công
     private val khiNhanDienMoMieng: () -> Unit
+
 ) {
 
     private enum class TrangThai {
@@ -19,16 +30,20 @@ class NhanDienMoMieng(
     private var thoiDiemBatDauDong =
         0L
 
+
     fun capNhat(
         doMoMieng: Float?,
         thoiGianMs: Long
     ) {
+
+        // Thiếu dữ liệu thì reset
         if (doMoMieng == null) {
             datLai()
             return
         }
 
         when (trangThai) {
+
             TrangThai.SAN_SANG ->
                 xuLySanSang(
                     doMoMieng = doMoMieng,
@@ -49,7 +64,9 @@ class NhanDienMoMieng(
         }
     }
 
+
     fun datLai() {
+
         trangThai =
             TrangThai.SAN_SANG
 
@@ -60,11 +77,13 @@ class NhanDienMoMieng(
             0L
     }
 
+
     private fun xuLySanSang(
         doMoMieng: Float,
         thoiGianMs: Long
     ) {
-        if (doMoMieng < NGUONG_MO) {
+
+        if (doMoMieng < cauHinh.nguongMo) {
             return
         }
 
@@ -75,23 +94,29 @@ class NhanDienMoMieng(
             TrangThai.DANG_MO
     }
 
+
     private fun xuLyDangMo(
         doMoMieng: Float,
         thoiGianMs: Long
     ) {
-        if (doMoMieng <= NGUONG_DONG) {
+
+        if (doMoMieng <= cauHinh.nguongDong) {
             datLai()
             return
         }
 
-        if (doMoMieng < NGUONG_MO) {
+        if (doMoMieng < cauHinh.nguongMo) {
             return
         }
 
         val thoiGianDaMo =
-            thoiGianMs - thoiDiemBatDauMo
+            thoiGianMs -
+                    thoiDiemBatDauMo
 
-        if (thoiGianDaMo < THOI_GIAN_GIU_BACK_MS) {
+        if (
+            thoiGianDaMo <
+            cauHinh.thoiGianGiuBackMs
+        ) {
             return
         }
 
@@ -104,41 +129,38 @@ class NhanDienMoMieng(
             0L
     }
 
+
     private fun xuLySauKichHoat(
         doMoMieng: Float,
         thoiGianMs: Long
     ) {
-        if (doMoMieng > NGUONG_DONG) {
+
+        if (doMoMieng > cauHinh.nguongDong) {
+
             thoiDiemBatDauDong =
                 0L
+
             return
         }
 
         if (thoiDiemBatDauDong == 0L) {
+
             thoiDiemBatDauDong =
                 thoiGianMs
+
             return
         }
 
         val thoiGianDaDong =
-            thoiGianMs - thoiDiemBatDauDong
+            thoiGianMs -
+                    thoiDiemBatDauDong
 
-        if (thoiGianDaDong >= THOI_GIAN_DONG_DE_REARM_MS) {
+        if (
+            thoiGianDaDong >=
+            cauHinh.thoiGianDongDeRearmMs
+        ) {
+
             datLai()
         }
-    }
-
-    companion object {
-        private const val NGUONG_MO =
-            0.35f
-
-        private const val NGUONG_DONG =
-            0.10f
-
-        private const val THOI_GIAN_GIU_BACK_MS =
-            500L
-
-        private const val THOI_GIAN_DONG_DE_REARM_MS =
-            150L
     }
 }

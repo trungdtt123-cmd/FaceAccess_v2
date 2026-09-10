@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 package com.example.faceaccess.v2.dieuphoi.hotro
 
 import android.app.AlertDialog
+import android.content.ContentResolver
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -14,23 +19,12 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.example.faceaccess.v2.R
 import com.yalantis.ucrop.UCrop
 import java.io.File
 
-/**
- * Màn hình chi tiết một liên hệ hỗ trợ.
- *
- * Ảnh đại diện:
- * - chưa có ảnh -> dùng chữ cái đầu;
- * - bấm CHỌN ẢNH -> hiện giải thích quyền truy cập;
- * - Android mở trình chọn ảnh hệ thống;
- * - sau khi chọn -> uCrop cho phép kéo ảnh, phóng to/thu nhỏ
- *   trong khung tròn;
- * - chỉ khi bấm CẬP NHẬT thì URI ảnh mới được lưu vào liên hệ.
- *
- * Nút GỌI mở trình quay số Android bằng ACTION_DIAL.
- */
+// Xem và cập nhật một liên hệ hỗ trợ.
 class ChiTietLienHeHoTroActivity :
     AppCompatActivity() {
 
@@ -116,6 +110,34 @@ class ChiTietLienHeHoTroActivity :
                 return@registerForActivityResult
             }
 
+            if (
+                uriNguon.scheme !=
+                ContentResolver.SCHEME_CONTENT
+            ) {
+                Toast.makeText(
+                    this,
+                    "Nguồn ảnh không được hỗ trợ",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@registerForActivityResult
+            }
+
+            val kieuNoiDung =
+                contentResolver.getType(uriNguon)
+
+            if (
+                kieuNoiDung != null &&
+                !kieuNoiDung.startsWith("image/")
+            ) {
+                Toast.makeText(
+                    this,
+                    "Tệp đã chọn không phải là ảnh",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@registerForActivityResult
+            }
 
             try {
 
@@ -220,6 +242,7 @@ class ChiTietLienHeHoTroActivity :
             R.layout.activity_chi_tiet_lien_he_ho_tro
         )
 
+        cauHinhThanhHeThong()
 
         lienHeId =
             intent.getLongExtra(
@@ -246,6 +269,8 @@ class ChiTietLienHeHoTroActivity :
 
 
         anhXa()
+
+        apDungPhongCachNut()
 
         ganSuKien()
 
@@ -324,6 +349,92 @@ class ChiTietLienHeHoTroActivity :
             findViewById(
                 R.id.btnQuayLaiChiTietLienHe
             )
+    }
+
+
+    private fun cauHinhThanhHeThong() {
+
+        window.statusBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        window.navigationBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        WindowCompat
+            .getInsetsController(
+                window,
+                window.decorView
+            )
+            .apply {
+                isAppearanceLightStatusBars =
+                    true
+                isAppearanceLightNavigationBars =
+                    true
+            }
+    }
+
+
+    private fun apDungPhongCachNut() {
+
+        listOf(
+            btnChonAnh,
+            btnGoi,
+            btnCapNhat,
+            btnXoa,
+            btnQuayLai
+        ).forEach { nut ->
+
+            nut.backgroundTintList =
+                null
+
+            nut.isAllCaps =
+                false
+
+            ganHieuUngNhan(
+                nut
+            )
+        }
+    }
+
+
+    private fun ganHieuUngNhan(
+        view: View
+    ) {
+
+        view.setOnTouchListener {
+                v,
+                event ->
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN -> {
+
+                    v.animate()
+                        .scaleX(0.96f)
+                        .scaleY(0.96f)
+                        .setDuration(80L)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+
+                    v.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(110L)
+                        .start()
+                }
+            }
+
+            false
+        }
     }
 
 
@@ -468,27 +579,24 @@ class ChiTietLienHeHoTroActivity :
                 )
 
                 setToolbarTitle(
-                    "Căn chỉnh ảnh đại diện"
+                    "Căn ảnh"
                 )
 
                 setToolbarColor(
-                    ContextCompat.getColor(
-                        this@ChiTietLienHeHoTroActivity,
-                        R.color.nen_man_hinh
+                    Color.parseColor(
+                        "#F6FBF8"
                     )
                 )
 
                 setActiveControlsWidgetColor(
-                    ContextCompat.getColor(
-                        this@ChiTietLienHeHoTroActivity,
-                        R.color.xanh_chinh
+                    Color.parseColor(
+                        "#2A9D75"
                     )
                 )
 
                 setToolbarWidgetColor(
-                    ContextCompat.getColor(
-                        this@ChiTietLienHeHoTroActivity,
-                        android.R.color.white
+                    Color.parseColor(
+                        "#173D33"
                     )
                 )
             }
@@ -527,35 +635,36 @@ class ChiTietLienHeHoTroActivity :
 
                     putExtra(
                         UCrop.Options.EXTRA_UCROP_ROOT_VIEW_BACKGROUND_COLOR,
-                        ContextCompat.getColor(
-                            this@ChiTietLienHeHoTroActivity,
-                            R.color.nen_man_hinh
+                        Color.parseColor(
+                            "#F6FBF8"
                         )
                     )
 
                     putExtra(
                         UCrop.Options.EXTRA_DIMMED_LAYER_COLOR,
                         Color.argb(
-                            190,
-                            0,
-                            0,
-                            0
+                            175,
+                            16,
+                            58,
+                            47
                         )
                     )
 
                     putExtra(
                         UCrop.Options.EXTRA_CROP_FRAME_COLOR,
-                        Color.WHITE
+                        Color.parseColor(
+                            "#54C49D"
+                        )
                     )
 
                     putExtra(
                         UCrop.Options.EXTRA_STATUS_BAR_LIGHT,
-                        false
+                        true
                     )
 
                     putExtra(
                         UCrop.Options.EXTRA_NAVIGATION_BAR_LIGHT,
-                        false
+                        true
                     )
 
                     /*
@@ -772,16 +881,29 @@ class ChiTietLienHeHoTroActivity :
                         ?: return
 
 
+                val thuMucAvatar =
+                    File(
+                        filesDir,
+                        THU_MUC_AVATAR
+                    ).canonicalFile
+
+
                 val file =
                     File(
                         duongDan
-                    )
+                    ).canonicalFile
+
+
+                val tienToThuMucAvatar =
+                    thuMucAvatar.path +
+                            File.separator
 
 
                 if (
-                    file.absolutePath.startsWith(
-                        filesDir.absolutePath
-                    )
+                    file.path.startsWith(
+                        tienToThuMucAvatar
+                    ) &&
+                    file.isFile
                 ) {
 
                     file.delete()

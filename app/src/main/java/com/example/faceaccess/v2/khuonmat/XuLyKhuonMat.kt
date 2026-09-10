@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 package com.example.faceaccess.v2.khuonmat
 
 import android.content.Context
@@ -14,6 +16,9 @@ class XuLyKhuonMat(
 ) {
 
     private var faceLandmarker: FaceLandmarker? = null
+
+    @Volatile
+    private var daDong = false
 
     init {
         khoiTao(context)
@@ -40,10 +45,10 @@ class XuLyKhuonMat(
                     .setMinFacePresenceConfidence(0.5f)
                     .setMinTrackingConfidence(0.5f)
 
-                    // Sau này dùng cho mắt và miệng.
+                    // Dùng cho mắt và miệng.
                     .setOutputFaceBlendshapes(true)
 
-                    // Sau này dùng tính ROLL / YAW / PITCH.
+                    // Dùng tính ROLL / YAW / PITCH.
                     .setOutputFacialTransformationMatrixes(true)
 
                     .setResultListener { result, inputImage ->
@@ -89,13 +94,14 @@ class XuLyKhuonMat(
         }
     }
 
-    /**
-     * Sau này QuanLyCamera sẽ gửi frame camera vào hàm này.
-     */
     fun xuLyAnh(
         mpImage: MPImage,
         thoiGianMs: Long
     ) {
+
+        if (daDong) {
+            return
+        }
 
         try {
 
@@ -124,6 +130,10 @@ class XuLyKhuonMat(
         inputImage: MPImage
     ) {
 
+        if (daDong) {
+            return
+        }
+
         if (result.faceLandmarks().isEmpty()) {
 
             langNghe.khiKhongThayKhuonMat()
@@ -142,6 +152,10 @@ class XuLyKhuonMat(
         exception: RuntimeException
     ) {
 
+        if (daDong) {
+            return
+        }
+
         Log.e(
             TAG,
             "Face Landmarker gap loi",
@@ -154,10 +168,13 @@ class XuLyKhuonMat(
         )
     }
 
-    /**
-     * Giải phóng MediaPipe.
-     */
     fun dong() {
+
+        if (daDong) {
+            return
+        }
+
+        daDong = true
 
         faceLandmarker?.close()
 
@@ -192,6 +209,6 @@ class XuLyKhuonMat(
             "XuLyKhuonMat"
 
         private const val TEN_MODEL =
-            "models/face_landmarker (1).task"
+            "face_landmarker (1).task"
     }
 }

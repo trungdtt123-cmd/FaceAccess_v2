@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 package com.example.faceaccess.v2.dichvu
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -11,11 +16,16 @@ import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.example.faceaccess.v2.R
 import com.example.faceaccess.v2.camera.QuanLyCamera
+import com.example.faceaccess.v2.ai.hieuchinh.BoChuanHoaDuLieuKhuonMat
+import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNhanDienCuChi
+import com.example.faceaccess.v2.cuchi.cauhinh.KhoCauHinhNhanDienCuChi
+import com.example.faceaccess.v2.cuchi.cauhinh.HanhDongTuyChinhCuChi
 import com.example.faceaccess.v2.cuchi.nghiengdau.HuongNghiengDau
 import com.example.faceaccess.v2.cuchi.nghiengdau.NhanDienNghiengDau
 import com.example.faceaccess.v2.cuchi.huongdau.HuongDau
@@ -44,7 +54,6 @@ class DichVuTheoDoiFaceAccess :
     Service(),
     LifecycleOwner {
 
-    // LIFECYCLE
 
     private val lifecycleRegistry =
         LifecycleRegistry(this)
@@ -52,7 +61,6 @@ class DichVuTheoDoiFaceAccess :
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
 
-    // CAMERA + MEDIAPIPE NỀN
 
     private lateinit var xuLyKhuonMat:
             XuLyKhuonMat
@@ -65,6 +73,15 @@ class DichVuTheoDoiFaceAccess :
 
     private lateinit var trichXuatDuLieuKhuonMat:
             TrichXuatDuLieuKhuonMat
+
+    private lateinit var khoCauHinhNhanDienCuChi:
+            KhoCauHinhNhanDienCuChi
+
+    private lateinit var cauHinhNhanDienCuChi:
+            CauHinhNhanDienCuChi
+
+    private lateinit var boChuanHoaDuLieuKhuonMat:
+            BoChuanHoaDuLieuKhuonMat
 
     private lateinit var nhanDienNghiengDau:
             NhanDienNghiengDau
@@ -99,16 +116,44 @@ class DichVuTheoDoiFaceAccess :
             Looper.getMainLooper()
         )
 
+    private val tacVuTaiLaiCauHinh =
+        Runnable {
+
+            if (
+                ::khoCauHinhNhanDienCuChi
+                    .isInitialized
+            ) {
+                taiLaiCauHinhNhanDienNen()
+
+                Log.d(
+                    TAG,
+                    "Da ap dung cau hinh moi khi dang chay nen"
+                )
+            }
+        }
+
+    private val boLangNgheCauHinh =
+        SharedPreferences
+            .OnSharedPreferenceChangeListener {
+                    _,
+                    _ ->
+
+                mainHandler.removeCallbacks(
+                    tacVuTaiLaiCauHinh
+                )
+
+                mainHandler.postDelayed(
+                    tacVuTaiLaiCauHinh,
+                    120L
+                )
+            }
+
     @Volatile
     private var cameraNenDangBat =
         false
 
     @Volatile
     private var cameraNenDangKhoiDong =
-        false
-
-    @Volatile
-    private var yeuCauTatSauKhiKhoiDong =
         false
 
     @Volatile
@@ -121,7 +166,6 @@ class DichVuTheoDoiFaceAccess :
     private var dangThayKhuonMatNen: Boolean? =
         null
 
-    // SERVICE CREATE
 
     override fun onCreate() {
         super.onCreate()
@@ -137,6 +181,13 @@ class DichVuTheoDoiFaceAccess :
         taoKenhThongBao()
 
         batForeground()
+
+        khoiTaoCauHinhNhanDienNen()
+
+        khoCauHinhNhanDienCuChi
+            .dangKyBoLangNgheThayDoi(
+                boLangNgheCauHinh
+            )
 
         khoiTaoBoDinhTuyenCheDoNen()
 
@@ -165,9 +216,11 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoXuLyKhuonMatNen()
 
         khoiTaoCameraNen()
+
+        dichVuDangHoatDong =
+            true
     }
 
-    // SERVICE START
 
     override fun onStartCommand(
         intent: Intent?,
@@ -192,6 +245,7 @@ class DichVuTheoDoiFaceAccess :
                     "Nhan yeu cau BAT Camera nen"
                 )
 
+                taiLaiCauHinhNhanDienNen()
                 batCameraNen()
             }
 
@@ -219,10 +273,71 @@ class DichVuTheoDoiFaceAccess :
             }
         }
 
-        return START_STICKY
+        // Camera FGS không nên tự hồi sinh ở nền với trạng thái mơ hồ.
+        return START_NOT_STICKY
     }
 
-    // MODE TOÀN CỤC TRONG SERVICE
+    // Cấu hình nhận diện
+
+    private fun khoiTaoCauHinhNhanDienNen() {
+
+        khoCauHinhNhanDienCuChi =
+            KhoCauHinhNhanDienCuChi(
+                applicationContext
+            )
+
+        cauHinhNhanDienCuChi =
+            khoCauHinhNhanDienCuChi
+                .layCauHinh()
+
+        boChuanHoaDuLieuKhuonMat =
+            BoChuanHoaDuLieuKhuonMat(
+                cauHinhNhanDienCuChi.chuanHoa
+            )
+    }
+
+    private fun taiLaiCauHinhNhanDienNen() {
+
+        cauHinhNhanDienCuChi =
+            khoCauHinhNhanDienCuChi
+                .layCauHinh()
+
+        boChuanHoaDuLieuKhuonMat =
+            BoChuanHoaDuLieuKhuonMat(
+                cauHinhNhanDienCuChi.chuanHoa
+            )
+
+        if (::dieuPhoiCuChi.isInitialized) {
+            khoiTaoDieuPhoiCuChiNen()
+        }
+
+        if (::nhanDienNghiengDau.isInitialized) {
+            khoiTaoNhanDienCuChiNen()
+        }
+
+        if (::nhanDienMoMieng.isInitialized) {
+            khoiTaoNhanDienMoMiengNen()
+        }
+
+        if (::nhanDienMoMiengHaiLan.isInitialized) {
+            khoiTaoNhanDienMoMiengHaiLanNen()
+        }
+
+        if (::nhanDienHuongDau.isInitialized) {
+            khoiTaoNhanDienHuongDauNen()
+        }
+
+        if (::nhanDienNhamHaiMat.isInitialized) {
+            khoiTaoNhanDienNhamHaiMatNen()
+        }
+
+        Log.d(
+            TAG_CAU_HINH,
+            "Da tai lai cau hinh nen"
+        )
+    }
+
+    // Chế độ
 
     private fun khoiTaoBoDinhTuyenCheDoNen() {
 
@@ -271,7 +386,6 @@ class DichVuTheoDoiFaceAccess :
         )
     }
 
-    // CURSOR - ĐỒNG BỘ MODE NỀN
 
     private fun capNhatTrangThaiConTroTheoCheDoNen(
         cheDo: CheDoDieuKhien
@@ -296,7 +410,6 @@ class DichVuTheoDoiFaceAccess :
         }
     }
 
-    // BỘ ĐIỀU KHIỂN MEDIA NỀN
 
     private fun khoiTaoBoDieuKhienMediaNen() {
 
@@ -306,7 +419,6 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-    // BỘ ĐIỀU KHIỂN LIÊN HỆ HỖ TRỢ NỀN
 
     private fun khoiTaoBoDieuKhienLienHeHoTroNen() {
 
@@ -316,7 +428,6 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-    // ĐIỀU PHỐI CỬ CHỈ NỀN
 
     private fun khoiTaoDieuPhoiCuChiNen() {
 
@@ -326,6 +437,9 @@ class DichVuTheoDoiFaceAccess :
 
                     boDinhTuyenCheDo
                         .layCheDoHienTai()
+                },
+                layCauHinhHanhDong = {
+                    cauHinhNhanDienCuChi.hanhDong
                 },
                 khiCoHuongTheoCheDo = {
                         cheDo,
@@ -619,7 +733,6 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-    // NHẬN DIỆN CỬ CHỈ NỀN
 
     private fun khoiTaoNhanDienCuChiNen() {
 
@@ -627,7 +740,10 @@ class DichVuTheoDoiFaceAccess :
             TrichXuatDuLieuKhuonMat()
 
         nhanDienNghiengDau =
-            NhanDienNghiengDau { huong ->
+            NhanDienNghiengDau(
+                cauHinh =
+                    cauHinhNhanDienCuChi.nghiengDau
+            ) { huong ->
 
                 when (huong) {
 
@@ -658,12 +774,14 @@ class DichVuTheoDoiFaceAccess :
             }
     }
 
-    // NHẬN DIỆN MỞ MIỆNG NỀN
 
     private fun khoiTaoNhanDienMoMiengNen() {
 
         nhanDienMoMieng =
-            NhanDienMoMieng {
+            NhanDienMoMieng(
+                cauHinh =
+                    cauHinhNhanDienCuChi.moMieng
+            ) {
 
                 Log.d(
                     TAG_CU_CHI_MIENG,
@@ -679,25 +797,45 @@ class DichVuTheoDoiFaceAccess :
     private fun khoiTaoNhanDienMoMiengHaiLanNen() {
         nhanDienMoMiengHaiLan =
             NhanDienMoMiengHaiLan(
+                cauHinh =
+                    cauHinhNhanDienCuChi.moMiengHaiLan,
                 khiMoMotLan = {
                     Log.d(
                         TAG_CU_CHI_MIENG,
-                        "NEN: MO MIENG MOT LAN - BACK"
-                    )
-                    dieuPhoiCuChi.xuLy(
-                        SuKienCuChi.MoMieng
+                        "NEN: MO MIENG GIU - DETECTOR DON"
                     )
                 },
                 khiMoHaiLan = {
                     Log.d(
                         TAG_CU_CHI_MIENG,
-                        "NEN: MO MIENG HAI LAN - DOI KHOA CON TRO"
+                        "NEN: MO MIENG HAI LAN"
                     )
                     dieuPhoiCuChi.xuLy(
                         SuKienCuChi.MoMiengHaiLan
                     )
                 }
             )
+    }
+
+    private fun canTheoDoiMoMiengHaiLan(
+        cheDoHienTai: CheDoDieuKhien
+    ): Boolean {
+
+        return when (
+            cauHinhNhanDienCuChi
+                .hanhDong
+                .moMiengHaiLan
+        ) {
+            HanhDongTuyChinhCuChi.KHONG_SU_DUNG ->
+                false
+
+            HanhDongTuyChinhCuChi.THEO_CHE_DO ->
+                cheDoHienTai ==
+                        CheDoDieuKhien.CON_TRO
+
+            else ->
+                true
+        }
     }
 
     private fun datLaiNhanDienMieng() {
@@ -710,12 +848,14 @@ class DichVuTheoDoiFaceAccess :
         }
     }
 
-    // NHẬN DIỆN HƯỚNG ĐẦU YAW / PITCH NỀN
 
     private fun khoiTaoNhanDienHuongDauNen() {
 
         nhanDienHuongDau =
-            NhanDienHuongDau { huong ->
+            NhanDienHuongDau(
+                cauHinh =
+                    cauHinhNhanDienCuChi.huongDau
+            ) { huong ->
 
                 val tenHuong =
                     when (huong) {
@@ -754,14 +894,16 @@ class DichVuTheoDoiFaceAccess :
 
     private fun khoiTaoNhanDienNhamHaiMatNen() {
         nhanDienNhamHaiMat =
-            NhanDienNhamHaiMat {
+            NhanDienNhamHaiMat(
+                cauHinh =
+                    cauHinhNhanDienCuChi.nhamHaiMat
+            ) {
                 dieuPhoiCuChi.xuLy(
                     SuKienCuChi.NhamHaiMat
                 )
             }
     }
 
-    // KHỞI TẠO MEDIAPIPE NỀN
 
     private fun khoiTaoXuLyKhuonMatNen() {
 
@@ -793,9 +935,15 @@ class DichVuTheoDoiFaceAccess :
                             val hienTai =
                                 SystemClock.uptimeMillis()
 
-                            val duLieu =
+                            val duLieuGoc =
                                 trichXuatDuLieuKhuonMat
                                     .trichXuat(result)
+
+                            val duLieu =
+                                boChuanHoaDuLieuKhuonMat
+                                    .chuanHoa(
+                                        duLieuGoc
+                                    )
 
                             capNhatTrangThaiKhuonMatOverlayNen(
                                 true
@@ -819,9 +967,19 @@ class DichVuTheoDoiFaceAccess :
                                 boDinhTuyenCheDo
                                     .layCheDoHienTai()
 
+                            // Mở giữ hoạt động ở mọi chế độ
+                            nhanDienMoMieng.capNhat(
+                                doMoMieng =
+                                    duLieu.doMoMieng,
+                                thoiGianMs =
+                                    hienTai
+                            )
+
+                            // Mở hai lần chỉ chạy khi cần
                             if (
-                                cheDoHienTai ==
-                                CheDoDieuKhien.CON_TRO
+                                canTheoDoiMoMiengHaiLan(
+                                    cheDoHienTai
+                                )
                             ) {
                                 nhanDienMoMiengHaiLan.capNhat(
                                     doMoMieng =
@@ -830,12 +988,7 @@ class DichVuTheoDoiFaceAccess :
                                         hienTai
                                 )
                             } else {
-                                nhanDienMoMieng.capNhat(
-                                    doMoMieng =
-                                        duLieu.doMoMieng,
-                                    thoiGianMs =
-                                        hienTai
-                                )
+                                nhanDienMoMiengHaiLan.datLai()
                             }
 
                             val thoiGianXacNhanNhamMat =
@@ -847,8 +1000,9 @@ class DichVuTheoDoiFaceAccess :
                                     CheDoDieuKhien.DIEU_HUONG,
                                     CheDoDieuKhien.MEDIA,
                                     CheDoDieuKhien.CON_TRO ->
-                                        NhanDienNhamHaiMat
-                                            .THOI_GIAN_NHAM_XAC_NHAN_MS
+                                        cauHinhNhanDienCuChi
+                                            .nhamHaiMat
+                                            .thoiGianNhamXacNhanMs
                                 }
 
                             if (thoiGianXacNhanNhamMat != null) {
@@ -962,7 +1116,6 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-    // KHỞI TẠO CAMERA NỀN
 
     private fun khoiTaoCameraNen() {
 
@@ -976,7 +1129,6 @@ class DichVuTheoDoiFaceAccess :
             )
     }
 
-    // BẬT CAMERA NỀN
 
     private fun batCameraNen() {
 
@@ -1003,9 +1155,6 @@ class DichVuTheoDoiFaceAccess :
         cameraNenDangKhoiDong =
             true
 
-        yeuCauTatSauKhiKhoiDong =
-            false
-
         thoiGianLogGanNhat =
             0L
 
@@ -1023,9 +1172,8 @@ class DichVuTheoDoiFaceAccess :
                     true
 
                 nhanDienNghiengDau.datLai()
-
+                nhanDienHuongDau.datLai()
                 datLaiNhanDienMieng()
-
                 datLaiNhanDienMat()
 
                 Log.d(
@@ -1033,22 +1181,7 @@ class DichVuTheoDoiFaceAccess :
                     "Camera nen da bat thanh cong"
                 )
 
-                if (yeuCauTatSauKhiKhoiDong) {
-
-                    yeuCauTatSauKhiKhoiDong =
-                        false
-
-                    Log.d(
-                        TAG_BAN_GIAO_CAMERA,
-                        "Co yeu cau TAT trong luc dang BAT -> nha Camera ngay"
-                    )
-
-                    tatCameraNenVaBaoDaTat()
-
-                } else {
-
-                    guiBroadcastCameraNenDaBat()
-                }
+                guiBroadcastCameraNenDaBat()
             },
 
             khiLoi = { exception ->
@@ -1063,80 +1196,63 @@ class DichVuTheoDoiFaceAccess :
                     false
                 )
 
-                val dangChoTat =
-                    yeuCauTatSauKhiKhoiDong
-
-                yeuCauTatSauKhiKhoiDong =
-                    false
-
                 Log.e(
                     TAG_CAMERA_NEN,
                     "Khong the bat Camera nen",
                     exception
                 )
 
-                if (dangChoTat) {
-
+                if (dangChoXacNhanCameraNenDaTat) {
                     guiBroadcastCameraNenDaTatMotLan()
                 }
             }
         )
     }
 
-    // TẮT CAMERA NỀN
 
     private fun tatCameraNen() {
 
-        if (cameraNenDangKhoiDong) {
+        val dangKhoiDong =
+            cameraNenDangKhoiDong
 
-            yeuCauTatSauKhiKhoiDong =
-                true
+        val dangBat =
+            cameraNenDangBat
 
-            Log.d(
-                TAG_BAN_GIAO_CAMERA,
-                "Camera nen dang khoi dong -> cho khoi dong xong roi tat"
-            )
-
-            return
-        }
-
-        if (!cameraNenDangBat) {
-
-            Log.d(
-                TAG_BAN_GIAO_CAMERA,
-                "Camera nen dang tat san -> xac nhan DA_TAT"
-            )
-
-            guiBroadcastCameraNenDaTatMotLan()
-
-            return
-        }
-
-        tatCameraNenVaBaoDaTat()
-    }
-
-    private fun tatCameraNenVaBaoDaTat() {
+        cameraNenDangKhoiDong =
+            false
 
         cameraNenDangBat =
             false
 
         nhanDienNghiengDau.datLai()
-
+        nhanDienHuongDau.datLai()
         datLaiNhanDienMieng()
-
         datLaiNhanDienMat()
 
+        // Hủy cả yêu cầu bind CameraX đang chờ nếu có.
         quanLyCamera.tatCamera()
+
+        capNhatTrangThaiKhuonMatOverlayNen(
+            false
+        )
 
         Log.d(
             TAG_CAMERA_NEN,
-            "Camera nen da tat"
+            when {
+                dangKhoiDong ->
+                    "Da huy Camera nen dang khoi dong"
+
+                dangBat ->
+                    "Camera nen da tat"
+
+                else ->
+                    "Camera nen dang tat san"
+            }
         )
 
         guiBroadcastCameraNenDaTatMotLan()
     }
 
-    // BROADCAST BÀN GIAO CAMERA
 
     private fun guiBroadcastCameraNenDaBat() {
 
@@ -1195,9 +1311,22 @@ class DichVuTheoDoiFaceAccess :
         )
     }
 
-    // SERVICE DESTROY
 
     override fun onDestroy() {
+
+        mainHandler.removeCallbacks(
+            tacVuTaiLaiCauHinh
+        )
+
+        if (
+            ::khoCauHinhNhanDienCuChi
+                .isInitialized
+        ) {
+            khoCauHinhNhanDienCuChi
+                .huyDangKyBoLangNgheThayDoi(
+                    boLangNgheCauHinh
+                )
+        }
 
         DichVuTruyCapFaceAccess
             .tatConTro()
@@ -1227,9 +1356,6 @@ class DichVuTheoDoiFaceAccess :
         cameraNenDangKhoiDong =
             false
 
-        yeuCauTatSauKhiKhoiDong =
-            false
-
         dangChoXacNhanCameraNenDaTat =
             false
 
@@ -1243,6 +1369,9 @@ class DichVuTheoDoiFaceAccess :
             xuLyKhuonMat.dong()
         }
 
+        dichVuDangHoatDong =
+            false
+
         Log.d(
             TAG,
             "Dich vu theo doi da dung"
@@ -1254,7 +1383,6 @@ class DichVuTheoDoiFaceAccess :
         super.onDestroy()
     }
 
-    // BIND
 
     override fun onBind(
         intent: Intent?
@@ -1263,7 +1391,6 @@ class DichVuTheoDoiFaceAccess :
         return null
     }
 
-    // FOREGROUND
 
     private fun batForeground() {
 
@@ -1287,13 +1414,14 @@ class DichVuTheoDoiFaceAccess :
                 .setOngoing(true)
                 .build()
 
-        startForeground(
+        ServiceCompat.startForeground(
+            this,
             ID_THONG_BAO,
-            thongBao
+            thongBao,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
         )
     }
 
-    // NOTIFICATION CHANNEL
 
     private fun taoKenhThongBao() {
 
@@ -1324,9 +1452,15 @@ class DichVuTheoDoiFaceAccess :
         }
     }
 
-    // CONSTANT
 
     companion object {
+
+        @Volatile
+        private var dichVuDangHoatDong =
+            false
+
+        fun dangTheoDoiHoatDong(): Boolean =
+            dichVuDangHoatDong
 
         private const val TAG =
             "DichVuTheoDoi"
@@ -1360,6 +1494,9 @@ class DichVuTheoDoiFaceAccess :
 
         private const val TAG_CON_TRO =
             "FaceAccessCursor"
+
+        private const val TAG_CAU_HINH =
+            "CauHinhNen"
 
         const val HANH_DONG_BAT_CAMERA_NEN =
             "com.example.faceaccess.v2.BAT_CAMERA_NEN"

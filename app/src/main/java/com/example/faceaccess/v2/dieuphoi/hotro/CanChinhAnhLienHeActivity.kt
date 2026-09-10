@@ -1,43 +1,33 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 package com.example.faceaccess.v2.dieuphoi.hotro
 
-import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.Menu
-import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.faceaccess.v2.R
 import com.yalantis.ucrop.UCropActivity
 
-/**
- * Màn hình căn chỉnh ảnh đại diện riêng của FaceAccess.
- *
- * Dùng engine crop của uCrop nhưng thay phần tương tác chính bằng UI
- * đồng bộ với khu vực Liên hệ hỗ trợ:
- *
- * - nền tối;
- * - khung crop tròn;
- * - hướng dẫn rõ ràng;
- * - nút "XÁC NHẬN ẢNH" lớn ở phía dưới;
- * - vẫn kéo ảnh và pinch-to-zoom trực tiếp trên ảnh;
- * - nút X trên toolbar vẫn dùng để hủy/quay lại.
- *
- * Không sửa source của thư viện uCrop.
- */
+// Giao diện căn ảnh theo phong cách FaceAccess.
 class CanChinhAnhLienHeActivity :
     UCropActivity() {
 
-    private var btnXacNhanAnh:
+    private var btnDungAnh:
             Button? =
         null
-
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -47,17 +37,10 @@ class CanChinhAnhLienHeActivity :
             savedInstanceState
         )
 
-
-        themPanelXacNhan()
+        cauHinhThanhHeThong()
+        themBangDieuKhien()
     }
 
-
-    /**
-     * uCrop mặc định có icon dấu tick trên toolbar.
-     *
-     * FaceAccess dùng nút lớn phía dưới nên ẩn menu crop mặc định.
-     * Loader của uCrop vẫn được giữ để phản hồi khi đang xử lý ảnh.
-     */
     override fun onCreateOptionsMenu(
         menu: Menu
     ): Boolean {
@@ -67,23 +50,15 @@ class CanChinhAnhLienHeActivity :
                 menu
             )
 
-
         menu.findItem(
             com.yalantis.ucrop.R.id.menu_crop
         )
             ?.isVisible =
             false
 
-
         return ketQua
     }
 
-
-    /**
-     * Khi ảnh load xong, uCrop làm menu_crop visible.
-     * Ta dùng trạng thái đó để bật nút XÁC NHẬN ẢNH, rồi tiếp tục
-     * ẩn menu crop mặc định.
-     */
     override fun onPrepareOptionsMenu(
         menu: Menu
     ): Boolean {
@@ -93,19 +68,16 @@ class CanChinhAnhLienHeActivity :
                 menu
             )
 
-
         val menuCrop =
             menu.findItem(
                 com.yalantis.ucrop.R.id.menu_crop
             )
 
-
         val daSanSang =
             menuCrop?.isVisible ==
                     true
 
-
-        btnXacNhanAnh?.apply {
+        btnDungAnh?.apply {
 
             isEnabled =
                 daSanSang
@@ -118,22 +90,45 @@ class CanChinhAnhLienHeActivity :
                 }
         }
 
-
         menuCrop?.isVisible =
             false
-
 
         return ketQua
     }
 
+    private fun cauHinhThanhHeThong() {
 
-    private fun themPanelXacNhan() {
+        window.statusBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        window.navigationBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        WindowCompat
+            .getInsetsController(
+                window,
+                window.decorView
+            )
+            .apply {
+
+                isAppearanceLightStatusBars =
+                    true
+
+                isAppearanceLightNavigationBars =
+                    true
+            }
+    }
+
+    private fun themBangDieuKhien() {
 
         val content =
             findViewById<FrameLayout>(
                 android.R.id.content
             )
-
 
         val panel =
             LinearLayout(this).apply {
@@ -145,51 +140,61 @@ class CanChinhAnhLienHeActivity :
                     Gravity.CENTER
 
                 setPadding(
-                    dp(16),
                     dp(14),
-                    dp(16),
-                    dp(16)
+                    dp(10),
+                    dp(14),
+                    dp(12)
                 )
 
                 background =
-                    taoNenPanel()
-            }
+                    getDrawable(
+                        R.drawable.fa_support_card
+                    )
 
+                elevation =
+                    dp(5).toFloat()
+            }
 
         val huongDan =
             TextView(this).apply {
 
                 text =
-                    "Kéo ảnh để căn giữa • Chụm 2 ngón để phóng to hoặc thu nhỏ"
+                    "Kéo hoặc chụm để căn ảnh"
 
                 gravity =
                     Gravity.CENTER
 
                 textSize =
-                    14f
+                    13f
 
                 setTextColor(
-                    ContextCompat.getColor(
-                        this@CanChinhAnhLienHeActivity,
-                        R.color.chu_chinh
+                    Color.parseColor(
+                        "#5F756D"
                     )
-                )
-
-                setLineSpacing(
-                    0f,
-                    1.08f
                 )
             }
 
+        val hangNut =
+            LinearLayout(this).apply {
 
-        btnXacNhanAnh =
+                orientation =
+                    LinearLayout.HORIZONTAL
+
+                gravity =
+                    Gravity.CENTER
+            }
+
+        val btnHuy =
             Button(this).apply {
 
                 text =
-                    "XÁC NHẬN ẢNH"
+                    "Hủy"
 
                 textSize =
-                    15f
+                    14f
+
+                isAllCaps =
+                    false
 
                 setTypeface(
                     typeface,
@@ -197,18 +202,60 @@ class CanChinhAnhLienHeActivity :
                 )
 
                 setTextColor(
-                    ContextCompat.getColor(
-                        this@CanChinhAnhLienHeActivity,
-                        android.R.color.white
+                    Color.parseColor(
+                        "#315248"
                     )
                 )
 
                 backgroundTintList =
-                    ColorStateList.valueOf(
-                        ContextCompat.getColor(
-                            this@CanChinhAnhLienHeActivity,
-                            R.color.xanh_chinh
-                        )
+                    null
+
+                background =
+                    getDrawable(
+                        R.drawable.fa_support_button_secondary
+                    )
+
+                ganHieuUngNhan(
+                    this
+                )
+
+                setOnClickListener {
+
+                    setResult(
+                        RESULT_CANCELED
+                    )
+
+                    finish()
+                }
+            }
+
+        btnDungAnh =
+            Button(this).apply {
+
+                text =
+                    "Dùng ảnh"
+
+                textSize =
+                    14f
+
+                isAllCaps =
+                    false
+
+                setTypeface(
+                    typeface,
+                    Typeface.BOLD
+                )
+
+                setTextColor(
+                    Color.WHITE
+                )
+
+                backgroundTintList =
+                    null
+
+                background =
+                    getDrawable(
+                        R.drawable.fa_support_button_primary
                     )
 
                 isEnabled =
@@ -217,16 +264,15 @@ class CanChinhAnhLienHeActivity :
                 alpha =
                     0.55f
 
+                ganHieuUngNhan(
+                    this
+                )
+
                 setOnClickListener {
 
-                    /**
-                     * cropAndSaveImage() là protected trong UCropActivity.
-                     * Nó crop ảnh hiện tại, ghi ra URI đích rồi trả RESULT_OK.
-                     */
                     cropAndSaveImage()
                 }
             }
-
 
         panel.addView(
             huongDan,
@@ -236,23 +282,52 @@ class CanChinhAnhLienHeActivity :
             )
         )
 
-
-        val paramsNut =
+        val paramsHangNut =
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(54)
+                dp(52)
             ).apply {
 
                 topMargin =
-                    dp(12)
+                    dp(8)
             }
 
-
         panel.addView(
-            btnXacNhanAnh,
-            paramsNut
+            hangNut,
+            paramsHangNut
         )
 
+        val paramsNutHuy =
+            LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                1f
+            ).apply {
+
+                marginEnd =
+                    dp(5)
+            }
+
+        val paramsNutDungAnh =
+            LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                1f
+            ).apply {
+
+                marginStart =
+                    dp(5)
+            }
+
+        hangNut.addView(
+            btnHuy,
+            paramsNutHuy
+        )
+
+        hangNut.addView(
+            btnDungAnh,
+            paramsNutDungAnh
+        )
 
         val paramsPanel =
             FrameLayout.LayoutParams(
@@ -262,51 +337,87 @@ class CanChinhAnhLienHeActivity :
             ).apply {
 
                 marginStart =
-                    dp(18)
+                    dp(16)
 
                 marginEnd =
-                    dp(18)
+                    dp(16)
 
+                // Khoảng cách dự phòng trước khi nhận system inset
                 bottomMargin =
-                    dp(22)
+                    dp(16)
             }
-
 
         content.addView(
             panel,
             paramsPanel
         )
+
+        // Đẩy panel lên trên thanh điều hướng của điện thoại
+        ViewCompat.setOnApplyWindowInsetsListener(
+            content
+        ) {
+                _,
+                insets ->
+
+            val systemBars =
+                insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                )
+
+            val layoutParams =
+                panel.layoutParams
+                        as FrameLayout.LayoutParams
+
+            layoutParams.bottomMargin =
+                systemBars.bottom +
+                        dp(14)
+
+            panel.layoutParams =
+                layoutParams
+
+            insets
+        }
+
+        ViewCompat.requestApplyInsets(
+            content
+        )
     }
 
+    private fun ganHieuUngNhan(
+        view: View
+    ) {
 
-    private fun taoNenPanel():
-            GradientDrawable {
+        view.setOnTouchListener {
+                v,
+                event ->
 
-        return GradientDrawable().apply {
+            when (
+                event.actionMasked
+            ) {
 
-            shape =
-                GradientDrawable.RECTANGLE
+                MotionEvent.ACTION_DOWN -> {
 
-            cornerRadius =
-                dp(18).toFloat()
+                    v.animate()
+                        .scaleX(0.96f)
+                        .scaleY(0.96f)
+                        .setDuration(80L)
+                        .start()
+                }
 
-            setColor(
-                ContextCompat.getColor(
-                    this@CanChinhAnhLienHeActivity,
-                    R.color.nen_man_hinh
-                )
-            )
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
 
-            setStroke(
-                dp(1),
-                ContextCompat.getColor(
-                    this@CanChinhAnhLienHeActivity,
-                    R.color.xanh_chinh
-                )
-            )
+                    v.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(110L)
+                        .start()
+                }
+            }
+
+            false
         }
     }
-
 
     private fun dp(
         giaTri: Int
@@ -314,7 +425,9 @@ class CanChinhAnhLienHeActivity :
 
         return (
                 giaTri *
-                        resources.displayMetrics.density
+                        resources
+                            .displayMetrics
+                            .density
                 )
             .toInt()
     }

@@ -1,7 +1,18 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 package com.example.faceaccess.v2.cuchi.mat
 
+import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNhamHaiMat
+
 class NhanDienNhamHaiMat(
+
+    // Cấu hình nhận diện nhắm mắt
+    private val cauHinh: CauHinhNhamHaiMat =
+        CauHinhNhamHaiMat(),
+
+    // Callback khi xác nhận cử chỉ
     private val khiXacNhan: () -> Unit
+
 ) {
 
     private enum class TrangThai {
@@ -23,13 +34,16 @@ class NhanDienNhamHaiMat(
     private var batDauNhieuMs: Long? =
         null
 
+
     fun capNhat(
         doNhamMatTrai: Float?,
         doNhamMatPhai: Float?,
         thoiGianMs: Long,
         thoiGianXacNhanMs: Long =
-            THOI_GIAN_NHAM_XAC_NHAN_MS
+            cauHinh.thoiGianNhamXacNhanMs
     ) {
+
+        // Thiếu dữ liệu thì reset
         if (
             doNhamMatTrai == null ||
             doNhamMatPhai == null
@@ -39,16 +53,20 @@ class NhanDienNhamHaiMat(
         }
 
         val traiDong =
-            doNhamMatTrai >= NGUONG_DONG
+            doNhamMatTrai >=
+                    cauHinh.nguongDong
 
         val phaiDong =
-            doNhamMatPhai >= NGUONG_DONG
+            doNhamMatPhai >=
+                    cauHinh.nguongDong
 
         val traiMo =
-            doNhamMatTrai <= NGUONG_MO
+            doNhamMatTrai <=
+                    cauHinh.nguongMo
 
         val phaiMo =
-            doNhamMatPhai <= NGUONG_MO
+            doNhamMatPhai <=
+                    cauHinh.nguongMo
 
         val caHaiDong =
             traiDong &&
@@ -58,7 +76,9 @@ class NhanDienNhamHaiMat(
             traiMo &&
                     phaiMo
 
+
         when (trangThai) {
+
             TrangThai.CHO_MO ->
                 xuLyChoMo(
                     caHaiMo = caHaiMo,
@@ -91,7 +111,9 @@ class NhanDienNhamHaiMat(
         }
     }
 
+
     fun datLai() {
+
         trangThai =
             TrangThai.CHO_MO
 
@@ -105,13 +127,17 @@ class NhanDienNhamHaiMat(
             null
     }
 
+
     private fun xuLyChoMo(
         caHaiMo: Boolean,
         thoiGianMs: Long
     ) {
+
         if (!caHaiMo) {
+
             batDauMoOnDinhMs =
                 null
+
             return
         }
 
@@ -119,16 +145,19 @@ class NhanDienNhamHaiMat(
             batDauMoOnDinhMs
 
         if (batDau == null) {
+
             batDauMoOnDinhMs =
                 thoiGianMs
+
             return
         }
 
         if (
             thoiGianMs -
             batDau >=
-            THOI_GIAN_MO_DE_REARM_MS
+            cauHinh.thoiGianMoDeRearmMs
         ) {
+
             trangThai =
                 TrangThai.SAN_SANG
 
@@ -137,12 +166,15 @@ class NhanDienNhamHaiMat(
         }
     }
 
+
     private fun xuLySanSang(
         caHaiDong: Boolean,
         caHaiMo: Boolean,
         thoiGianMs: Long
     ) {
+
         if (caHaiDong) {
+
             trangThai =
                 TrangThai.DANG_NHAM
 
@@ -156,10 +188,12 @@ class NhanDienNhamHaiMat(
         }
 
         if (caHaiMo) {
+
             batDauNhieuMs =
                 null
         }
     }
+
 
     private fun xuLyDangNham(
         caHaiDong: Boolean,
@@ -168,7 +202,9 @@ class NhanDienNhamHaiMat(
         thoiGianMs: Long,
         thoiGianXacNhanMs: Long
     ) {
+
         if (caHaiDong) {
+
             batDauNhieuMs =
                 null
 
@@ -185,6 +221,7 @@ class NhanDienNhamHaiMat(
                 batDau >=
                 thoiGianXacNhanMs
             ) {
+
                 trangThai =
                     TrangThai.DA_KICH_HOAT
 
@@ -194,7 +231,9 @@ class NhanDienNhamHaiMat(
             return
         }
 
+
         if (caHaiMo || coMatMo) {
+
             chuyenSangChoMo(
                 thoiGianMs =
                     if (caHaiMo) {
@@ -203,31 +242,39 @@ class NhanDienNhamHaiMat(
                         null
                     }
             )
+
             return
         }
+
 
         val batDauNhieu =
             batDauNhieuMs
 
         if (batDauNhieu == null) {
+
             batDauNhieuMs =
                 thoiGianMs
+
             return
         }
+
 
         if (
             thoiGianMs -
             batDauNhieu >
-            THOI_GIAN_NHIEU_CHO_PHEP_MS
+            cauHinh.thoiGianNhieuChoPhepMs
         ) {
+
             chuyenSangChoMo()
         }
     }
+
 
     private fun xuLyDaKichHoat(
         caHaiMo: Boolean,
         thoiGianMs: Long
     ) {
+
         if (!caHaiMo) {
             return
         }
@@ -237,9 +284,11 @@ class NhanDienNhamHaiMat(
         )
     }
 
+
     private fun chuyenSangChoMo(
         thoiGianMs: Long? = null
     ) {
+
         trangThai =
             TrangThai.CHO_MO
 
@@ -253,20 +302,14 @@ class NhanDienNhamHaiMat(
             null
     }
 
+
     companion object {
+
+        // Giữ tương thích với code hiện tại
         const val THOI_GIAN_NHAM_XAC_NHAN_MS =
             400L
 
         const val THOI_GIAN_MO_DE_REARM_MS =
             150L
-
-        private const val THOI_GIAN_NHIEU_CHO_PHEP_MS =
-            100L
-
-        private const val NGUONG_DONG =
-            0.65f
-
-        private const val NGUONG_MO =
-            0.35f
     }
 }

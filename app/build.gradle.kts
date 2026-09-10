@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -11,13 +14,15 @@ android {
 
     defaultConfig {
         applicationId = "com.example.faceaccess.v2"
+
         minSdk = 26
         targetSdk = 37
 
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner =
+            "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -29,8 +34,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility =
+            JavaVersion.VERSION_11
+
+        targetCompatibility =
+            JavaVersion.VERSION_11
     }
 }
 
@@ -54,9 +62,20 @@ dependencies {
     // Crop ảnh đại diện
     implementation("com.github.yalantis:ucrop:2.2.11")
 
+    // Lottie
+    implementation("com.airbnb.android:lottie:6.7.1")
+
+    // ViewPager2
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+
     // Test
     testImplementation(libs.junit)
 
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(
+        libs.androidx.espresso.core
+    )
+
+    androidTestImplementation(
+        libs.androidx.junit
+    )
 }

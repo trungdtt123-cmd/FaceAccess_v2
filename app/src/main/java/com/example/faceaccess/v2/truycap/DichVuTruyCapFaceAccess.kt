@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 package com.example.faceaccess.v2.truycap
 
 import android.accessibilityservice.AccessibilityService
@@ -99,6 +101,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     @Volatile
     private var dangVuotConTro =
         false
+
+    private val khoaVongDoiConTro =
+        Any()
 
     private val mainHandlerThongBao =
         Handler(
@@ -240,6 +245,15 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         anThongBaoHeThongNoiBo()
         anFocusDieuHuongOverlayNoiBo()
 
+        mucTieuConTroDangChon =
+            null
+
+        conTroDangKhoa =
+            false
+
+        dangVuotConTro =
+            false
+
         if (
             ::boQuanLyConTroOverlay.isInitialized
         ) {
@@ -266,24 +280,102 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
     // CURSOR OVERLAY
 
-    private fun batConTroNoiBo(): Boolean {
-        if (
-            !::boQuanLyConTroOverlay.isInitialized
+    private fun batConTroNoiBo(): Boolean =
+        synchronized(
+            khoaVongDoiConTro
         ) {
+            dauVetNodeDieuHuongDangChon =
+                null
+
+            anFocusDieuHuongOverlayNoiBo()
+
+            mucTieuConTroDangChon =
+                null
+
+            conTroDangKhoa =
+                false
+
+            dangVuotConTro =
+                false
+
+            if (
+                !::boQuanLyConTroOverlay.isInitialized
+            ) {
+                boQuanLyConTroOverlay =
+                    BoQuanLyConTroOverlay(this)
+            }
+
+            if (
+                boQuanLyConTroOverlay
+                    .dangHienThi()
+            ) {
+                boQuanLyConTroOverlay
+                    .datKhoa(
+                        false
+                    )
+
+                Log.d(
+                    TAG_CON_TRO,
+                    "CURSOR_ALREADY_VISIBLE"
+                )
+
+                return@synchronized true
+            }
+
+            try {
+                boQuanLyConTroOverlay
+                    .dong()
+            } catch (
+                exception: Exception
+            ) {
+                Log.w(
+                    TAG_CON_TRO,
+                    "CURSOR_CLEAN_BEFORE_START_FAILED",
+                    exception
+                )
+            }
+
             boQuanLyConTroOverlay =
                 BoQuanLyConTroOverlay(this)
+
+            val thanhCong =
+                boQuanLyConTroOverlay
+                    .bat()
+
+            if (thanhCong) {
+                boQuanLyConTroOverlay
+                    .datKhoa(
+                        false
+                    )
+            } else {
+                try {
+                    boQuanLyConTroOverlay
+                        .dong()
+                } catch (
+                    exception: Exception
+                ) {
+                    Log.w(
+                        TAG_CON_TRO,
+                        "CURSOR_CLEAN_AFTER_START_FAILED",
+                        exception
+                    )
+                }
+
+                boQuanLyConTroOverlay =
+                    BoQuanLyConTroOverlay(this)
+            }
+
+            Log.d(
+                TAG_CON_TRO,
+                "CURSOR_START=$thanhCong"
+            )
+
+            thanhCong
         }
 
-        val daHienThi =
-            boQuanLyConTroOverlay
-                .dangHienThi()
-
-        val thanhCong =
-            boQuanLyConTroOverlay.bat()
-
-        if (
-            thanhCong &&
-            !daHienThi
+    private fun tatConTroNoiBo(): Boolean =
+        synchronized(
+            khoaVongDoiConTro
         ) {
             mucTieuConTroDangChon =
                 null
@@ -291,38 +383,74 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             conTroDangKhoa =
                 false
 
-            boQuanLyConTroOverlay
-                .datKhoa(
-                    false
-                )
-        }
-
-        return thanhCong
-    }
-
-    private fun tatConTroNoiBo(): Boolean {
-        mucTieuConTroDangChon =
-            null
-
-        conTroDangKhoa =
-            false
-
-        dangVuotConTro =
-            false
-
-        if (
-            !::boQuanLyConTroOverlay.isInitialized
-        ) {
-            return true
-        }
-
-        boQuanLyConTroOverlay
-            .datKhoa(
+            dangVuotConTro =
                 false
+
+            if (
+                !::boQuanLyConTroOverlay.isInitialized
+            ) {
+                return@synchronized true
+            }
+
+            try {
+                boQuanLyConTroOverlay
+                    .datKhoa(
+                        false
+                    )
+            } catch (
+                exception: Exception
+            ) {
+                Log.w(
+                    TAG_CON_TRO,
+                    "CURSOR_UNLOCK_BEFORE_STOP_FAILED",
+                    exception
+                )
+            }
+
+            val daTat =
+                try {
+                    boQuanLyConTroOverlay
+                        .tat()
+                } catch (
+                    exception: Exception
+                ) {
+                    Log.w(
+                        TAG_CON_TRO,
+                        "CURSOR_STOP_FAILED",
+                        exception
+                    )
+
+                    false
+                }
+
+            val daDong =
+                try {
+                    boQuanLyConTroOverlay
+                        .dong()
+
+                    true
+                } catch (
+                    exception: Exception
+                ) {
+                    Log.w(
+                        TAG_CON_TRO,
+                        "CURSOR_CLOSE_FAILED",
+                        exception
+                    )
+
+                    false
+                }
+
+            boQuanLyConTroOverlay =
+                BoQuanLyConTroOverlay(this)
+
+            Log.d(
+                TAG_CON_TRO,
+                "CURSOR_STOP=$daTat | CLOSE=$daDong"
             )
 
-        return boQuanLyConTroOverlay.tat()
-    }
+            daTat || daDong
+        }
 
     private fun diChuyenConTroNoiBo(
         lenh: LenhConTro
@@ -2195,8 +2323,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             TAG_FOCUS,
             "XAC_NHAN_ACTION_CLICK | " +
                     "virtual=${nodeTheoVirtualFocus != null} | " +
-                    "text=${nodeXacNhan.text} | " +
-                    "desc=${nodeXacNhan.contentDescription} | " +
                     "OK=$actionClickThanhCong"
         )
 

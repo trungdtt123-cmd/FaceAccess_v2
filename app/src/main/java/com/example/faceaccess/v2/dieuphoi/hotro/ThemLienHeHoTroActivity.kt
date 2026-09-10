@@ -1,10 +1,16 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung
 package com.example.faceaccess.v2.dieuphoi.hotro
 
+import android.graphics.Color
 import android.os.Bundle
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import com.example.faceaccess.v2.R
 
 /**
@@ -50,6 +56,8 @@ class ThemLienHeHoTroActivity :
             R.layout.activity_them_lien_he_ho_tro
         )
 
+        cauHinhThanhHeThong()
+
 
         khoLienHe =
             KhoLienHeHoTro(
@@ -58,6 +66,8 @@ class ThemLienHeHoTroActivity :
 
 
         anhXa()
+
+        apDungPhongCachNut()
 
         ganSuKien()
     }
@@ -89,6 +99,92 @@ class ThemLienHeHoTroActivity :
             findViewById(
                 R.id.btnQuayLaiThemLienHe
             )
+    }
+
+
+    private fun cauHinhThanhHeThong() {
+
+        window.statusBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        window.navigationBarColor =
+            Color.parseColor(
+                "#F6FBF8"
+            )
+
+        WindowCompat
+            .getInsetsController(
+                window,
+                window.decorView
+            )
+            .apply {
+                isAppearanceLightStatusBars =
+                    true
+                isAppearanceLightNavigationBars =
+                    true
+            }
+    }
+
+
+    private fun apDungPhongCachNut() {
+
+        btnLuuLienHe.backgroundTintList =
+            null
+
+        btnQuayLai.backgroundTintList =
+            null
+
+        btnQuayLai.background =
+            null
+
+        btnLuuLienHe.isAllCaps =
+            false
+
+        btnQuayLai.isAllCaps =
+            false
+
+        ganHieuUngNhan(
+            btnLuuLienHe
+        )
+    }
+
+
+    private fun ganHieuUngNhan(
+        view: View
+    ) {
+
+        view.setOnTouchListener {
+                v,
+                event ->
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN -> {
+
+                    v.animate()
+                        .scaleX(0.96f)
+                        .scaleY(0.96f)
+                        .setDuration(80L)
+                        .start()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+
+                    v.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(110L)
+                        .start()
+                }
+            }
+
+            false
+        }
     }
 
 
