@@ -17,6 +17,9 @@ class XuLyKhuonMat(
 
     private var faceLandmarker: FaceLandmarker? = null
 
+    @Volatile
+    private var daDong = false
+
     init {
         khoiTao(context)
     }
@@ -96,6 +99,10 @@ class XuLyKhuonMat(
         thoiGianMs: Long
     ) {
 
+        if (daDong) {
+            return
+        }
+
         try {
 
             faceLandmarker?.detectAsync(
@@ -123,6 +130,10 @@ class XuLyKhuonMat(
         inputImage: MPImage
     ) {
 
+        if (daDong) {
+            return
+        }
+
         if (result.faceLandmarks().isEmpty()) {
 
             langNghe.khiKhongThayKhuonMat()
@@ -141,6 +152,10 @@ class XuLyKhuonMat(
         exception: RuntimeException
     ) {
 
+        if (daDong) {
+            return
+        }
+
         Log.e(
             TAG,
             "Face Landmarker gap loi",
@@ -154,6 +169,12 @@ class XuLyKhuonMat(
     }
 
     fun dong() {
+
+        if (daDong) {
+            return
+        }
+
+        daDong = true
 
         faceLandmarker?.close()
 

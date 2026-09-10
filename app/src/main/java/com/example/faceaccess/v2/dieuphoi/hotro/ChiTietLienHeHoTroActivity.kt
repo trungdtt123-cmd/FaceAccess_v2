@@ -4,6 +4,7 @@
 package com.example.faceaccess.v2.dieuphoi.hotro
 
 import android.app.AlertDialog
+import android.content.ContentResolver
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
@@ -109,6 +110,34 @@ class ChiTietLienHeHoTroActivity :
                 return@registerForActivityResult
             }
 
+            if (
+                uriNguon.scheme !=
+                ContentResolver.SCHEME_CONTENT
+            ) {
+                Toast.makeText(
+                    this,
+                    "Nguồn ảnh không được hỗ trợ",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@registerForActivityResult
+            }
+
+            val kieuNoiDung =
+                contentResolver.getType(uriNguon)
+
+            if (
+                kieuNoiDung != null &&
+                !kieuNoiDung.startsWith("image/")
+            ) {
+                Toast.makeText(
+                    this,
+                    "Tệp đã chọn không phải là ảnh",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@registerForActivityResult
+            }
 
             try {
 

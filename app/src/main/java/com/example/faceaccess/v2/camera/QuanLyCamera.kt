@@ -6,9 +6,11 @@ import android.content.Context
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCase
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -16,263 +18,206 @@ import java.util.concurrent.Executors
 class QuanLyCamera(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
-
-    /*
-     * Activity:
-     * truyền PreviewView để hiển thị Camera.
-     *
-     * Foreground Service:
-     * có thể truyền null vì không cần giao diện Preview.
-     */
     private val previewView: PreviewView? = null,
-
     private val boPhanTichKhungHinh: ImageAnalysis.Analyzer
 ) {
-
-    // =========================================================
-    // EXECUTOR
-    // =========================================================
 
     private val cameraExecutor: ExecutorService =
         Executors.newSingleThreadExecutor()
 
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var preview: Preview? = null
+    private var imageAnalysis: ImageAnalysis? = null
 
-    // =========================================================
-    // CAMERA STATE
-    // =========================================================
+    @Volatile
+    private var daDong = false
 
-    private var cameraProvider:
-            ProcessCameraProvider? = null
+    @Volatile
+    private var yeuCauCameraDangBat = false
 
-    private var imageAnalysis:
-            ImageAnalysis? = null
+    @Volatile
+    private var phienYeuCau = 0L
 
-
-    // =========================================================
-    // BẬT CAMERA
-    // =========================================================
-
-    /**
-     * Bật Camera trước.
-     *
-     * Nếu có PreviewView:
-     *
-     * Camera
-     * ├── Preview
-     * └── ImageAnalysis
-     *
-     * Nếu không có PreviewView:
-     *
-     * Camera
-     * └── ImageAnalysis
-     *
-     * Trường hợp không Preview được dùng cho
-     * Foreground Service chạy nền.
-     */
     fun batCamera(
         khiThanhCong: () -> Unit,
         khiLoi: (Throwable) -> Unit
     ) {
+        if (daDong) {
+            khiLoi(
+                IllegalStateException(
+                    "QuanLyCamera da dong va khong the su dung lai"
+                )
+            )
+            return
+        }
+
+        yeuCauCameraDangBat = true
+        val phienHienTai = ++phienYeuCau
 
         val cameraProviderFuture =
-            ProcessCameraProvider
-                .getInstance(context)
+            ProcessCameraProvider.getInstance(context)
 
         cameraProviderFuture.addListener({
+            // Bỏ callback cũ nếu Camera đã bị tắt hoặc manager đã đóng.
+            if (
+                daDong ||
+                !yeuCauCameraDangBat ||
+                phienHienTai != phienYeuCau
+            ) {
+                return@addListener
+            }
+
+            var phanTichAnhMoi: ImageAnalysis? = null
+            var previewMoi: Preview? = null
 
             try {
+                if (
+                    lifecycleOwner.lifecycle.currentState ==
+                    Lifecycle.State.DESTROYED
+                ) {
+                    throw IllegalStateException(
+                        "LifecycleOwner da DESTROYED"
+                    )
+                }
 
-                val provider =
-                    cameraProviderFuture.get()
+                val provider = cameraProviderFuture.get()
+                cameraProvider = provider
 
-                cameraProvider =
-                    provider
-
-
-                // =================================================
-                // IMAGE ANALYSIS
-                // =================================================
-
-                val phanTichAnh =
+                phanTichAnhMoi =
                     ImageAnalysis.Builder()
-
-                        /*
-                         * Không tích các frame cũ.
-                         *
-                         * Nếu MediaPipe đang xử lý chưa xong,
-                         * CameraX chỉ giữ frame mới nhất.
-                         */
                         .setBackpressureStrategy(
-                            ImageAnalysis
-                                .STRATEGY_KEEP_ONLY_LATEST
+                            ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
                         )
-
-                        /*
-                         * PhanTichKhungHinhKhuonMat
-                         * hiện đang xử lý RGBA_8888.
-                         */
                         .setOutputImageFormat(
-                            ImageAnalysis
-                                .OUTPUT_IMAGE_FORMAT_RGBA_8888
+                            ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888
                         )
-
                         .build()
 
-
-                phanTichAnh.setAnalyzer(
+                phanTichAnhMoi.setAnalyzer(
                     cameraExecutor,
                     boPhanTichKhungHinh
                 )
 
-
-                imageAnalysis =
-                    phanTichAnh
-
-
-                // =================================================
-                // CAMERA TRƯỚC
-                // =================================================
-
                 val cameraSelector =
-                    CameraSelector
-                        .DEFAULT_FRONT_CAMERA
+                    CameraSelector.DEFAULT_FRONT_CAMERA
 
+                // Chỉ gỡ UseCase do chính manager này sở hữu.
+                boRangBuocUseCaseCuaManager(provider)
 
-                // =================================================
-                // HỦY BINDING CŨ
-                // =================================================
+                if (
+                    daDong ||
+                    !yeuCauCameraDangBat ||
+                    phienHienTai != phienYeuCau
+                ) {
+                    phanTichAnhMoi.clearAnalyzer()
+                    return@addListener
+                }
 
-                provider.unbindAll()
-
-
-                // =================================================
-                // BIND CAMERA
-                // =================================================
-
-                val previewViewHienTai =
-                    previewView
-
+                val previewViewHienTai = previewView
 
                 if (previewViewHienTai != null) {
-
-                    /*
-                     * Trường hợp Activity:
-                     *
-                     * Preview + ImageAnalysis
-                     */
-
-                    val preview =
+                    previewMoi =
                         Preview.Builder()
                             .build()
                             .also { cameraPreview ->
-
                                 cameraPreview.surfaceProvider =
-                                    previewViewHienTai
-                                        .surfaceProvider
+                                    previewViewHienTai.surfaceProvider
                             }
 
-
                     provider.bindToLifecycle(
                         lifecycleOwner,
                         cameraSelector,
-                        preview,
-                        phanTichAnh
+                        previewMoi,
+                        phanTichAnhMoi
                     )
-
                 } else {
-
-                    /*
-                     * Trường hợp Foreground Service:
-                     *
-                     * Không tạo Preview.
-                     * Chỉ cần ImageAnalysis để MediaPipe
-                     * tiếp tục nhận frame.
-                     */
-
                     provider.bindToLifecycle(
                         lifecycleOwner,
                         cameraSelector,
-                        phanTichAnh
+                        phanTichAnhMoi
                     )
                 }
 
-
-                // =================================================
-                // THÀNH CÔNG
-                // =================================================
+                preview = previewMoi
+                imageAnalysis = phanTichAnhMoi
 
                 khiThanhCong()
 
             } catch (exception: Exception) {
+                phanTichAnhMoi?.clearAnalyzer()
 
-                imageAnalysis
-                    ?.clearAnalyzer()
+                try {
+                    val provider = cameraProvider
+                    if (provider != null) {
+                        val useCases = mutableListOf<UseCase>()
+                        previewMoi?.let(useCases::add)
+                        phanTichAnhMoi?.let(useCases::add)
 
-                imageAnalysis =
-                    null
+                        if (useCases.isNotEmpty()) {
+                            provider.unbind(*useCases.toTypedArray())
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Không che mất lỗi gốc.
+                }
 
-                khiLoi(
-                    exception
-                )
+                if (
+                    !daDong &&
+                    yeuCauCameraDangBat &&
+                    phienHienTai == phienYeuCau
+                ) {
+                    khiLoi(exception)
+                }
             }
-
         }, ContextCompat.getMainExecutor(context))
     }
 
-
-    // =========================================================
-    // DỪNG CAMERA
-    // =========================================================
-
-    /**
-     * Dừng Camera và ngừng đưa frame
-     * sang ImageAnalysis.
-     *
-     * Có thể gọi khi người dùng bấm
-     * DỪNG THEO DÕI.
-     */
     fun tatCamera() {
+        yeuCauCameraDangBat = false
+        phienYeuCau++
 
-        imageAnalysis
-            ?.clearAnalyzer()
+        imageAnalysis?.clearAnalyzer()
 
-        imageAnalysis =
-            null
-
-        cameraProvider
-            ?.unbindAll()
+        cameraProvider?.let { provider ->
+            boRangBuocUseCaseCuaManager(provider)
+        }
     }
 
-
-    // =========================================================
-    // GIẢI PHÓNG
-    // =========================================================
-
-    /**
-     * Giải phóng hoàn toàn tài nguyên Camera.
-     *
-     * Sau khi gọi dong(), đối tượng QuanLyCamera
-     * không nên được sử dụng lại.
-     */
     fun dong() {
+        if (daDong) {
+            return
+        }
 
-        imageAnalysis
-            ?.clearAnalyzer()
+        daDong = true
+        yeuCauCameraDangBat = false
+        phienYeuCau++
 
-        imageAnalysis =
-            null
+        imageAnalysis?.clearAnalyzer()
 
-        cameraProvider
-            ?.unbindAll()
+        cameraProvider?.let { provider ->
+            boRangBuocUseCaseCuaManager(provider)
+        }
 
-        cameraProvider =
-            null
-
+        cameraProvider = null
 
         if (!cameraExecutor.isShutdown) {
-
-            cameraExecutor
-                .shutdown()
+            cameraExecutor.shutdown()
         }
+    }
+
+    private fun boRangBuocUseCaseCuaManager(
+        provider: ProcessCameraProvider
+    ) {
+        val useCases = mutableListOf<UseCase>()
+
+        preview?.let(useCases::add)
+        imageAnalysis?.let(useCases::add)
+
+        if (useCases.isNotEmpty()) {
+            provider.unbind(*useCases.toTypedArray())
+        }
+
+        preview = null
+        imageAnalysis = null
     }
 }

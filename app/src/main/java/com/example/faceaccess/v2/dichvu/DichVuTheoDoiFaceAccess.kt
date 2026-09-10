@@ -7,6 +7,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.content.SharedPreferences
 import android.os.Build
 import android.os.Handler
@@ -15,6 +16,7 @@ import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -155,10 +157,6 @@ class DichVuTheoDoiFaceAccess :
         false
 
     @Volatile
-    private var yeuCauTatSauKhiKhoiDong =
-        false
-
-    @Volatile
     private var dangChoXacNhanCameraNenDaTat =
         false
 
@@ -218,6 +216,9 @@ class DichVuTheoDoiFaceAccess :
         khoiTaoXuLyKhuonMatNen()
 
         khoiTaoCameraNen()
+
+        dichVuDangHoatDong =
+            true
     }
 
 
@@ -272,7 +273,8 @@ class DichVuTheoDoiFaceAccess :
             }
         }
 
-        return START_STICKY
+        // Camera FGS không nên tự hồi sinh ở nền với trạng thái mơ hồ.
+        return START_NOT_STICKY
     }
 
     // Cấu hình nhận diện
@@ -1153,9 +1155,6 @@ class DichVuTheoDoiFaceAccess :
         cameraNenDangKhoiDong =
             true
 
-        yeuCauTatSauKhiKhoiDong =
-            false
-
         thoiGianLogGanNhat =
             0L
 
@@ -1173,11 +1172,8 @@ class DichVuTheoDoiFaceAccess :
                     true
 
                 nhanDienNghiengDau.datLai()
-
                 nhanDienHuongDau.datLai()
-
                 datLaiNhanDienMieng()
-
                 datLaiNhanDienMat()
 
                 Log.d(
@@ -1185,22 +1181,7 @@ class DichVuTheoDoiFaceAccess :
                     "Camera nen da bat thanh cong"
                 )
 
-                if (yeuCauTatSauKhiKhoiDong) {
-
-                    yeuCauTatSauKhiKhoiDong =
-                        false
-
-                    Log.d(
-                        TAG_BAN_GIAO_CAMERA,
-                        "Co yeu cau TAT trong luc dang BAT -> nha Camera ngay"
-                    )
-
-                    tatCameraNenVaBaoDaTat()
-
-                } else {
-
-                    guiBroadcastCameraNenDaBat()
-                }
+                guiBroadcastCameraNenDaBat()
             },
 
             khiLoi = { exception ->
@@ -1215,20 +1196,13 @@ class DichVuTheoDoiFaceAccess :
                     false
                 )
 
-                val dangChoTat =
-                    yeuCauTatSauKhiKhoiDong
-
-                yeuCauTatSauKhiKhoiDong =
-                    false
-
                 Log.e(
                     TAG_CAMERA_NEN,
                     "Khong the bat Camera nen",
                     exception
                 )
 
-                if (dangChoTat) {
-
+                if (dangChoXacNhanCameraNenDaTat) {
                     guiBroadcastCameraNenDaTatMotLan()
                 }
             }
@@ -1238,50 +1212,42 @@ class DichVuTheoDoiFaceAccess :
 
     private fun tatCameraNen() {
 
-        if (cameraNenDangKhoiDong) {
+        val dangKhoiDong =
+            cameraNenDangKhoiDong
 
-            yeuCauTatSauKhiKhoiDong =
-                true
+        val dangBat =
+            cameraNenDangBat
 
-            Log.d(
-                TAG_BAN_GIAO_CAMERA,
-                "Camera nen dang khoi dong -> cho khoi dong xong roi tat"
-            )
-
-            return
-        }
-
-        if (!cameraNenDangBat) {
-
-            Log.d(
-                TAG_BAN_GIAO_CAMERA,
-                "Camera nen dang tat san -> xac nhan DA_TAT"
-            )
-
-            guiBroadcastCameraNenDaTatMotLan()
-
-            return
-        }
-
-        tatCameraNenVaBaoDaTat()
-    }
-
-    private fun tatCameraNenVaBaoDaTat() {
+        cameraNenDangKhoiDong =
+            false
 
         cameraNenDangBat =
             false
 
         nhanDienNghiengDau.datLai()
-
+        nhanDienHuongDau.datLai()
         datLaiNhanDienMieng()
-
         datLaiNhanDienMat()
 
+        // Hủy cả yêu cầu bind CameraX đang chờ nếu có.
         quanLyCamera.tatCamera()
+
+        capNhatTrangThaiKhuonMatOverlayNen(
+            false
+        )
 
         Log.d(
             TAG_CAMERA_NEN,
-            "Camera nen da tat"
+            when {
+                dangKhoiDong ->
+                    "Da huy Camera nen dang khoi dong"
+
+                dangBat ->
+                    "Camera nen da tat"
+
+                else ->
+                    "Camera nen dang tat san"
+            }
         )
 
         guiBroadcastCameraNenDaTatMotLan()
@@ -1390,9 +1356,6 @@ class DichVuTheoDoiFaceAccess :
         cameraNenDangKhoiDong =
             false
 
-        yeuCauTatSauKhiKhoiDong =
-            false
-
         dangChoXacNhanCameraNenDaTat =
             false
 
@@ -1405,6 +1368,9 @@ class DichVuTheoDoiFaceAccess :
 
             xuLyKhuonMat.dong()
         }
+
+        dichVuDangHoatDong =
+            false
 
         Log.d(
             TAG,
@@ -1448,9 +1414,11 @@ class DichVuTheoDoiFaceAccess :
                 .setOngoing(true)
                 .build()
 
-        startForeground(
+        ServiceCompat.startForeground(
+            this,
             ID_THONG_BAO,
-            thongBao
+            thongBao,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
         )
     }
 
@@ -1486,6 +1454,13 @@ class DichVuTheoDoiFaceAccess :
 
 
     companion object {
+
+        @Volatile
+        private var dichVuDangHoatDong =
+            false
+
+        fun dangTheoDoiHoatDong(): Boolean =
+            dichVuDangHoatDong
 
         private const val TAG =
             "DichVuTheoDoi"

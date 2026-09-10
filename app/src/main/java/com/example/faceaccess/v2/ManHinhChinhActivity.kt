@@ -89,6 +89,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private var cameraDangBat = false
 
     @Volatile
+    private var cameraDangKhoiDong = false
+
+    @Volatile
     private var theoDoiDangHoatDong = false
 
     @Volatile
@@ -98,6 +101,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
     private var dangChoBatDichVuTruyCap = false
 
     private var daDangKyBoNhanBanGiaoCamera = false
+
+    private var soLanThuBanGiaoCamera = 0
 
     // DETECTOR MỞ MIỆNG
 
@@ -510,12 +515,20 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         .HANH_DONG_BAT_CAMERA_NEN
             }
 
-        startService(intent)
+        try {
+            startService(intent)
 
-        Log.d(
-            TAG_BAN_GIAO_CAMERA,
-            "Activity da nha Camera -> yeu cau Service BAT Camera nen"
-        )
+            Log.d(
+                TAG_BAN_GIAO_CAMERA,
+                "Activity da nha Camera -> yeu cau Service BAT Camera nen"
+            )
+        } catch (exception: Exception) {
+            Log.e(
+                TAG_BAN_GIAO_CAMERA,
+                "Khong the yeu cau Service BAT Camera nen",
+                exception
+            )
+        }
     }
 
     private fun yeuCauTatCameraNenDeNhanLaiCamera() {
@@ -526,6 +539,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         dangChoCameraNenNhaQuyen =
             true
+
+        soLanThuBanGiaoCamera =
+            0
+
+        guiYeuCauTatCameraNen()
+    }
+
+    private fun guiYeuCauTatCameraNen() {
 
         val intent =
             Intent(
@@ -538,11 +559,60 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         .HANH_DONG_TAT_CAMERA_NEN
             }
 
-        startService(intent)
+        try {
+            startService(intent)
 
-        Log.d(
-            TAG_BAN_GIAO_CAMERA,
-            "Activity yeu cau Service TAT Camera nen"
+            Log.d(
+                TAG_BAN_GIAO_CAMERA,
+                "Activity yeu cau Service TAT Camera nen"
+            )
+        } catch (exception: Exception) {
+            Log.e(
+                TAG_BAN_GIAO_CAMERA,
+                "Khong the gui yeu cau TAT Camera nen",
+                exception
+            )
+        }
+
+        window.decorView.postDelayed(
+            {
+                if (
+                    !dangChoCameraNenNhaQuyen ||
+                    !theoDoiDangHoatDong ||
+                    !lifecycle.currentState.isAtLeast(
+                        Lifecycle.State.STARTED
+                    )
+                ) {
+                    return@postDelayed
+                }
+
+                if (
+                    soLanThuBanGiaoCamera <
+                    SO_LAN_THU_LAI_BAN_GIAO_CAMERA
+                ) {
+                    soLanThuBanGiaoCamera++
+
+                    Log.w(
+                        TAG_BAN_GIAO_CAMERA,
+                        "Chua nhan ACK Camera nen DA TAT -> thu lai lan $soLanThuBanGiaoCamera"
+                    )
+
+                    guiYeuCauTatCameraNen()
+                } else {
+                    dangChoCameraNenNhaQuyen =
+                        false
+
+                    Log.e(
+                        TAG_BAN_GIAO_CAMERA,
+                        "Het thoi gian cho Service nha Camera"
+                    )
+
+                    capNhatTrangThaiHeThong(
+                        "● Chưa thể nhận lại Camera - hãy thử lại"
+                    )
+                }
+            },
+            THOI_GIAN_CHO_BAN_GIAO_CAMERA_MS
         )
     }
 
@@ -561,6 +631,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                         dangChoCameraNenNhaQuyen =
                             false
+
+                        soLanThuBanGiaoCamera =
+                            0
 
                         Log.d(
                             TAG_BAN_GIAO_CAMERA,
@@ -933,8 +1006,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         cauHinhGiaoDienHieuChinh()
 
+        theoDoiDangHoatDong =
+            DichVuTheoDoiFaceAccess
+                .dangTheoDoiHoatDong()
+
         capNhatGiaoDienNutTheoDoi(
-            dangTheoDoi = false
+            dangTheoDoi = theoDoiDangHoatDong
         )
 
         ganHieuUngNhanNutTheoDoi()
@@ -2238,7 +2315,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         btnBatDauTheoDoi.setOnClickListener {
 
-            if (cameraDangBat) {
+            if (theoDoiDangHoatDong) {
 
                 tatCamera()
 
@@ -3428,6 +3505,16 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private fun batCamera() {
 
+        if (cameraDangBat || cameraDangKhoiDong) {
+            return
+        }
+
+        theoDoiDangHoatDong =
+            true
+
+        cameraDangKhoiDong =
+            true
+
         txtTrangThaiCamera.visibility =
             View.GONE
 
@@ -3452,6 +3539,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
         quanLyCamera.batCamera(
 
             khiThanhCong = {
+
+                cameraDangKhoiDong =
+                    false
 
                 cameraDangBat =
                     true
@@ -3493,6 +3583,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
             },
 
             khiLoi = { exception ->
+
+                cameraDangKhoiDong =
+                    false
 
                 dangChoHieuChinhTuCaiDat =
                     false
@@ -3546,7 +3639,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         if (
             !theoDoiDangHoatDong ||
-            cameraDangBat
+            cameraDangBat ||
+            cameraDangKhoiDong
         ) {
             return
         }
@@ -3558,9 +3652,15 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         nhanDienNghiengDau.datLai()
 
+        cameraDangKhoiDong =
+            true
+
         quanLyCamera.batCamera(
 
             khiThanhCong = {
+
+                cameraDangKhoiDong =
+                    false
 
                 cameraDangBat =
                     true
@@ -3610,6 +3710,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             khiLoi = { exception ->
 
+                cameraDangKhoiDong =
+                    false
+
                 dangChoHieuChinhTuCaiDat =
                     false
 
@@ -3646,6 +3749,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
         theoDoiDangHoatDong =
             false
 
+        cameraDangKhoiDong =
+            false
+
         DichVuTruyCapFaceAccess
             .tatConTro()
 
@@ -3662,6 +3768,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         dangChoCameraNenNhaQuyen =
             false
+
+        soLanThuBanGiaoCamera =
+            0
 
         cameraDangBat =
             false
@@ -4119,9 +4228,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         if (
             theoDoiDangHoatDong &&
-            cameraDangBat &&
             ::quanLyCamera.isInitialized
         ) {
+
+            cameraDangKhoiDong =
+                false
 
             cameraDangBat =
                 false
@@ -4213,6 +4324,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         private const val THOI_GIAN_CHO_DICH_VU_TRUY_CAP_MS =
             300L
+
+        private const val THOI_GIAN_CHO_BAN_GIAO_CAMERA_MS =
+            1200L
+
+        private const val SO_LAN_THU_LAI_BAN_GIAO_CAMERA =
+            2
 
         // Khoảng nghỉ ngắn trước khi chuyển sang bước tiếp theo
         private const val THOI_GIAN_CHUYEN_BUOC_HIEU_CHINH_MS =
