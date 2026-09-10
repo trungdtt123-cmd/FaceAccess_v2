@@ -2323,8 +2323,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             TAG_FOCUS,
             "XAC_NHAN_ACTION_CLICK | " +
                     "virtual=${nodeTheoVirtualFocus != null} | " +
-                    "text=${nodeXacNhan.text} | " +
-                    "desc=${nodeXacNhan.contentDescription} | " +
                     "OK=$actionClickThanhCong"
         )
 

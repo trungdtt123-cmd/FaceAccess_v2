@@ -881,16 +881,29 @@ class ChiTietLienHeHoTroActivity :
                         ?: return
 
 
+                val thuMucAvatar =
+                    File(
+                        filesDir,
+                        THU_MUC_AVATAR
+                    ).canonicalFile
+
+
                 val file =
                     File(
                         duongDan
-                    )
+                    ).canonicalFile
+
+
+                val tienToThuMucAvatar =
+                    thuMucAvatar.path +
+                            File.separator
 
 
                 if (
-                    file.absolutePath.startsWith(
-                        filesDir.absolutePath
-                    )
+                    file.path.startsWith(
+                        tienToThuMucAvatar
+                    ) &&
+                    file.isFile
                 ) {
 
                     file.delete()

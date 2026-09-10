@@ -3,6 +3,8 @@
 package com.example.faceaccess.v2.dieuphoi.hotro
 
 import android.content.Context
+import android.net.Uri
+import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -16,8 +18,11 @@ class KhoLienHeHoTro(
     context: Context
 ) {
 
+    private val appContext =
+        context.applicationContext
+
     private val preferences =
-        context.applicationContext.getSharedPreferences(
+        appContext.getSharedPreferences(
             TEN_PREFERENCES,
             Context.MODE_PRIVATE
         )
@@ -187,8 +192,19 @@ class KhoLienHeHoTro(
         }
 
 
-        val danhSachMoi =
+        val danhSachHienTai =
             layTatCa()
+
+
+        val lienHeBiXoa =
+            danhSachHienTai
+                .filter {
+                    it.id in ids
+                }
+
+
+        val danhSachMoi =
+            danhSachHienTai
                 .filterNot {
                     it.id in ids
                 }
@@ -197,6 +213,90 @@ class KhoLienHeHoTro(
         luu(
             danhSachMoi
         )
+
+
+        // Chỉ xóa avatar nội bộ không còn được liên hệ nào sử dụng.
+        val avatarConDuocSuDung =
+            danhSachMoi
+                .mapNotNull {
+                    it.anhUri
+                }
+                .toSet()
+
+
+        lienHeBiXoa
+            .mapNotNull {
+                it.anhUri
+            }
+            .filterNot {
+                it in avatarConDuocSuDung
+            }
+            .distinct()
+            .forEach { anhUri ->
+                xoaAvatarNoiBoNeuCan(
+                    anhUri
+                )
+            }
+    }
+
+
+    private fun xoaAvatarNoiBoNeuCan(
+        anhUri: String
+    ) {
+
+        try {
+
+            val uri =
+                Uri.parse(
+                    anhUri
+                )
+
+
+            if (uri.scheme != "file") {
+                return
+            }
+
+
+            val duongDan =
+                uri.path
+                    ?: return
+
+
+            val thuMucAvatar =
+                File(
+                    appContext.filesDir,
+                    THU_MUC_AVATAR
+                ).canonicalFile
+
+
+            val fileAvatar =
+                File(
+                    duongDan
+                ).canonicalFile
+
+
+            val tienToThuMucAvatar =
+                thuMucAvatar.path +
+                        File.separator
+
+
+            if (
+                !fileAvatar.path.startsWith(
+                    tienToThuMucAvatar
+                )
+            ) {
+                return
+            }
+
+
+            if (fileAvatar.isFile) {
+                fileAvatar.delete()
+            }
+
+        } catch (_: Exception) {
+
+            // Dọn file là best-effort, không để lỗi I/O phá thao tác xóa liên hệ.
+        }
     }
 
 
@@ -278,6 +378,9 @@ class KhoLienHeHoTro(
 
         private const val KHOA_DANH_SACH =
             "danh_sach"
+
+        private const val THU_MUC_AVATAR =
+            "support_avatars"
 
         private const val KHOA_ID =
             "id"

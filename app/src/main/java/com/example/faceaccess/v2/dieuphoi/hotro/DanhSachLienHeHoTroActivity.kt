@@ -781,7 +781,7 @@ class DanhSachLienHeHoTroActivity :
             return
         }
 
-        startActivity(
+        val intentGoi =
             Intent(
                 Intent.ACTION_DIAL,
                 Uri.parse(
@@ -792,7 +792,22 @@ class DanhSachLienHeHoTroActivity :
                     }"
                 )
             )
-        )
+
+
+        try {
+
+            startActivity(
+                intentGoi
+            )
+
+        } catch (_: Exception) {
+
+            Toast.makeText(
+                this,
+                "Không tìm thấy ứng dụng gọi điện",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
 

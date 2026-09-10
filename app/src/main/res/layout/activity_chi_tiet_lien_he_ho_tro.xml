@@ -35,7 +35,7 @@
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:padding="0dp"
-                android:text="‹"
+                android:text="&#8249;"
                 android:textAllCaps="false"
                 android:textColor="#173D33"
                 android:textSize="32sp" />
@@ -81,7 +81,7 @@
                 android:layout_height="match_parent"
                 android:background="@drawable/fa_support_avatar"
                 android:gravity="center"
-                android:text="?"
+                android:text=""
                 android:textColor="@android:color/white"
                 android:textSize="42sp"
                 android:textStyle="bold" />
