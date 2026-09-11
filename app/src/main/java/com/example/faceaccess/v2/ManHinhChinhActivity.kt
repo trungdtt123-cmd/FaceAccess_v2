@@ -2051,20 +2051,16 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                             .thoiGianNhamXacNhanMs
                                 }
 
-                            if (thoiGianXacNhanNhamMat != null) {
-                                nhanDienNhamHaiMat.capNhat(
-                                    doNhamMatTrai =
-                                        duLieu.doNhamMatTrai,
-                                    doNhamMatPhai =
-                                        duLieu.doNhamMatPhai,
-                                    thoiGianMs =
-                                        thoiGianHienTai,
-                                    thoiGianXacNhanMs =
-                                        thoiGianXacNhanNhamMat
-                                )
-                            } else {
-                                datLaiNhanDienMat()
-                            }
+                            nhanDienNhamHaiMat.capNhat(
+                                doNhamMatTrai =
+                                    duLieu.doNhamMatTrai,
+                                doNhamMatPhai =
+                                    duLieu.doNhamMatPhai,
+                                thoiGianMs =
+                                    thoiGianHienTai,
+                                thoiGianXacNhanMs =
+                                    thoiGianXacNhanNhamMat
+                            )
 
                         }
 

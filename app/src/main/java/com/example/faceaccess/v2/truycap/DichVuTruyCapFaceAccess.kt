@@ -871,7 +871,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 Log.d(
                     TAG_CON_TRO,
                     "CLICK_TARGET_NODE | " +
-                            "${mucTieu.nhan ?: mucTieu.viewId ?: "UNKNOWN"} | " +
+                            "HAS_VIEW_ID=${!mucTieu.viewId.isNullOrBlank()} | " +
                             "WINDOW=${mucTieu.windowId}"
                 )
 
@@ -2620,7 +2620,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             "MUC_DICH[$tenHuong] | " +
                     "index=$viTriHienTai->$viTriDich/${danhSachMuc.lastIndex} | " +
                     "window=${mucDich.nodeClick.windowId} | " +
-                    "label=${mucDich.nhan ?: "NONE"} | " +
+                    "hasLabel=${!mucDich.nhan.isNullOrBlank()} | " +
                     "focusClass=${mucDich.nodeFocus.className} | " +
                     "clickClass=${mucDich.nodeClick.className}"
         )
@@ -3066,7 +3066,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             Log.d(
                 TAG_FOCUS,
                 "SEMANTIC_FOCUS[$tenHuong] | " +
-                        "label=${muc.nhan ?: "NONE"} | native=FOCUS_NODE"
+                        "hasLabel=${!muc.nhan.isNullOrBlank()} | native=FOCUS_NODE"
             )
 
             return true
@@ -3088,7 +3088,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             Log.d(
                 TAG_FOCUS,
                 "SEMANTIC_FOCUS[$tenHuong] | " +
-                        "label=${muc.nhan ?: "NONE"} | native=CLICK_NODE"
+                        "hasLabel=${!muc.nhan.isNullOrBlank()} | native=CLICK_NODE"
             )
 
             return true
@@ -3103,7 +3103,7 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             TAG_FOCUS,
             "VIRTUAL_FOCUS[$tenHuong] | " +
                     "nguon=$nguon | " +
-                    "label=${muc.nhan ?: "NONE"} | " +
+                    "hasLabel=${!muc.nhan.isNullOrBlank()} | " +
                     "overlay=$virtualFocusThanhCong"
         )
 

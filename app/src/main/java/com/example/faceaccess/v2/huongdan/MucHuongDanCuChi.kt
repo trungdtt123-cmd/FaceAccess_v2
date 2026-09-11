@@ -13,7 +13,7 @@ data class MucHuongDanCuChi(
     val goiYCuChi: String,
     val nhanCheDo: String,
 
-    @RawRes
+    @param:RawRes
     val animationResId: Int,
 
     val lapLaiAnimation: Boolean = true

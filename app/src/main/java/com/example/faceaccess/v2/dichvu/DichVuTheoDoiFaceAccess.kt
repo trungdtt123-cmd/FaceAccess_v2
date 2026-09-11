@@ -1005,20 +1005,16 @@ class DichVuTheoDoiFaceAccess :
                                             .thoiGianNhamXacNhanMs
                                 }
 
-                            if (thoiGianXacNhanNhamMat != null) {
-                                nhanDienNhamHaiMat.capNhat(
-                                    doNhamMatTrai =
-                                        duLieu.doNhamMatTrai,
-                                    doNhamMatPhai =
-                                        duLieu.doNhamMatPhai,
-                                    thoiGianMs =
-                                        hienTai,
-                                    thoiGianXacNhanMs =
-                                        thoiGianXacNhanNhamMat
-                                )
-                            } else {
-                                datLaiNhanDienMat()
-                            }
+                            nhanDienNhamHaiMat.capNhat(
+                                doNhamMatTrai =
+                                    duLieu.doNhamMatTrai,
+                                doNhamMatPhai =
+                                    duLieu.doNhamMatPhai,
+                                thoiGianMs =
+                                    hienTai,
+                                thoiGianXacNhanMs =
+                                    thoiGianXacNhanNhamMat
+                            )
 
 
                             if (
