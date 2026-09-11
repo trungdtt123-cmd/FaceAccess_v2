@@ -46,7 +46,6 @@ dependencies {
 
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
 
@@ -66,7 +65,6 @@ dependencies {
     implementation("com.airbnb.android:lottie:6.7.1")
 
     // ViewPager2
-    implementation("androidx.viewpager2:viewpager2:1.1.0")
 
     // Test
     testImplementation(libs.junit)
