@@ -21,14 +21,18 @@ class NhanDienMoMieng(
         DA_KICH_HOAT
     }
 
+    // Mỗi session mới phải thấy miệng đóng trước khi nhận cử chỉ.
     private var trangThai =
-        TrangThai.SAN_SANG
+        TrangThai.DA_KICH_HOAT
 
     private var thoiDiemBatDauMo =
         0L
 
     private var thoiDiemBatDauDong =
         0L
+
+    private var thoiDiemBatDauNhieu: Long? =
+        null
 
 
     fun capNhat(
@@ -67,14 +71,36 @@ class NhanDienMoMieng(
 
     fun datLai() {
 
+        // Không coi một lần mở đã bắt đầu từ session trước là cử chỉ mới.
         trangThai =
-            TrangThai.SAN_SANG
+            TrangThai.DA_KICH_HOAT
 
         thoiDiemBatDauMo =
             0L
 
         thoiDiemBatDauDong =
             0L
+
+        thoiDiemBatDauNhieu =
+            null
+    }
+
+
+    // Khi cử chỉ mở miệng hai lần đã được xác nhận,
+    // không cho detector mở giữ kích hoạt tiếp trên cùng lần mở thứ hai.
+    fun chanChoDenKhiDong() {
+
+        trangThai =
+            TrangThai.DA_KICH_HOAT
+
+        thoiDiemBatDauMo =
+            0L
+
+        thoiDiemBatDauDong =
+            0L
+
+        thoiDiemBatDauNhieu =
+            null
     }
 
 
@@ -89,6 +115,9 @@ class NhanDienMoMieng(
 
         thoiDiemBatDauMo =
             thoiGianMs
+
+        thoiDiemBatDauNhieu =
+            null
 
         trangThai =
             TrangThai.DANG_MO
@@ -106,8 +135,29 @@ class NhanDienMoMieng(
         }
 
         if (doMoMieng < cauHinh.nguongMo) {
+
+            val batDauNhieu =
+                thoiDiemBatDauNhieu
+
+            if (batDauNhieu == null) {
+                thoiDiemBatDauNhieu =
+                    thoiGianMs
+                return
+            }
+
+            if (
+                thoiGianMs -
+                batDauNhieu >
+                THOI_GIAN_NHIEU_CHO_PHEP_MS
+            ) {
+                datLaiVeSanSang()
+            }
+
             return
         }
+
+        thoiDiemBatDauNhieu =
+            null
 
         val thoiGianDaMo =
             thoiGianMs -
@@ -160,7 +210,29 @@ class NhanDienMoMieng(
             cauHinh.thoiGianDongDeRearmMs
         ) {
 
-            datLai()
+            datLaiVeSanSang()
         }
+    }
+
+
+    private fun datLaiVeSanSang() {
+
+        trangThai =
+            TrangThai.SAN_SANG
+
+        thoiDiemBatDauMo =
+            0L
+
+        thoiDiemBatDauDong =
+            0L
+
+        thoiDiemBatDauNhieu =
+            null
+    }
+
+
+    companion object {
+        private const val THOI_GIAN_NHIEU_CHO_PHEP_MS =
+            140L
     }
 }

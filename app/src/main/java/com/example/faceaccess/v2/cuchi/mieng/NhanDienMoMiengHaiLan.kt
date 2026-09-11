@@ -29,6 +29,7 @@ class NhanDienMoMiengHaiLan(
 
 
     private enum class TrangThai {
+        CHO_DONG_BAN_DAU,
         SAN_SANG,
         MO_LAN_1,
         CHO_LAN_2,
@@ -37,8 +38,10 @@ class NhanDienMoMiengHaiLan(
     }
 
 
+    // Session mới hoặc sau khi mất dữ liệu phải thấy miệng đóng ổn định
+    // trước khi cho phép tính lần mở thứ nhất.
     private var trangThai =
-        TrangThai.SAN_SANG
+        TrangThai.CHO_DONG_BAN_DAU
 
     private var batDauMoMs: Long? =
         null
@@ -76,6 +79,12 @@ class NhanDienMoMiengHaiLan(
 
 
         when (trangThai) {
+
+            TrangThai.CHO_DONG_BAN_DAU ->
+                xuLyChoDongBanDau(
+                    dangDong = dangDong,
+                    thoiGianMs = thoiGianMs
+                )
 
             TrangThai.SAN_SANG ->
                 xuLySanSang(
@@ -116,7 +125,37 @@ class NhanDienMoMiengHaiLan(
 
         TrangThaiCuChiMieng.huy()
 
-        datLaiNoiBo()
+        datLaiChoDongBanDau()
+    }
+
+
+    private fun xuLyChoDongBanDau(
+        dangDong: Boolean,
+        thoiGianMs: Long
+    ) {
+
+        if (!dangDong) {
+            batDauDongMs =
+                null
+            return
+        }
+
+        val batDau =
+            batDauDongMs
+                ?: thoiGianMs.also {
+                    batDauDongMs = it
+                }
+
+        if (
+            thoiGianMs - batDau >=
+            cauHinh.thoiGianDongDeRearmMs
+        ) {
+            trangThai =
+                TrangThai.SAN_SANG
+
+            batDauDongMs =
+                null
+        }
     }
 
 
@@ -390,6 +429,28 @@ class NhanDienMoMiengHaiLan(
             .ketThucVoiGuard()
 
         datLaiNoiBo()
+    }
+
+
+    private fun datLaiChoDongBanDau() {
+
+        trangThai =
+            TrangThai.CHO_DONG_BAN_DAU
+
+        batDauMoMs =
+            null
+
+        batDauChoLanHaiMs =
+            null
+
+        batDauDongMs =
+            null
+
+        batDauNhieuMs =
+            null
+
+        lanMotDaDuDieuKien =
+            false
     }
 
 

@@ -298,6 +298,10 @@ class DichVuTheoDoiFaceAccess :
 
     private fun taiLaiCauHinhNhanDienNen() {
 
+        // Xóa trạng thái detector cũ trước khi thay instance mới.
+        // Nếu double-mouth đang giữa chừng, trạng thái chặn toàn cục cũng phải được giải phóng.
+        datLaiNhanDienMieng()
+
         cauHinhNhanDienCuChi =
             khoCauHinhNhanDienCuChi
                 .layCauHinh()
@@ -362,6 +366,16 @@ class DichVuTheoDoiFaceAccess :
 
                     boDieuKhienLienHeHoTro
                         .datLaiPhien()
+                }
+
+                // Không để cử chỉ đã bắt đầu ở chế độ cũ
+                // hoàn tất và phát lệnh trong chế độ mới.
+                if (::nhanDienNghiengDau.isInitialized) {
+                    nhanDienNghiengDau.datLai()
+                }
+
+                if (::nhanDienHuongDau.isInitialized) {
+                    nhanDienHuongDau.datLai()
                 }
 
                 datLaiNhanDienMieng()
@@ -806,6 +820,13 @@ class DichVuTheoDoiFaceAccess :
                     )
                 },
                 khiMoHaiLan = {
+
+                    // Không để cùng lần mở thứ hai tiếp tục kích hoạt
+                    // detector mở-giữ sau khi double-mouth đã được xác nhận.
+                    if (::nhanDienMoMieng.isInitialized) {
+                        nhanDienMoMieng.chanChoDenKhiDong()
+                    }
+
                     Log.d(
                         TAG_CU_CHI_MIENG,
                         "NEN: MO MIENG HAI LAN"
@@ -1074,6 +1095,19 @@ class DichVuTheoDoiFaceAccess :
                             thongBao: String
                         ) {
 
+                            // Lỗi MediaPipe làm gián đoạn chuỗi frame.
+                            // Hủy mọi cử chỉ đang giữ để không tính tiếp thời gian cũ.
+                            if (::nhanDienNghiengDau.isInitialized) {
+                                nhanDienNghiengDau.datLai()
+                            }
+
+                            if (::nhanDienHuongDau.isInitialized) {
+                                nhanDienHuongDau.datLai()
+                            }
+
+                            datLaiNhanDienMieng()
+                            datLaiNhanDienMat()
+
                             capNhatTrangThaiKhuonMatOverlayNen(
                                 false
                             )
@@ -1334,9 +1368,7 @@ class DichVuTheoDoiFaceAccess :
             nhanDienNghiengDau.datLai()
         }
 
-        if (::nhanDienMoMieng.isInitialized) {
-            nhanDienMoMieng.datLai()
-        }
+        datLaiNhanDienMieng()
 
         if (::nhanDienHuongDau.isInitialized) {
             nhanDienHuongDau.datLai()

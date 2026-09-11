@@ -40,6 +40,12 @@ class BoDieuKhienHieuChinh(
     private var matMoTrungTinh: Float? = null
     private var miengDongTrungTinh: Float? = null
 
+    private enum class TrucHieuChinh {
+        ROLL,
+        YAW,
+        PITCH
+    }
+
     // Bắt đầu một bước hiệu chỉnh mới
     fun batDauBuoc(
         buoc: BuocHieuChinh,
@@ -249,59 +255,59 @@ class BoDieuKhienHieuChinh(
             BuocHieuChinh.TRUNG_TINH ->
                 kiemTraTrungTinh(duLieu)
 
-            BuocHieuChinh.QUAY_TRAI -> {
-                val yaw = duLieu.yaw
-                val moc = yawTrungTinh
+            BuocHieuChinh.QUAY_TRAI ->
+                kiemTraTrucChiPhoi(
+                    duLieu = duLieu,
+                    truc = TrucHieuChinh.YAW,
+                    huongDuong = true,
+                    nguong = NGUONG_XAC_NHAN_YAW,
+                    tyLeChiPhoi = TY_LE_CHI_PHOI_HUONG_DAU
+                )
 
-                yaw != null &&
-                        moc != null &&
-                        yaw - moc >= NGUONG_XAC_NHAN_YAW
-            }
+            BuocHieuChinh.QUAY_PHAI ->
+                kiemTraTrucChiPhoi(
+                    duLieu = duLieu,
+                    truc = TrucHieuChinh.YAW,
+                    huongDuong = false,
+                    nguong = NGUONG_XAC_NHAN_YAW,
+                    tyLeChiPhoi = TY_LE_CHI_PHOI_HUONG_DAU
+                )
 
-            BuocHieuChinh.QUAY_PHAI -> {
-                val yaw = duLieu.yaw
-                val moc = yawTrungTinh
+            BuocHieuChinh.NHIN_LEN ->
+                kiemTraTrucChiPhoi(
+                    duLieu = duLieu,
+                    truc = TrucHieuChinh.PITCH,
+                    huongDuong = true,
+                    nguong = NGUONG_XAC_NHAN_PITCH,
+                    tyLeChiPhoi = TY_LE_CHI_PHOI_HUONG_DAU
+                )
 
-                yaw != null &&
-                        moc != null &&
-                        yaw - moc <= -NGUONG_XAC_NHAN_YAW
-            }
+            BuocHieuChinh.NHIN_XUONG ->
+                kiemTraTrucChiPhoi(
+                    duLieu = duLieu,
+                    truc = TrucHieuChinh.PITCH,
+                    huongDuong = false,
+                    nguong = NGUONG_XAC_NHAN_PITCH,
+                    tyLeChiPhoi = TY_LE_CHI_PHOI_HUONG_DAU
+                )
 
-            BuocHieuChinh.NHIN_LEN -> {
-                val pitch = duLieu.pitch
-                val moc = pitchTrungTinh
+            BuocHieuChinh.NGHIENG_TRAI ->
+                kiemTraTrucChiPhoi(
+                    duLieu = duLieu,
+                    truc = TrucHieuChinh.ROLL,
+                    huongDuong = false,
+                    nguong = NGUONG_XAC_NHAN_ROLL,
+                    tyLeChiPhoi = TY_LE_CHI_PHOI_NGHIENG_DAU
+                )
 
-                pitch != null &&
-                        moc != null &&
-                        pitch - moc >= NGUONG_XAC_NHAN_PITCH
-            }
-
-            BuocHieuChinh.NHIN_XUONG -> {
-                val pitch = duLieu.pitch
-                val moc = pitchTrungTinh
-
-                pitch != null &&
-                        moc != null &&
-                        pitch - moc <= -NGUONG_XAC_NHAN_PITCH
-            }
-
-            BuocHieuChinh.NGHIENG_TRAI -> {
-                val roll = duLieu.roll
-                val moc = rollTrungTinh
-
-                roll != null &&
-                        moc != null &&
-                        roll - moc <= -NGUONG_XAC_NHAN_ROLL
-            }
-
-            BuocHieuChinh.NGHIENG_PHAI -> {
-                val roll = duLieu.roll
-                val moc = rollTrungTinh
-
-                roll != null &&
-                        moc != null &&
-                        roll - moc >= NGUONG_XAC_NHAN_ROLL
-            }
+            BuocHieuChinh.NGHIENG_PHAI ->
+                kiemTraTrucChiPhoi(
+                    duLieu = duLieu,
+                    truc = TrucHieuChinh.ROLL,
+                    huongDuong = true,
+                    nguong = NGUONG_XAC_NHAN_ROLL,
+                    tyLeChiPhoi = TY_LE_CHI_PHOI_NGHIENG_DAU
+                )
 
             BuocHieuChinh.NHAM_HAI_MAT ->
                 kiemTraNhamHaiMat(duLieu)
@@ -309,6 +315,58 @@ class BoDieuKhienHieuChinh(
             BuocHieuChinh.MO_MIENG ->
                 kiemTraMoMieng(duLieu)
         }
+    }
+
+    // Cử chỉ hiệu chỉnh phải đủ biên độ và đúng trục chi phối.
+    private fun kiemTraTrucChiPhoi(
+        duLieu: DuLieuKhuonMat,
+        truc: TrucHieuChinh,
+        huongDuong: Boolean,
+        nguong: Float,
+        tyLeChiPhoi: Float
+    ): Boolean {
+
+        val roll = duLieu.roll ?: return false
+        val yaw = duLieu.yaw ?: return false
+        val pitch = duLieu.pitch ?: return false
+
+        val mocRoll = rollTrungTinh ?: return false
+        val mocYaw = yawTrungTinh ?: return false
+        val mocPitch = pitchTrungTinh ?: return false
+
+        val deltaRoll = roll - mocRoll
+        val deltaYaw = yaw - mocYaw
+        val deltaPitch = pitch - mocPitch
+
+        val giaTriChinh =
+            when (truc) {
+                TrucHieuChinh.ROLL -> deltaRoll
+                TrucHieuChinh.YAW -> deltaYaw
+                TrucHieuChinh.PITCH -> deltaPitch
+            }
+
+        val dungHuong =
+            if (huongDuong) {
+                giaTriChinh >= nguong
+            } else {
+                giaTriChinh <= -nguong
+            }
+
+        if (!dungHuong) {
+            return false
+        }
+
+        val giaTriChinhAbs = abs(giaTriChinh)
+
+        val (phuThuNhat, phuThuHai) =
+            when (truc) {
+                TrucHieuChinh.ROLL -> abs(deltaYaw) to abs(deltaPitch)
+                TrucHieuChinh.YAW -> abs(deltaRoll) to abs(deltaPitch)
+                TrucHieuChinh.PITCH -> abs(deltaRoll) to abs(deltaYaw)
+            }
+
+        return giaTriChinhAbs >= phuThuNhat * tyLeChiPhoi &&
+                giaTriChinhAbs >= phuThuHai * tyLeChiPhoi
     }
 
     // Trung tính phải ổn định, mở mắt và khép miệng
@@ -590,6 +648,13 @@ class BoDieuKhienHieuChinh(
 
         private const val NGUONG_XAC_NHAN_ROLL =
             6f
+
+        // Đồng bộ với quy tắc trục chi phối của detector khi chạy thật
+        private const val TY_LE_CHI_PHOI_HUONG_DAU =
+            1.05f
+
+        private const val TY_LE_CHI_PHOI_NGHIENG_DAU =
+            1f
 
         // Độ dao động cho phép khi nhìn thẳng
         private const val NGUONG_ON_DINH_GOC =

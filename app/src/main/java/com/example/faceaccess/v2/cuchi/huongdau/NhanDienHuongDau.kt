@@ -272,13 +272,34 @@ class NhanDienHuongDau(
         pitch: Float
     ): Boolean {
 
+        // Vùng trung tính phải nhỏ hơn ngưỡng kích hoạt thực tế.
+        // Nếu không, các mức độ nhạy cao (ngưỡng thấp) sẽ bị vùng
+        // trung tính che mất và thanh độ nhạy không còn tác dụng.
+        val nguongYawTrungTinhHieuLuc =
+            minOf(
+                cauHinh.nguongYawTrungTinh,
+                minOf(
+                    cauHinh.layNguongQuayTrai(),
+                    cauHinh.layNguongQuayPhai()
+                ) * TY_LE_TRUNG_TINH_SO_VOI_NGUONG
+            )
+
+        val nguongPitchTrungTinhHieuLuc =
+            minOf(
+                cauHinh.nguongPitchTrungTinh,
+                minOf(
+                    cauHinh.layNguongNhinLen(),
+                    cauHinh.layNguongNhinXuong()
+                ) * TY_LE_TRUNG_TINH_SO_VOI_NGUONG
+            )
+
         return (
                 abs(roll) <=
                         cauHinh.nguongRollTrungTinh &&
                         abs(yaw) <=
-                        cauHinh.nguongYawTrungTinh &&
+                        nguongYawTrungTinhHieuLuc &&
                         abs(pitch) <=
-                        cauHinh.nguongPitchTrungTinh
+                        nguongPitchTrungTinhHieuLuc
                 )
     }
 
@@ -352,5 +373,10 @@ class NhanDienHuongDau(
 
     fun datLai() {
         chuyenSangChoTrungTinh()
+    }
+
+    companion object {
+        private const val TY_LE_TRUNG_TINH_SO_VOI_NGUONG =
+            0.85f
     }
 }

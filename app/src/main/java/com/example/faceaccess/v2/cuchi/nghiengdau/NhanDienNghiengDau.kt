@@ -18,6 +18,7 @@ class NhanDienNghiengDau(
 ) {
 
     private enum class TrangThai {
+        CHO_TRUNG_TINH,
         SAN_SANG,
         DANG_GIU_TRAI,
         DANG_GIU_PHAI,
@@ -25,7 +26,7 @@ class NhanDienNghiengDau(
     }
 
     private var trangThai =
-        TrangThai.SAN_SANG
+        TrangThai.CHO_TRUNG_TINH
 
     private var thoiGianBatDauGiu =
         0L
@@ -44,10 +45,22 @@ class NhanDienNghiengDau(
             yaw == null ||
             pitch == null
         ) {
+            datLai()
             return
         }
 
         when (trangThai) {
+
+            TrangThai.CHO_TRUNG_TINH -> {
+
+                if (laTrungTinh(roll)) {
+                    trangThai =
+                        TrangThai.SAN_SANG
+
+                    thoiGianBatDauGiu =
+                        0L
+                }
+            }
 
             TrangThai.SAN_SANG -> {
 
@@ -210,14 +223,22 @@ class NhanDienNghiengDau(
         val pitchAbs =
             abs(pitch)
 
+        // Không cho phép vùng nhận diện nghiêng chồng lên quay/nhìn đầu.
+        // Cấu hình cũ có thể lưu tyLeChiPhoi < 1, nên luôn ép tối thiểu 1.
+        val tyLeChiPhoiHieuLuc =
+            maxOf(
+                1f,
+                cauHinh.tyLeChiPhoi
+            )
+
         return (
                 rollAbs >=
                         yawAbs *
-                        cauHinh.tyLeChiPhoi
+                        tyLeChiPhoiHieuLuc
                         &&
                         rollAbs >=
                         pitchAbs *
-                        cauHinh.tyLeChiPhoi
+                        tyLeChiPhoiHieuLuc
                 )
     }
 
@@ -232,11 +253,12 @@ class NhanDienNghiengDau(
     }
 
 
-    // Reset khi camera dừng hoặc mất session
+    // Reset khi camera dừng hoặc mất session.
+    // Phải trở về trung tính trước khi nhận cử chỉ mới.
     fun datLai() {
 
         trangThai =
-            TrangThai.SAN_SANG
+            TrangThai.CHO_TRUNG_TINH
 
         thoiGianBatDauGiu =
             0L

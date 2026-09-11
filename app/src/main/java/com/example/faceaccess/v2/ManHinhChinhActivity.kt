@@ -141,6 +141,12 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 },
                 khiMoHaiLan = {
 
+                    // Cùng một lần mở thứ hai không được tiếp tục
+                    // kích hoạt detector mở-giữ sau đó.
+                    if (::nhanDienMoMieng.isInitialized) {
+                        nhanDienMoMieng.chanChoDenKhiDong()
+                    }
+
                     Log.d(
                         TAG_CU_CHI_MIENG,
                         "APP: MO MIENG HAI LAN - DOI KHOA CON TRO"
@@ -182,6 +188,20 @@ class ManHinhChinhActivity : AppCompatActivity() {
         if (::nhanDienMoMiengHaiLan.isInitialized) {
             nhanDienMoMiengHaiLan.datLai()
         }
+    }
+
+    private fun datLaiTatCaBoNhanDien() {
+
+        if (::nhanDienNghiengDau.isInitialized) {
+            nhanDienNghiengDau.datLai()
+        }
+
+        if (::nhanDienHuongDau.isInitialized) {
+            nhanDienHuongDau.datLai()
+        }
+
+        datLaiNhanDienMieng()
+        datLaiNhanDienMat()
     }
 
     // DETECTOR HƯỚNG ĐẦU YAW / PITCH
@@ -1490,8 +1510,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                         .datLaiPhien()
                 }
 
-                datLaiNhanDienMieng()
-                datLaiNhanDienMat()
+                // Không để cử chỉ đã bắt đầu ở chế độ cũ
+                // hoàn tất và phát lệnh trong chế độ mới.
+                datLaiTatCaBoNhanDien()
 
                 capNhatTrangThaiConTroTheoCheDo(
                     cheDoMoi
@@ -2098,6 +2119,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             thongBao: String
                         ) {
 
+                            // Không nối thời gian giữ cử chỉ qua một lỗi MediaPipe.
+                            datLaiTatCaBoNhanDien()
+
                             Log.e(
                                 TAG_MEDIAPIPE,
                                 thongBao
@@ -2472,6 +2496,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
     }
 
     private fun taiLaiCauHinhNhanDien() {
+
+        // Xóa trạng thái detector cũ trước khi thay instance mới.
+        // Đặc biệt tránh TrangThaiCuChiMieng bị giữ ở trạng thái đang chặn.
+        datLaiNhanDienMieng()
 
         cauHinhNhanDienCuChi =
             khoCauHinhNhanDienCuChi
@@ -3149,6 +3177,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 cauHinhNhanDienCuChi.chuanHoa
             )
 
+        datLaiNhanDienMieng()
+
         khoiTaoNhanDienNghiengDau()
         khoiTaoNhanDienMoMieng()
         khoiTaoNhanDienMoMiengHaiLan()
@@ -3524,11 +3554,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         btnBatDauTheoDoi.isEnabled =
             false
 
-        nhanDienNghiengDau.datLai()
-
-        datLaiNhanDienMieng()
-
-        datLaiNhanDienMat()
+        datLaiTatCaBoNhanDien()
 
         batDichVuTheoDoi()
 
@@ -3556,11 +3582,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 thoiGianCapNhatUiGanNhat =
                     0L
 
-                nhanDienNghiengDau.datLai()
-
-                datLaiNhanDienMieng()
-
-                datLaiNhanDienMat()
+                datLaiTatCaBoNhanDien()
 
                 capNhatTrangThaiHeThong(
                     "● Camera đang hoạt động - đang tìm khuôn mặt"
@@ -3603,9 +3625,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 dangThayKhuonMat =
                     null
 
-                nhanDienNghiengDau.datLai()
-
-                datLaiNhanDienMat()
+                datLaiTatCaBoNhanDien()
 
                 hienThiCameraDaDung(
                     "CAMERA\nKhông thể khởi động"
@@ -3646,7 +3666,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             "Bat lai Camera tren Activity sau ban giao"
         )
 
-        nhanDienNghiengDau.datLai()
+        datLaiTatCaBoNhanDien()
 
         cameraDangKhoiDong =
             true
@@ -3672,9 +3692,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 thoiGianCapNhatUiGanNhat =
                     0L
 
-                nhanDienNghiengDau.datLai()
-
-                datLaiNhanDienMat()
+                datLaiTatCaBoNhanDien()
 
                 runOnUiThread {
 
@@ -3714,6 +3732,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
                 cameraDangBat =
                     false
+
+                datLaiTatCaBoNhanDien()
 
                 Log.e(
                     TAG_BAN_GIAO_CAMERA,
@@ -3771,11 +3791,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
         cameraDangBat =
             false
 
-        nhanDienNghiengDau.datLai()
-
-        datLaiNhanDienMieng()
-
-        datLaiNhanDienMat()
+        datLaiTatCaBoNhanDien()
 
         quanLyCamera.tatCamera()
 
@@ -4233,11 +4249,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             cameraDangBat =
                 false
 
-            nhanDienNghiengDau.datLai()
-
-            datLaiNhanDienMieng()
-
-            datLaiNhanDienMat()
+            datLaiTatCaBoNhanDien()
 
             quanLyCamera.tatCamera()
 
@@ -4260,28 +4272,7 @@ class ManHinhChinhActivity : AppCompatActivity() {
             animationHuongDan.cancelAnimation()
         }
 
-        if (
-            ::nhanDienNghiengDau.isInitialized
-        ) {
-
-            nhanDienNghiengDau.datLai()
-        }
-
-        if (
-            ::nhanDienMoMieng.isInitialized
-        ) {
-
-            datLaiNhanDienMieng()
-        }
-
-        if (
-            ::nhanDienHuongDau.isInitialized
-        ) {
-
-            nhanDienHuongDau.datLai()
-        }
-
-        datLaiNhanDienMat()
+        datLaiTatCaBoNhanDien()
 
         if (
             ::quanLyCamera.isInitialized
