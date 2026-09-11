@@ -46,6 +46,14 @@ class NhanDienMoMieng(
             return
         }
 
+        // Sau khi lần mở thứ nhất ngắn đã được xác nhận, chuỗi mở hai lần
+        // được ưu tiên tuyệt đối. Detector mở-giữ không được phép phát BACK
+        // từ lần mở thứ hai, dù người dùng giữ miệng mở lâu.
+        if (TrangThaiCuChiMieng.dangChanMoGiu()) {
+            chanChoDenKhiDong()
+            return
+        }
+
         when (trangThai) {
 
             TrangThai.SAN_SANG ->

@@ -14,6 +14,10 @@ object TrangThaiCuChiMieng {
     private var thoiDiemBoChanHuongDauMs =
         0L
 
+    @Volatile
+    private var dangUuTienMoHaiLan =
+        false
+
     fun batDau() {
         dangXuLyCuChiMieng =
             true
@@ -22,8 +26,16 @@ object TrangThaiCuChiMieng {
             0L
     }
 
+    fun batDauUuTienMoHaiLan() {
+        dangUuTienMoHaiLan =
+            true
+    }
+
     fun ketThucVoiGuard() {
         dangXuLyCuChiMieng =
+            false
+
+        dangUuTienMoHaiLan =
             false
 
         thoiDiemBoChanHuongDauMs =
@@ -35,8 +47,15 @@ object TrangThaiCuChiMieng {
         dangXuLyCuChiMieng =
             false
 
+        dangUuTienMoHaiLan =
+            false
+
         thoiDiemBoChanHuongDauMs =
             0L
+    }
+
+    fun dangChanMoGiu(): Boolean {
+        return dangUuTienMoHaiLan
     }
 
     fun dangChanHuongDau(): Boolean {

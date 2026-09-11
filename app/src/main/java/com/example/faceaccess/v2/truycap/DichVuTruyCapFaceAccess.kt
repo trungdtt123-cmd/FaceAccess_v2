@@ -292,12 +292,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             mucTieuConTroDangChon =
                 null
 
-            conTroDangKhoa =
-                false
-
-            dangVuotConTro =
-                false
-
             if (
                 !::boQuanLyConTroOverlay.isInitialized
             ) {
@@ -305,65 +299,46 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     BoQuanLyConTroOverlay(this)
             }
 
-            if (
+            // Luôn gọi bat(), kể cả manager hiện tại đang hiển thị. bat() không tạo
+            // view thứ hai nếu view hiện tại còn hợp lệ, nhưng nó sẽ giành quyền sở hữu
+            // và dọn mọi manager/overlay cũ còn sót từ phiên AccessibilityService trước.
+            val daDangHienThi =
                 boQuanLyConTroOverlay
                     .dangHienThi()
-            ) {
-                boQuanLyConTroOverlay
-                    .datKhoa(
-                        false
-                    )
-
-                Log.d(
-                    TAG_CON_TRO,
-                    "CURSOR_ALREADY_VISIBLE"
-                )
-
-                return@synchronized true
-            }
-
-            try {
-                boQuanLyConTroOverlay
-                    .dong()
-            } catch (
-                exception: Exception
-            ) {
-                Log.w(
-                    TAG_CON_TRO,
-                    "CURSOR_CLEAN_BEFORE_START_FAILED",
-                    exception
-                )
-            }
-
-            boQuanLyConTroOverlay =
-                BoQuanLyConTroOverlay(this)
 
             val thanhCong =
                 boQuanLyConTroOverlay
                     .bat()
 
-            if (thanhCong) {
-                boQuanLyConTroOverlay
-                    .datKhoa(
-                        false
-                    )
-            } else {
-                try {
-                    boQuanLyConTroOverlay
-                        .dong()
-                } catch (
-                    exception: Exception
-                ) {
-                    Log.w(
-                        TAG_CON_TRO,
-                        "CURSOR_CLEAN_AFTER_START_FAILED",
-                        exception
-                    )
-                }
-
-                boQuanLyConTroOverlay =
-                    BoQuanLyConTroOverlay(this)
+            if (!thanhCong) {
+                return@synchronized false
             }
+
+            if (daDangHienThi) {
+                val daDongBoKhoa =
+                    boQuanLyConTroOverlay
+                        .datKhoa(
+                            conTroDangKhoa
+                        )
+
+                Log.d(
+                    TAG_CON_TRO,
+                    "CURSOR_ALREADY_VISIBLE | LOCK=$conTroDangKhoa"
+                )
+
+                return@synchronized daDongBoKhoa
+            }
+
+            conTroDangKhoa =
+                false
+
+            dangVuotConTro =
+                false
+
+            boQuanLyConTroOverlay
+                .datKhoa(
+                    false
+                )
 
             Log.d(
                 TAG_CON_TRO,
@@ -392,21 +367,6 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 return@synchronized true
             }
 
-            try {
-                boQuanLyConTroOverlay
-                    .datKhoa(
-                        false
-                    )
-            } catch (
-                exception: Exception
-            ) {
-                Log.w(
-                    TAG_CON_TRO,
-                    "CURSOR_UNLOCK_BEFORE_STOP_FAILED",
-                    exception
-                )
-            }
-
             val daTat =
                 try {
                     boQuanLyConTroOverlay
@@ -423,33 +383,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     false
                 }
 
-            val daDong =
-                try {
-                    boQuanLyConTroOverlay
-                        .dong()
-
-                    true
-                } catch (
-                    exception: Exception
-                ) {
-                    Log.w(
-                        TAG_CON_TRO,
-                        "CURSOR_CLOSE_FAILED",
-                        exception
-                    )
-
-                    false
-                }
-
-            boQuanLyConTroOverlay =
-                BoQuanLyConTroOverlay(this)
-
             Log.d(
                 TAG_CON_TRO,
-                "CURSOR_STOP=$daTat | CLOSE=$daDong"
+                "CURSOR_STOP=$daTat"
             )
 
-            daTat || daDong
+            daTat
         }
 
     private fun diChuyenConTroNoiBo(
@@ -4621,12 +4560,21 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         }
 
         fun tatConTro(): Boolean {
+            // Dọn overlay trước cả khi không còn lấy được instance AccessibilityService
+            // hiện hành. Điều này chặn cursor cũ bị giữ lại qua chu kỳ Dừng -> Bật lại.
+            val daDonTatCaOverlay =
+                BoQuanLyConTroOverlay
+                    .tatTatCaConTro()
 
             val dichVu =
                 phienBanDangHoatDong
-                    ?: return false
+                    ?: return daDonTatCaOverlay
 
-            return dichVu.tatConTroNoiBo()
+            val daDatLaiTrangThai =
+                dichVu.tatConTroNoiBo()
+
+            return daDonTatCaOverlay &&
+                    daDatLaiTrangThai
         }
 
         fun doiKhoaConTro(): Boolean {

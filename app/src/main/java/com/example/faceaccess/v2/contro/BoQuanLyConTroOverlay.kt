@@ -28,6 +28,12 @@ class BoQuanLyConTroOverlay(
     private val accessibilityService: AccessibilityService
 ) {
 
+    init {
+        synchronized(KHOA_CON_TRO_TOAN_CUC) {
+            CAC_BO_QUAN_LY_CON_TRO.add(this)
+        }
+    }
+
     private val mainHandler =
         Handler(Looper.getMainLooper())
 
@@ -174,6 +180,11 @@ class BoQuanLyConTroOverlay(
     }
 
     private fun batNoiBo(): Boolean {
+        // Chỉ cho phép đúng một BoQuanLyConTroOverlay sở hữu cursor trong process.
+        // Nếu còn manager cũ từ lần bàn giao Activity/Service trước, đóng nó trước
+        // khi tạo/khôi phục cursor mới để tránh hai chấm cursor chồng lên nhau.
+        nhanQuyenConTroToanCuc()
+
         val viewHienTai = viewConTro
 
         // Chặn tạo nhiều cursor.
@@ -612,6 +623,8 @@ class BoQuanLyConTroOverlay(
             "TAT | session=$phienConTroId"
         )
 
+        giaiPhongQuyenConTroToanCuc()
+
         return true
     }
 
@@ -996,13 +1009,53 @@ class BoQuanLyConTroOverlay(
         }
     }
 
-    private fun xoaViewAnToan(view: View) {
-        if (!view.isAttachedToWindow) {
-            return
-        }
+    private fun nhanQuyenConTroToanCuc() {
+        // Không chỉ tin vào một biến owner. Trong quá trình AccessibilityService
+        // được tạo lại có thể còn manager cũ đang giữ một overlay. Thu toàn bộ
+        // manager còn sống rồi dọn tất cả manager khác trước khi dùng manager này.
+        val cacBoQuanLyCu =
+            synchronized(KHOA_CON_TRO_TOAN_CUC) {
+                val danhSach =
+                    CAC_BO_QUAN_LY_CON_TRO
+                        .filter {
+                            it !== this
+                        }
 
+                chuSoHuuConTro =
+                    this
+
+                danhSach
+            }
+
+        for (boQuanLyCu in cacBoQuanLyCu) {
+            try {
+                boQuanLyCu.tatNoiBo()
+            } catch (exception: Exception) {
+                Log.w(
+                    TAG,
+                    "Khong the don cursor cu",
+                    exception
+                )
+            }
+        }
+    }
+
+    private fun giaiPhongQuyenConTroToanCuc() {
+        synchronized(KHOA_CON_TRO_TOAN_CUC) {
+            if (chuSoHuuConTro === this) {
+                chuSoHuuConTro =
+                    null
+            }
+        }
+    }
+
+    private fun xoaViewAnToan(view: View) {
+        // Luôn thử remove. isAttachedToWindow có một khoảng chuyển tiếp ngắn
+        // trong lúc add/remove overlay nên chỉ dựa vào cờ đó có thể bỏ sót view cũ.
         try {
             windowManager.removeViewImmediate(view)
+        } catch (exception: IllegalArgumentException) {
+            // View đã được WindowManager gỡ trước đó.
         } catch (exception: Exception) {
             Log.w(
                 TAG,
@@ -1040,6 +1093,80 @@ class BoQuanLyConTroOverlay(
 
     companion object {
         private const val TAG = "FaceAccessCursor"
+
+        private val KHOA_CON_TRO_TOAN_CUC =
+            Any()
+
+        // Weak set để có thể dọn cả manager cũ nếu AccessibilityService được tạo lại,
+        // nhưng không giữ cứng instance service đã hết vòng đời.
+        private val CAC_BO_QUAN_LY_CON_TRO =
+            java.util.Collections.newSetFromMap(
+                java.util.WeakHashMap<
+                        BoQuanLyConTroOverlay,
+                        Boolean
+                        >()
+            )
+
+        @Volatile
+        private var chuSoHuuConTro:
+                BoQuanLyConTroOverlay? =
+            null
+
+        fun tatTatCaConTro(): Boolean {
+            val cacBoQuanLy =
+                synchronized(KHOA_CON_TRO_TOAN_CUC) {
+                    CAC_BO_QUAN_LY_CON_TRO.toList()
+                }
+
+            if (cacBoQuanLy.isEmpty()) {
+                synchronized(KHOA_CON_TRO_TOAN_CUC) {
+                    chuSoHuuConTro = null
+                }
+                return true
+            }
+
+            if (Looper.myLooper() != Looper.getMainLooper()) {
+                Handler(Looper.getMainLooper()).post {
+                    tatDanhSachConTroNoiBo(
+                        cacBoQuanLy
+                    )
+                }
+                return true
+            }
+
+            return tatDanhSachConTroNoiBo(
+                cacBoQuanLy
+            )
+        }
+
+        private fun tatDanhSachConTroNoiBo(
+            cacBoQuanLy: List<BoQuanLyConTroOverlay>
+        ): Boolean {
+            var thanhCong =
+                true
+
+            for (boQuanLy in cacBoQuanLy) {
+                try {
+                    if (!boQuanLy.tatNoiBo()) {
+                        thanhCong = false
+                    }
+                } catch (exception: Exception) {
+                    thanhCong = false
+
+                    Log.w(
+                        TAG,
+                        "Khong the don mot cursor cu",
+                        exception
+                    )
+                }
+            }
+
+            synchronized(KHOA_CON_TRO_TOAN_CUC) {
+                chuSoHuuConTro = null
+            }
+
+            return thanhCong
+        }
 
         private const val KICH_THUOC_CON_TRO_DP = 28
         private const val BUOC_DI_CHUYEN_DP = 64

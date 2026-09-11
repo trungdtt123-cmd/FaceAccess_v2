@@ -236,6 +236,11 @@ class NhanDienMoMiengHaiLan(
 
             if (lanMotDaDuDieuKien) {
 
+                // Từ thời điểm này, lần mở tiếp theo thuộc chuỗi double-mouth.
+                // Chặn detector mở-giữ để lần mở thứ hai không thể biến thành BACK.
+                TrangThaiCuChiMieng
+                    .batDauUuTienMoHaiLan()
+
                 trangThai =
                     TrangThai.CHO_LAN_2
 
