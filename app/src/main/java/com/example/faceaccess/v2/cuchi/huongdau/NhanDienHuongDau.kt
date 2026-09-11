@@ -33,6 +33,11 @@ class NhanDienHuongDau(
     private var thoiDiemBatDauTrungTinh =
         0L
 
+    // Cho phép MediaPipe rớt khuôn mặt rất ngắn khi người dùng đang quay đầu.
+    // Không coi một frame rỗng đơn lẻ là kết thúc phiên nhận diện.
+    private var thoiDiemBatDauMatDuLieu =
+        0L
+
     fun capNhat(
         roll: Float?,
         yaw: Float?,
@@ -45,13 +50,18 @@ class NhanDienHuongDau(
             yaw == null ||
             pitch == null
         ) {
-            datLai()
+            xuLyMatDuLieu(
+                thoiGianMs = thoiGianMs
+            )
             return
         }
 
+        khoiPhucSauMatDuLieu(
+            thoiGianMs = thoiGianMs
+        )
+
         val dangTrungTinh =
             laTrungTinh(
-                roll = roll,
                 yaw = yaw,
                 pitch = pitch
             )
@@ -267,7 +277,6 @@ class NhanDienHuongDau(
     }
 
     private fun laTrungTinh(
-        roll: Float,
         yaw: Float,
         pitch: Float
     ): Boolean {
@@ -293,14 +302,73 @@ class NhanDienHuongDau(
                 ) * TY_LE_TRUNG_TINH_SO_VOI_NGUONG
             )
 
+        // Detector YAW/PITCH chỉ cần hai trục của chính nó trở về giữa.
+        // ROLL được detector nghiêng đầu xử lý riêng; dùng ROLL để khóa rearm
+        // khiến người có tư thế đầu hơi nghiêng bị mất cử chỉ liên tiếp.
         return (
-                abs(roll) <=
-                        cauHinh.nguongRollTrungTinh &&
-                        abs(yaw) <=
+                abs(yaw) <=
                         nguongYawTrungTinhHieuLuc &&
                         abs(pitch) <=
                         nguongPitchTrungTinhHieuLuc
                 )
+    }
+
+    private fun xuLyMatDuLieu(
+        thoiGianMs: Long
+    ) {
+
+        if (thoiDiemBatDauMatDuLieu == 0L) {
+            thoiDiemBatDauMatDuLieu =
+                thoiGianMs
+        }
+
+        // Không cho thời gian trung tính chạy khi camera chưa thấy mặt.
+        thoiDiemBatDauTrungTinh =
+            0L
+
+        val thoiGianMatDuLieu =
+            thoiGianMs -
+                    thoiDiemBatDauMatDuLieu
+
+        if (
+            thoiGianMatDuLieu >
+            cauHinh.thoiGianGraceMs
+        ) {
+            chuyenSangChoTrungTinh()
+        }
+    }
+
+    private fun khoiPhucSauMatDuLieu(
+        thoiGianMs: Long
+    ) {
+
+        val batDauMatDuLieu =
+            thoiDiemBatDauMatDuLieu
+
+        if (batDauMatDuLieu == 0L) {
+            return
+        }
+
+        val thoiGianMatDuLieu =
+            thoiGianMs -
+                    batDauMatDuLieu
+
+        thoiDiemBatDauMatDuLieu =
+            0L
+
+        if (
+            thoiGianMatDuLieu >
+            cauHinh.thoiGianGraceMs
+        ) {
+            chuyenSangChoTrungTinh()
+            return
+        }
+
+        if (trangThai == TrangThai.DANG_GIU) {
+            // Không tính thời gian MediaPipe mất mặt vào thời gian giữ cử chỉ.
+            thoiDiemBatDauGiu +=
+                thoiGianMatDuLieu
+        }
     }
 
     private fun capNhatChoTrungTinh(
@@ -351,6 +419,9 @@ class NhanDienHuongDau(
 
         thoiDiemBatDauTrungTinh =
             0L
+
+        thoiDiemBatDauMatDuLieu =
+            0L
     }
 
     private fun datLaiVeSanSang() {
@@ -368,6 +439,9 @@ class NhanDienHuongDau(
             0L
 
         thoiDiemBatDauTrungTinh =
+            0L
+
+        thoiDiemBatDauMatDuLieu =
             0L
     }
 

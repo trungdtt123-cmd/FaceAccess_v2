@@ -458,7 +458,7 @@ class BoHocNguongThichNghi {
                 )
             .coerceIn(
                 toiThieu,
-                toiDa
+                minOf(toiDa, macDinh)
             )
     }
 
@@ -484,7 +484,7 @@ class BoHocNguongThichNghi {
                 )
             .coerceIn(
                 toiThieu,
-                toiDa
+                minOf(toiDa, macDinh)
             )
     }
 

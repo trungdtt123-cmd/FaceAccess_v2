@@ -8,6 +8,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.ComponentName
+import android.content.res.ColorStateList
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -27,6 +28,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -424,6 +426,14 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
     private lateinit var btnBatDauHieuChinh: Button
 
+    private lateinit var khungHanhDongSauHieuChinh: View
+
+    private lateinit var btnHieuChinhLai: Button
+
+    private lateinit var btnHuyHieuChinhCaNhan: Button
+
+    private lateinit var txtTrangThaiHoSoHieuChinh: TextView
+
     private lateinit var txtBuocHieuChinh: TextView
 
     private lateinit var txtDongTacHieuChinh: TextView
@@ -772,7 +782,6 @@ class ManHinhChinhActivity : AppCompatActivity() {
         fun datNutXanh(
             nut: Button
         ) {
-            // Bỏ màu mặc định của theme
             nut.backgroundTintList =
                 null
 
@@ -782,6 +791,36 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             nut.setTextColor(
                 Color.WHITE
+            )
+
+            nut.alpha =
+                1f
+
+            nut.scaleX =
+                1f
+
+            nut.scaleY =
+                1f
+        }
+
+        fun datNutXam(
+            nut: Button
+        ) {
+            nut.setBackgroundResource(
+                R.drawable.fa_button_secondary
+            )
+
+            nut.backgroundTintList =
+                ColorStateList.valueOf(
+                    Color.parseColor(
+                        "#E5E9E7"
+                    )
+                )
+
+            nut.setTextColor(
+                Color.parseColor(
+                    "#65716C"
+                )
             )
 
             nut.alpha =
@@ -830,11 +869,27 @@ class ManHinhChinhActivity : AppCompatActivity() {
         )
 
         datNutXanh(
+            btnHieuChinhLai
+        )
+
+        datNutXam(
+            btnHuyHieuChinhCaNhan
+        )
+
+        datNutXam(
             btnHuyHieuChinh
         )
 
         ganHieuUngNhan(
             btnBatDauHieuChinh
+        )
+
+        ganHieuUngNhan(
+            btnHieuChinhLai
+        )
+
+        ganHieuUngNhan(
+            btnHuyHieuChinhCaNhan
         )
 
         ganHieuUngNhan(
@@ -941,6 +996,10 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
             if (cauHinhDaThayDoi) {
                 taiLaiCauHinhNhanDien()
+
+                if (dangMoTrangHieuChinh) {
+                    capNhatTrangThaiHieuChinhCaNhan()
+                }
 
                 if (dangMoTrangHuongDan) {
                     capNhatNoiDungHuongDan(
@@ -1224,6 +1283,18 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         btnBatDauHieuChinh =
             findViewById(R.id.btnBatDauHieuChinh)
+
+        khungHanhDongSauHieuChinh =
+            findViewById(R.id.khungHanhDongSauHieuChinh)
+
+        btnHieuChinhLai =
+            findViewById(R.id.btnHieuChinhLai)
+
+        btnHuyHieuChinhCaNhan =
+            findViewById(R.id.btnHuyHieuChinhCaNhan)
+
+        txtTrangThaiHoSoHieuChinh =
+            findViewById(R.id.txtTrangThaiHoSoHieuChinh)
 
         txtBuocHieuChinh =
             findViewById(R.id.txtBuocHieuChinh)
@@ -2091,11 +2162,22 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 return
                             }
 
+                            val thoiGianHienTai =
+                                SystemClock.uptimeMillis()
+
                             nhanDienNghiengDau.datLai()
 
                             datLaiNhanDienMieng()
 
-                            nhanDienHuongDau.datLai()
+                            // Một vài frame rỗng khi quay đầu không được phép
+                            // phá candidate YAW/PITCH đang hợp lệ. Detector tự
+                            // quyết định reset nếu mất mặt quá thời gian grace.
+                            nhanDienHuongDau.capNhat(
+                                roll = null,
+                                yaw = null,
+                                pitch = null,
+                                thoiGianMs = thoiGianHienTai
+                            )
 
                             datLaiNhanDienMat()
 
@@ -2471,28 +2553,106 @@ class ManHinhChinhActivity : AppCompatActivity() {
         }
 
         btnBatDauHieuChinh.setOnClickListener {
+            yeuCauBatDauHieuChinh()
+        }
 
-            if (dangHieuChinh) {
-                return@setOnClickListener
-            }
+        btnHieuChinhLai.setOnClickListener {
+            yeuCauBatDauHieuChinh()
+        }
 
-            if (cameraDangBat) {
-
-                batDauHieuChinh()
-
-            } else {
-
-                dangChoHieuChinhTuCaiDat =
-                    true
-
-                kiemTraVaBatCamera()
-            }
+        btnHuyHieuChinhCaNhan.setOnClickListener {
+            xacNhanHuyHieuChinhCaNhan()
         }
 
         btnHuyHieuChinh.setOnClickListener {
-
             huyHieuChinh()
         }
+    }
+
+    private fun yeuCauBatDauHieuChinh() {
+
+        if (dangHieuChinh) {
+            return
+        }
+
+        if (cameraDangBat) {
+            batDauHieuChinh()
+            return
+        }
+
+        dangChoHieuChinhTuCaiDat =
+            true
+
+        kiemTraVaBatCamera()
+    }
+
+    private fun capNhatTrangThaiHieuChinhCaNhan() {
+
+        val daHieuChinh =
+            ::khoCauHinhNhanDienCuChi.isInitialized &&
+                    khoCauHinhNhanDienCuChi.daHieuChinh()
+
+        btnBatDauHieuChinh.visibility =
+            if (daHieuChinh) {
+                View.GONE
+            } else {
+                View.VISIBLE
+            }
+
+        khungHanhDongSauHieuChinh.visibility =
+            if (daHieuChinh) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+
+        txtTrangThaiHoSoHieuChinh.text =
+            if (daHieuChinh) {
+                "✓ Hồ sơ hiệu chỉnh cá nhân đang được áp dụng"
+            } else {
+                "Chưa có hồ sơ hiệu chỉnh • Đang dùng cấu hình mặc định"
+            }
+    }
+
+    private fun xacNhanHuyHieuChinhCaNhan() {
+
+        if (dangHieuChinh) {
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(
+                "Hủy hiệu chỉnh cá nhân?"
+            )
+            .setMessage(
+                "Dữ liệu hiệu chỉnh đã học sẽ được xóa và hệ thống sẽ quay về ngưỡng nhận diện mặc định. Chế độ hiện tại, hành động cử chỉ và thời gian phản hồi vẫn được giữ nguyên."
+            )
+            .setPositiveButton(
+                "HỦY HIỆU CHỈNH"
+            ) { _, _ ->
+                huyHieuChinhCaNhanDaLuu()
+            }
+            .setNegativeButton(
+                "GIỮ LẠI",
+                null
+            )
+            .show()
+    }
+
+    private fun huyHieuChinhCaNhanDaLuu() {
+
+        khoCauHinhNhanDienCuChi
+            .huyHieuChinhCaNhan()
+
+        // Activity dùng ngay cấu hình vừa reset.
+        taiLaiCauHinhNhanDien()
+
+        // Service nền cũng lắng nghe cùng SharedPreferences và tự reload.
+        capNhatTrangThaiHieuChinhCaNhan()
+
+        capNhatTrangThaiHeThong(
+            "● Đã hủy hiệu chỉnh cá nhân - đang dùng cấu hình mặc định"
+        )
     }
 
     private fun taiLaiCauHinhNhanDien() {
@@ -2805,6 +2965,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
         khungTienTrinhHieuChinh.visibility =
             View.GONE
 
+        capNhatTrangThaiHieuChinhCaNhan()
+
         capNhatMenuDuoi(
             dangHieuChinh = true
         )
@@ -3063,7 +3225,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
 
         if (cauHinhMoi == null) {
 
-            ketThucTrangThaiHieuChinh()
+            ketThucTrangThaiHieuChinh(
+                giuTrangHieuChinh = true
+            )
 
             runOnUiThread {
                 capNhatTrangThaiHeThong(
@@ -3177,6 +3341,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 cauHinhNhanDienCuChi.chuanHoa
             )
 
+        // Phiên hiệu chỉnh kết thúc bằng một bộ detector mới.
+        // Xóa trạng thái miệng cũ trước để không mang khóa con trỏ sang profile mới.
         datLaiNhanDienMieng()
 
         khoiTaoNhanDienNghiengDau()
@@ -3185,7 +3351,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
         khoiTaoNhanDienHuongDau()
         khoiTaoNhanDienNhamHaiMat()
 
-        ketThucTrangThaiHieuChinh()
+        ketThucTrangThaiHieuChinh(
+            giuTrangHieuChinh = true
+        )
 
         runOnUiThread {
             capNhatTrangThaiHeThong(
@@ -3249,6 +3417,8 @@ class ManHinhChinhActivity : AppCompatActivity() {
         khungTienTrinhHieuChinh.visibility =
             View.GONE
 
+        capNhatTrangThaiHieuChinhCaNhan()
+
         // Giữ nguyên trang Hiệu chỉnh phía sau Cài đặt
         dangMoTrangHieuChinh =
             true
@@ -3285,14 +3455,18 @@ class ManHinhChinhActivity : AppCompatActivity() {
                 .datLai()
         }
 
-        ketThucTrangThaiHieuChinh()
+        ketThucTrangThaiHieuChinh(
+            giuTrangHieuChinh = true
+        )
 
         capNhatTrangThaiHeThong(
-            "● Đã hủy hiệu chỉnh"
+            "● Đã dừng phiên hiệu chỉnh"
         )
     }
 
-    private fun ketThucTrangThaiHieuChinh() {
+    private fun ketThucTrangThaiHieuChinh(
+        giuTrangHieuChinh: Boolean = false
+    ) {
 
         dangHieuChinh =
             false
@@ -3329,7 +3503,30 @@ class ManHinhChinhActivity : AppCompatActivity() {
             txtPhanHoiHieuChinh.text =
                 ""
 
-            anGiaoDienHieuChinh()
+            if (giuTrangHieuChinh) {
+                dangMoTrangHieuChinh =
+                    true
+
+                khungChuanBiHieuChinh.visibility =
+                    View.VISIBLE
+
+                khungTienTrinhHieuChinh.visibility =
+                    View.GONE
+
+                khungHieuChinh.visibility =
+                    View.VISIBLE
+
+                noiDungChinh.visibility =
+                    View.GONE
+
+                capNhatTrangThaiHieuChinhCaNhan()
+
+                capNhatMenuDuoi(
+                    dangHieuChinh = true
+                )
+            } else {
+                anGiaoDienHieuChinh()
+            }
         }
     }
 

@@ -4480,8 +4480,11 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         private const val TY_LE_VUOT_CAO =
             0.80f
 
+        // 180 ms < chu kỳ nhận cử chỉ YAW nhanh nhất hiện tại
+        // (80 ms rearm + 110 ms hold), nên swipe trước kịp hoàn tất
+        // trước khi detector có thể phát lệnh YAW tiếp theo.
         private const val THOI_GIAN_VUOT_CON_TRO_MS =
-            300L
+            180L
 
         private const val SO_CAP_PARENT_CLICK_TOI_DA =
             6

@@ -333,9 +333,81 @@ class KhoCauHinhNhanDienCuChi(
         )
     }
 
+    fun huyHieuChinhCaNhan() {
+
+        val hienTai =
+            layCauHinh()
+
+        val macDinh =
+            CauHinhNhanDienCuChi.macDinh()
+
+        // Chỉ xóa phần dữ liệu được học từ hiệu chỉnh.
+        // Giữ nguyên mode/action mapping và các tham số thời gian người dùng đã chỉnh.
+        val sauKhiHuy =
+            hienTai.copy(
+                chuanHoa =
+                    macDinh.chuanHoa,
+
+                huongDau =
+                    hienTai.huongDau.copy(
+                        nguongYaw =
+                            macDinh.huongDau.nguongYaw,
+                        nguongPitch =
+                            macDinh.huongDau.nguongPitch,
+                        nguongQuayTrai =
+                            null,
+                        nguongQuayPhai =
+                            null,
+                        nguongNhinLen =
+                            null,
+                        nguongNhinXuong =
+                            null
+                    ),
+
+                nghiengDau =
+                    hienTai.nghiengDau.copy(
+                        nguongTrai =
+                            macDinh.nghiengDau.nguongTrai,
+                        nguongPhai =
+                            macDinh.nghiengDau.nguongPhai
+                    ),
+
+                nhamHaiMat =
+                    hienTai.nhamHaiMat.copy(
+                        nguongDong =
+                            macDinh.nhamHaiMat.nguongDong,
+                        nguongMo =
+                            macDinh.nhamHaiMat.nguongMo
+                    ),
+
+                moMieng =
+                    hienTai.moMieng.copy(
+                        nguongMo =
+                            macDinh.moMieng.nguongMo,
+                        nguongDong =
+                            macDinh.moMieng.nguongDong
+                    ),
+
+                moMiengHaiLan =
+                    hienTai.moMiengHaiLan.copy(
+                        nguongMo =
+                            macDinh.moMiengHaiLan.nguongMo,
+                        nguongDong =
+                            macDinh.moMiengHaiLan.nguongDong
+                    )
+            )
+
+        ghiCauHinh(
+            cauHinh = sauKhiHuy,
+            danhDauDaHieuChinh = false,
+            xoaDanhDauHieuChinh = true
+        )
+    }
+
     private fun ghiCauHinh(
         cauHinh: CauHinhNhanDienCuChi,
-        danhDauDaHieuChinh: Boolean
+        danhDauDaHieuChinh: Boolean,
+        xoaDanhDauHieuChinh: Boolean = false
     ) {
 
         val hanhDong =
@@ -344,11 +416,17 @@ class KhoCauHinhNhanDienCuChi(
 
         preferences.edit().apply {
 
-            if (danhDauDaHieuChinh) {
-                putBoolean(
-                    KHOA_DA_HIEU_CHINH,
-                    true
-                )
+            when {
+                xoaDanhDauHieuChinh ->
+                    remove(
+                        KHOA_DA_HIEU_CHINH
+                    )
+
+                danhDauDaHieuChinh ->
+                    putBoolean(
+                        KHOA_DA_HIEU_CHINH,
+                        true
+                    )
             }
 
             putFloat(

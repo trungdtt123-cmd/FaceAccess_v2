@@ -1060,20 +1060,27 @@ class DichVuTheoDoiFaceAccess :
                                 return
                             }
 
+                            val hienTai =
+                                SystemClock.uptimeMillis()
+
                             nhanDienNghiengDau.datLai()
 
                             datLaiNhanDienMieng()
 
-                            nhanDienHuongDau.datLai()
+                            // Cho detector YAW/PITCH tự xử lý mất mặt ngắn
+                            // thay vì reset ngay chỉ vì một frame rỗng.
+                            nhanDienHuongDau.capNhat(
+                                roll = null,
+                                yaw = null,
+                                pitch = null,
+                                thoiGianMs = hienTai
+                            )
 
                             datLaiNhanDienMat()
 
                             capNhatTrangThaiKhuonMatOverlayNen(
                                 false
                             )
-
-                            val hienTai =
-                                SystemClock.uptimeMillis()
 
                             if (
                                 hienTai -
