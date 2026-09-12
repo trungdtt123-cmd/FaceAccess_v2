@@ -25,10 +25,10 @@ jobs:
           cache: gradle
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
-      - name: Install Android platform 37
-        run: sdkmanager "platforms;android-37"
+      - name: Install Android SDK 37
+        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
