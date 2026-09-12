@@ -1,0 +1,109 @@
+name: Bug report
+description: Báo lỗi trong quá trình sử dụng FaceAccess
+title: "[BUG] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã báo lỗi cho FaceAccess. Vui lòng cung cấp đủ thông tin để nhóm có thể tái hiện và xử lý lỗi.
+
+  - type: input
+    id: device
+    attributes:
+      label: Thiết bị
+      description: Ghi rõ hãng và model thiết bị.
+      placeholder: Ví dụ Samsung Galaxy Note20 Ultra
+    validations:
+      required: true
+
+  - type: input
+    id: android
+    attributes:
+      label: Phiên bản Android / ROM
+      description: Ghi phiên bản Android và giao diện hệ thống nếu biết.
+      placeholder: Ví dụ Android 13 / One UI 5.1
+    validations:
+      required: true
+
+  - type: input
+    id: faceaccess_version
+    attributes:
+      label: Phiên bản FaceAccess / commit
+      description: Ghi phiên bản release hoặc commit SHA nếu có.
+      placeholder: Ví dụ v1.0.0 hoặc abc1234
+    validations:
+      required: false
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Chế độ FaceAccess
+      options:
+        - Điều hướng
+        - Media
+        - Hỗ trợ
+        - Con trỏ
+        - Hiệu chỉnh
+        - Cài đặt
+        - Khác
+    validations:
+      required: true
+
+  - type: input
+    id: gesture
+    attributes:
+      label: Cử chỉ liên quan
+      description: Nếu lỗi liên quan đến cử chỉ, ghi rõ cử chỉ đang dùng.
+      placeholder: Ví dụ YAW phải, PITCH lên, nhắm mắt có chủ đích
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Kết quả mong đợi
+      description: Hệ thống đáng ra phải làm gì?
+      placeholder: Mô tả hành vi mong đợi
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Kết quả thực tế
+      description: Điều gì đã xảy ra?
+      placeholder: Mô tả lỗi quan sát được
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Các bước tái hiện lỗi
+      description: Liệt kê các bước để tái hiện lỗi.
+      placeholder: |
+        1. Bật theo dõi
+        2. Chọn chế độ ...
+        3. Thực hiện ...
+        4. Quan sát lỗi ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logcat
+    attributes:
+      label: Logcat
+      description: Dán log liên quan nếu có.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Thông tin bổ sung
+      description: Ảnh chụp, video, điều kiện đặc biệt hoặc ghi chú khác.
+    validations:
+      required: false

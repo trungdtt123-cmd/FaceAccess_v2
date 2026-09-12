@@ -1,0 +1,79 @@
+name: Feature request
+description: Đề xuất tính năng hoặc cải tiến cho FaceAccess
+title: "[FEATURE] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã đóng góp ý tưởng cho FaceAccess. Hãy mô tả rõ nhu cầu và giá trị của tính năng đề xuất.
+
+  - type: input
+    id: title
+    attributes:
+      label: Tên tính năng
+      placeholder: Ví dụ Điều khiển bằng giọng nói
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Khu vực liên quan
+      options:
+        - Điều hướng
+        - Media
+        - Hỗ trợ
+        - Con trỏ
+        - Hiệu chỉnh
+        - AI
+        - Giọng nói
+        - Accessibility
+        - Giao diện
+        - Tương thích thiết bị
+        - Khác
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề cần giải quyết
+      description: Người dùng đang gặp khó khăn hoặc hạn chế gì?
+      placeholder: Mô tả vấn đề thực tế
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Giải pháp đề xuất
+      description: Bạn muốn FaceAccess hoạt động như thế nào?
+      placeholder: Mô tả cách hoạt động mong muốn
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefit
+    attributes:
+      label: Lợi ích đối với người dùng
+      description: Tính năng này giúp ích gì cho người dùng FaceAccess?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Giải pháp thay thế
+      description: Nếu có, hãy mô tả cách khác bạn đã nghĩ tới.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Thông tin bổ sung
+      description: Có thể thêm ảnh, ví dụ sử dụng hoặc tài liệu tham khảo.
+    validations:
+      required: false
