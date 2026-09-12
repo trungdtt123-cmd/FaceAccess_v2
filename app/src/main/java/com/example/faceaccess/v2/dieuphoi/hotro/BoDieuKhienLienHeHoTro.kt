@@ -70,6 +70,13 @@ class BoDieuKhienLienHeHoTro(
 
             dongBoLienHeDangChonNeuCan()
 
+            xuLyNeuDangChonSim(
+                lenh
+            )
+                ?.let {
+                    return it
+                }
+
             if (
                 lenh !=
                 LenhHoTro.GOI_HOAC_KET_THUC &&
@@ -154,6 +161,107 @@ class BoDieuKhienLienHeHoTro(
             dongBoLienHeDangChonNeuCan()
 
             return trangThaiPhien
+        }
+    }
+
+
+    private fun xuLyNeuDangChonSim(
+        lenh: LenhHoTro
+    ): KetQua? {
+        // Cuộc gọi thật luôn có ưu tiên cao hơn bộ chọn SIM. Nếu màn hình
+        // cuộc gọi có nhãn SIM 1/SIM 2, nhắm mắt vẫn phải kết thúc cuộc gọi
+        // theo luồng cũ thay vì bị hiểu nhầm là xác nhận SIM.
+        if (
+            DichVuTruyCapFaceAccess
+                .dangCoCuocGoiDangHienThi()
+        ) {
+            return null
+        }
+
+        if (
+            trangThaiPhien !=
+            TrangThaiPhien.DIALER_CO_SO ||
+            !DichVuTruyCapFaceAccess
+                .dangHienThiBoChonSim()
+        ) {
+            return null
+        }
+
+        val lienHe =
+            lienHeDangChon
+
+        return when (lenh) {
+            // Khi hộp thoại chọn SIM đang hiện, YAW được ưu tiên để chuyển
+            // qua lại giữa các SIM. Mapping YAW chung không đổi, chỉ đổi ý
+            // nghĩa trong đúng ngữ cảnh bộ chọn SIM.
+            LenhHoTro.NGUOI_TRUOC -> {
+                val thanhCong =
+                    DichVuTruyCapFaceAccess
+                        .thucThiDiChuyenLuaChonSim(
+                            buoc = -1
+                        )
+
+                KetQua(
+                    thanhCong = thanhCong,
+                    thongBao =
+                        if (thanhCong) {
+                            "Đã chuyển sang SIM trước. Nhắm hai mắt để xác nhận SIM."
+                        } else {
+                            "Chưa thể chuyển sang SIM trước."
+                        },
+                    lienHe = lienHe
+                )
+            }
+
+            LenhHoTro.NGUOI_TIEP_THEO -> {
+                val thanhCong =
+                    DichVuTruyCapFaceAccess
+                        .thucThiDiChuyenLuaChonSim(
+                            buoc = 1
+                        )
+
+                KetQua(
+                    thanhCong = thanhCong,
+                    thongBao =
+                        if (thanhCong) {
+                            "Đã chuyển sang SIM tiếp theo. Nhắm hai mắt để xác nhận SIM."
+                        } else {
+                            "Chưa thể chuyển sang SIM tiếp theo."
+                        },
+                    lienHe = lienHe
+                )
+            }
+
+            LenhHoTro.GOI_HOAC_KET_THUC -> {
+                val thanhCong =
+                    DichVuTruyCapFaceAccess
+                        .thucThiXacNhanLuaChonSim()
+
+                KetQua(
+                    thanhCong = thanhCong,
+                    thongBao =
+                        if (thanhCong) {
+                            "Đã xác nhận SIM. Đang thực hiện cuộc gọi."
+                        } else {
+                            "Hãy YAW trái/phải để chọn SIM trước khi nhắm hai mắt xác nhận."
+                        },
+                    lienHe = lienHe
+                )
+            }
+
+            // PITCH giữ nguyên ý nghĩa Hỗ trợ bên ngoài hộp thoại chọn SIM.
+            // Riêng lúc hộp thoại đang hiện, không để PITCH vô tình chọn SIM
+            // hoặc làm thay đổi luồng gọi trên các máy không cần chọn SIM.
+            LenhHoTro.XAC_NHAN_LIEN_HE,
+            LenhHoTro.HUY_LIEN_HE -> {
+                KetQua(
+                    thanhCong = false,
+                    thongBao =
+                        "Đang chọn SIM. Hãy YAW trái/phải để đổi SIM, " +
+                                "sau đó nhắm hai mắt để xác nhận.",
+                    lienHe = lienHe
+                )
+            }
         }
     }
 
@@ -692,63 +800,81 @@ class BoDieuKhienLienHeHoTro(
         }
 
 
-        val intentUuTien =
-            taoIntent(
-                packageUuTien
-                    ?: packageDialerGanNhat
-            )
+        val cacPackageThu =
+            buildList<String?> {
+                val packageUuTienThucTe =
+                    packageUuTien
+                        ?: packageDialerGanNhat
 
+                if (
+                    !packageUuTienThucTe.isNullOrBlank()
+                ) {
+                    // Giữ đường ưu tiên cũ đang hoạt động tốt trên Samsung.
+                    add(
+                        packageUuTienThucTe
+                    )
+                }
 
-        val componentUuTien =
-            intentUuTien.resolveActivity(
-                appContext.packageManager
-            )
+                val packageMacDinh =
+                    layPackageDialerMacDinh()
 
+                if (
+                    !packageMacDinh.isNullOrBlank() &&
+                    packageMacDinh !in this
+                ) {
+                    add(
+                        packageMacDinh
+                    )
+                }
 
-        val intentThucThi =
-            if (
-                componentUuTien !=
-                null
-            ) {
-
-                intentUuTien
-
-            } else {
-
-                taoIntent(
-                    packageName = null
+                // Fallback cuối để Android/Flyme tự chọn Dialer phù hợp.
+                add(
+                    null
                 )
             }
 
 
-        val component =
-            intentThucThi.resolveActivity(
-                appContext.packageManager
-            )
-                ?: return KetQuaMoDialer(
-                    thanhCong = false
+        for (packageName in cacPackageThu) {
+            val intent =
+                taoIntent(
+                    packageName
                 )
 
+            try {
+                // Không chặn bằng resolveActivity trước khi startActivity.
+                // Một số ROM OEM giới hạn package visibility nhưng vẫn mở
+                // ACTION_DIAL bình thường khi để Android tự định tuyến.
+                appContext.startActivity(
+                    intent
+                )
 
-        return try {
+                val packageDaMo =
+                    packageName
+                        ?: try {
+                            intent.resolveActivity(
+                                appContext.packageManager
+                            )
+                                ?.packageName
+                        } catch (_: Exception) {
+                            null
+                        }
+                        ?: layPackageDialerMacDinh()
 
-            appContext.startActivity(
-                intentThucThi
-            )
+                return KetQuaMoDialer(
+                    thanhCong = true,
+                    packageName =
+                        packageDaMo
+                )
 
-
-            KetQuaMoDialer(
-                thanhCong = true,
-                packageName =
-                    component.packageName
-            )
-
-        } catch (_: Exception) {
-
-            KetQuaMoDialer(
-                thanhCong = false
-            )
+            } catch (_: Exception) {
+                // Thử phương án tiếp theo.
+            }
         }
+
+
+        return KetQuaMoDialer(
+            thanhCong = false
+        )
     }
 
 
@@ -798,16 +924,45 @@ class BoDieuKhienLienHeHoTro(
     private fun layPackageDialerMacDinh():
             String? {
 
+        val packageTuTelecom =
+            try {
+                val telecomManager =
+                    appContext.getSystemService(
+                        Context.TELECOM_SERVICE
+                    ) as? android.telecom.TelecomManager
+
+                telecomManager
+                    ?.defaultDialerPackage
+                    ?.takeIf {
+                        it.isNotBlank()
+                    }
+            } catch (_: Exception) {
+                null
+            }
+
+
+        if (packageTuTelecom != null) {
+            return packageTuTelecom
+        }
+
+
         val intent =
             Intent(
-                Intent.ACTION_DIAL
+                Intent.ACTION_DIAL,
+                Uri.parse(
+                    "tel:"
+                )
             )
 
 
-        return intent.resolveActivity(
-            appContext.packageManager
-        )
-            ?.packageName
+        return try {
+            intent.resolveActivity(
+                appContext.packageManager
+            )
+                ?.packageName
+        } catch (_: Exception) {
+            null
+        }
     }
 
 
@@ -881,53 +1036,51 @@ class BoDieuKhienLienHeHoTro(
         }
 
 
-        val intentUuTien =
-            taoIntent(
-                packageDialer
-            )
+        val cacPackageThu =
+            buildList<String?> {
+                if (
+                    !packageDialer.isNullOrBlank()
+                ) {
+                    add(
+                        packageDialer
+                    )
+                }
 
+                val packageMacDinh =
+                    layPackageDialerMacDinh()
 
-        val intentThucThi =
-            if (
-                intentUuTien.resolveActivity(
-                    appContext.packageManager
-                ) !=
-                null
-            ) {
+                if (
+                    !packageMacDinh.isNullOrBlank() &&
+                    packageMacDinh !in this
+                ) {
+                    add(
+                        packageMacDinh
+                    )
+                }
 
-                intentUuTien
-
-            } else {
-
-                taoIntent(
-                    packageName = null
+                add(
+                    null
                 )
             }
 
 
-        if (
-            intentThucThi.resolveActivity(
-                appContext.packageManager
-            ) ==
-            null
-        ) {
+        for (packageName in cacPackageThu) {
+            try {
+                appContext.startActivity(
+                    taoIntent(
+                        packageName
+                    )
+                )
 
-            return false
+                return true
+
+            } catch (_: Exception) {
+                // Thử phương án tiếp theo.
+            }
         }
 
 
-        return try {
-
-            appContext.startActivity(
-                intentThucThi
-            )
-
-            true
-
-        } catch (_: Exception) {
-
-            false
-        }
+        return false
     }
 
 

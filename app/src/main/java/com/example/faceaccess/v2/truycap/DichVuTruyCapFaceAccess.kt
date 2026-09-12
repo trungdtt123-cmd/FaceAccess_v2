@@ -10,6 +10,7 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -73,9 +74,14 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         val thongTinDichVu =
             serviceInfo
 
+        // Giữ nguyên khả năng đọc nhiều cửa sổ và yêu cầu Android cung cấp
+        // viewIdResourceName khi ứng dụng đích có hỗ trợ. Điều này giúp nhận
+        // diện nút gọi ổn định hơn trên các ROM OEM như Flyme mà không thay
+        // đổi cơ chế Accessibility đang hoạt động tốt trên Samsung.
         thongTinDichVu.flags =
             thongTinDichVu.flags or
-                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+                    AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
 
         setServiceInfo(
             thongTinDichVu
@@ -1608,6 +1614,8 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             root.packageName
                 ?.toString()
 
+        // Chỉ cho phép bấm gọi khi đúng Dialer đã được phiên Hỗ trợ chuẩn bị.
+        // Không nới guard này để tránh thao tác nhầm trên ứng dụng khác.
         if (
             !packageDialerMongDoi.isNullOrBlank() &&
             packageDangHoatDong !=
@@ -1622,19 +1630,717 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         val nutGoi =
             timNutGoiDien(root)
-                ?: return false
 
-        val thanhCong =
+        if (nutGoi == null) {
+            Log.e(
+                TAG_DIALER,
+                "GOI_THAT_BAI | khong tim thay nut goi | package=$packageDangHoatDong"
+            )
+            return false
+        }
+
+        val actionClickThanhCong =
             nutGoi.performAction(
                 AccessibilityNodeInfo.ACTION_CLICK
             )
 
+        if (actionClickThanhCong) {
+            Log.d(
+                TAG_DIALER,
+                "GOI_THAT | package=$packageDangHoatDong | cach=ACTION_CLICK | ok=true"
+            )
+            return true
+        }
+
+        // Một số Dialer OEM hiển thị node bấm được nhưng từ chối ACTION_CLICK.
+        // Chỉ khi đã tìm được đúng ứng viên nút gọi mới fallback sang tap tại
+        // tâm bounds của node đó. Samsung vẫn đi đường ACTION_CLICK cũ.
+        val tapThanhCong =
+            thucThiTapNodeDialer(
+                nutGoi
+            )
+
         Log.d(
             TAG_DIALER,
-            "GOI_THAT | package=$packageDangHoatDong | ok=$thanhCong"
+            "GOI_THAT | package=$packageDangHoatDong | cach=TAP_FALLBACK | ok=$tapThanhCong"
+        )
+
+        return tapThanhCong
+    }
+
+    private fun dangHienThiBoChonSimNoiBo(): Boolean {
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+        return taoDanhSachMucLuaChonSim(
+            root
+        ).size >= 2
+    }
+
+    private fun diChuyenLuaChonSimNoiBo(
+        buoc: Int
+    ): Boolean {
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+        val danhSach =
+            taoDanhSachMucLuaChonSim(
+                root
+            )
+
+        if (danhSach.size < 2) {
+            return false
+        }
+
+        val viTriTheoDauVet =
+            timViTriTheoDauVet(
+                danhSachMuc = danhSach,
+                dauVet = dauVetNodeDieuHuongDangChon
+            )
+
+        val viTriTheoFocus =
+            timViTriMucDangFocus(
+                nodeDangFocus =
+                    timNodeDangFocusTrongRoot(
+                        root
+                    ),
+                danhSachMuc = danhSach
+            )
+
+        val viTriHienTai =
+            when {
+                viTriTheoDauVet >= 0 ->
+                    viTriTheoDauVet
+
+                viTriTheoFocus >= 0 ->
+                    viTriTheoFocus
+
+                else ->
+                    -1
+            }
+
+        val viTriMoi =
+            if (viTriHienTai < 0) {
+                if (buoc < 0) {
+                    0
+                } else {
+                    danhSach.lastIndex
+                }
+            } else {
+                // Bộ chọn SIM chỉ có rất ít mục, nên cho phép YAW chuyển
+                // vòng qua lại thay vì bị kẹt ở SIM đầu/cuối.
+                (
+                        viTriHienTai +
+                                buoc +
+                                danhSach.size
+                        ) % danhSach.size
+            }
+
+        val muc =
+            danhSach[
+                viTriMoi
+            ]
+
+        val thanhCong =
+            datFocusVaoMuc(
+                muc = muc,
+                tenHuong =
+                    if (buoc < 0) {
+                        "SIM_LEN"
+                    } else {
+                        "SIM_XUONG"
+                    },
+                nguon = "SIM_SELECTOR"
+            )
+
+        if (thanhCong) {
+            luuNodeDieuHuongDangChon(
+                muc.nodeClick
+            )
+        }
+
+        Log.d(
+            TAG_DIALER,
+            "SIM_CHON | index=$viTriMoi | label=${muc.nhan} | ok=$thanhCong"
         )
 
         return thanhCong
+    }
+
+    private fun xacNhanLuaChonSimNoiBo(): Boolean {
+        val root =
+            rootInActiveWindow
+                ?: return false
+
+        val danhSach =
+            taoDanhSachMucLuaChonSim(
+                root
+            )
+
+        if (danhSach.size < 2) {
+            return false
+        }
+
+        val viTriTheoDauVet =
+            timViTriTheoDauVet(
+                danhSachMuc = danhSach,
+                dauVet = dauVetNodeDieuHuongDangChon
+            )
+
+        val viTriTheoFocus =
+            timViTriMucDangFocus(
+                nodeDangFocus =
+                    timNodeDangFocusTrongRoot(
+                        root
+                    ),
+                danhSachMuc = danhSach
+            )
+
+        val viTri =
+            when {
+                viTriTheoDauVet >= 0 ->
+                    viTriTheoDauVet
+
+                viTriTheoFocus >= 0 ->
+                    viTriTheoFocus
+
+                else ->
+                    danhSach.indexOfFirst {
+                        it.nodeFocus.isChecked ||
+                                it.nodeFocus.isSelected ||
+                                it.nodeClick.isChecked ||
+                                it.nodeClick.isSelected
+                    }
+            }
+
+        if (viTri !in danhSach.indices) {
+            Log.d(
+                TAG_DIALER,
+                "SIM_XAC_NHAN | chua co SIM duoc chon"
+            )
+            return false
+        }
+
+        val muc =
+            danhSach[
+                viTri
+            ]
+
+        val thanhCong =
+            muc.nodeClick.performAction(
+                AccessibilityNodeInfo.ACTION_CLICK
+            ) ||
+                    thucThiTapNodeDialer(
+                        muc.nodeClick
+                    )
+
+        Log.d(
+            TAG_DIALER,
+            "SIM_XAC_NHAN | index=$viTri | label=${muc.nhan} | ok=$thanhCong"
+        )
+
+        if (thanhCong) {
+            ketThucLuaChonDieuHuongSauXacNhan()
+        }
+
+        return thanhCong
+    }
+
+    private fun taoDanhSachMucLuaChonSim(
+        root: AccessibilityNodeInfo
+    ): List<MucDieuHuong> {
+        val tatCaMuc =
+            taoDanhSachMucDieuHuong(
+                root
+            )
+
+        val mucSimCuThe =
+            tatCaMuc.filter {
+                laMucLuaChonSimCuThe(
+                    it
+                )
+            }
+
+        if (mucSimCuThe.size >= 2) {
+            return sapXepVaGioiHanMucSim(
+                mucSimCuThe
+            )
+        }
+
+        if (!coNguCanhBoChonSim(root)) {
+            return emptyList()
+        }
+
+        val mucFallback =
+            tatCaMuc.filter {
+                val node =
+                    it.nodeFocus
+
+                val id =
+                    listOfNotNull(
+                        node.viewIdResourceName,
+                        it.nodeClick.viewIdResourceName
+                    )
+                        .joinToString(" ")
+                        .lowercase()
+
+                val className =
+                    node.className
+                        ?.toString()
+                        .orEmpty()
+
+                !laMucKhongPhaiSim(it) &&
+                        (
+                                node.isCheckable ||
+                                        it.nodeClick.isCheckable ||
+                                        className.contains(
+                                            "RadioButton",
+                                            ignoreCase = true
+                                        ) ||
+                                        className.contains(
+                                            "CheckedTextView",
+                                            ignoreCase = true
+                                        ) ||
+                                        id.contains(
+                                            "phone_account"
+                                        ) ||
+                                        id.contains(
+                                            "subscription"
+                                        ) ||
+                                        id.contains(
+                                            "sim"
+                                        )
+                                )
+            }
+
+        if (mucFallback.size >= 2) {
+            return sapXepVaGioiHanMucSim(
+                mucFallback
+            )
+        }
+
+        // Một số Dialer/Flyme hiển thị hộp thoại "Chọn SIM cho cuộc gọi này"
+        // bằng hai hàng clickable nhưng hàng đó không checkable và không có
+        // viewId chứa "sim". Khi đã xác nhận đúng ngữ cảnh bộ chọn SIM, dùng
+        // hình học + nội dung của dialog để lấy đúng hai hàng tài khoản gọi.
+        val mucTheoDialog =
+            taoDanhSachMucSimTheoNguCanhDialog(
+                root = root,
+                tatCaMuc = tatCaMuc
+            )
+
+        Log.d(
+            TAG_DIALER,
+            "SIM_SELECTOR_DETECT | strict=${mucSimCuThe.size} | " +
+                    "typed=${mucFallback.size} | dialog=${mucTheoDialog.size}"
+        )
+
+        return if (mucTheoDialog.size >= 2) {
+            sapXepVaGioiHanMucSim(
+                mucTheoDialog
+            )
+        } else {
+            emptyList()
+        }
+    }
+
+    private fun taoDanhSachMucSimTheoNguCanhDialog(
+        root: AccessibilityNodeInfo,
+        tatCaMuc: List<MucDieuHuong>
+    ): List<MucDieuHuong> {
+        val boundsTieuDe =
+            timBoundsTieuDeBoChonSim(
+                root
+            )
+                ?: return emptyList()
+
+        val boundsRoot =
+            Rect().also {
+                root.getBoundsInScreen(
+                    it
+                )
+            }
+
+        if (boundsRoot.isEmpty) {
+            return emptyList()
+        }
+
+        val chieuRongToiThieu =
+            maxOf(
+                dp(120),
+                (boundsTieuDe.width() * 0.75f).toInt()
+            )
+
+        val chieuCaoToiThieu =
+            dp(36)
+
+        val chieuCaoToiDa =
+            dp(180)
+
+        val ketQua =
+            tatCaMuc.filter { muc ->
+                val bounds =
+                    muc.bounds
+
+                if (
+                    laMucKhongPhaiSim(muc) ||
+                    bounds.isEmpty ||
+                    bounds.top < boundsTieuDe.bottom - dp(8) ||
+                    bounds.width() < chieuRongToiThieu ||
+                    bounds.height() < chieuCaoToiThieu ||
+                    bounds.height() > chieuCaoToiDa ||
+                    bounds.left < boundsRoot.left ||
+                    bounds.right > boundsRoot.right ||
+                    bounds.top < boundsRoot.top ||
+                    bounds.bottom > boundsRoot.bottom
+                ) {
+                    false
+                } else {
+                    val noiDung =
+                        layNoiDungCayConChoSim(
+                            muc.nodeClick
+                        )
+
+                    val coSoDienThoai =
+                        MAU_SO_DIEN_THOAI_TRONG_SIM
+                            .containsMatchIn(
+                                noiDung
+                            )
+
+                    val coNhieuNhan =
+                        demNhanTrongCayConChoSim(
+                            muc.nodeClick
+                        ) >= 2
+
+                    val coChiSoSim =
+                        MAU_CHI_SO_SIM_DON
+                            .containsMatchIn(
+                                noiDung
+                            )
+
+                    coSoDienThoai ||
+                            coNhieuNhan ||
+                            coChiSoSim
+                }
+            }
+
+        return ketQua
+            .distinctBy {
+                Triple(
+                    it.nodeClick.windowId,
+                    it.bounds.left,
+                    it.bounds.top
+                )
+            }
+            .sortedWith(
+                compareBy<MucDieuHuong> {
+                    it.bounds.top
+                }.thenBy {
+                    it.bounds.left
+                }
+            )
+            .take(
+                SO_MUC_SIM_TOI_DA
+            )
+    }
+
+    private fun timBoundsTieuDeBoChonSim(
+        root: AccessibilityNodeInfo
+    ): Rect? {
+        var ketQua:
+                Rect? =
+            null
+
+        fun duyet(
+            node: AccessibilityNodeInfo
+        ) {
+            if (
+                ketQua != null ||
+                !node.isVisibleToUser
+            ) {
+                return
+            }
+
+            val noiDung =
+                listOfNotNull(
+                    node.text?.toString(),
+                    node.contentDescription?.toString(),
+                    node.viewIdResourceName
+                )
+                    .joinToString(" ")
+                    .lowercase()
+
+            if (
+                CAC_CUM_TU_BO_CHON_SIM.any {
+                    noiDung.contains(
+                        it
+                    )
+                }
+            ) {
+                val bounds =
+                    Rect().also {
+                        node.getBoundsInScreen(
+                            it
+                        )
+                    }
+
+                if (!bounds.isEmpty) {
+                    ketQua =
+                        Rect(bounds)
+                    return
+                }
+            }
+
+            for (index in 0 until node.childCount) {
+                val child =
+                    node.getChild(
+                        index
+                    )
+                        ?: continue
+
+                duyet(
+                    child
+                )
+
+                if (ketQua != null) {
+                    return
+                }
+            }
+        }
+
+        duyet(
+            root
+        )
+
+        return ketQua
+    }
+
+    private fun layNoiDungCayConChoSim(
+        node: AccessibilityNodeInfo
+    ): String {
+        val cacNhan =
+            mutableListOf<String>()
+
+        fun duyet(
+            hienTai: AccessibilityNodeInfo
+        ) {
+            if (!hienTai.isVisibleToUser) {
+                return
+            }
+
+            listOfNotNull(
+                hienTai.text?.toString(),
+                hienTai.contentDescription?.toString(),
+                hienTai.viewIdResourceName
+            )
+                .map {
+                    it.trim()
+                }
+                .filter {
+                    it.isNotBlank()
+                }
+                .forEach {
+                    cacNhan.add(
+                        it
+                    )
+                }
+
+            for (index in 0 until hienTai.childCount) {
+                val child =
+                    hienTai.getChild(
+                        index
+                    )
+                        ?: continue
+
+                duyet(
+                    child
+                )
+            }
+        }
+
+        duyet(
+            node
+        )
+
+        return cacNhan
+            .joinToString(" ")
+            .lowercase()
+    }
+
+    private fun demNhanTrongCayConChoSim(
+        node: AccessibilityNodeInfo
+    ): Int {
+        var soNhan =
+            0
+
+        fun duyet(
+            hienTai: AccessibilityNodeInfo
+        ) {
+            if (!hienTai.isVisibleToUser) {
+                return
+            }
+
+            if (
+                !hienTai.text
+                    ?.toString()
+                    ?.trim()
+                    .isNullOrBlank() ||
+                !hienTai.contentDescription
+                    ?.toString()
+                    ?.trim()
+                    .isNullOrBlank()
+            ) {
+                soNhan +=
+                    1
+            }
+
+            for (index in 0 until hienTai.childCount) {
+                val child =
+                    hienTai.getChild(
+                        index
+                    )
+                        ?: continue
+
+                duyet(
+                    child
+                )
+            }
+        }
+
+        duyet(
+            node
+        )
+
+        return soNhan
+    }
+
+    private fun laMucLuaChonSimCuThe(
+        muc: MucDieuHuong
+    ): Boolean {
+        val nhan =
+            listOfNotNull(
+                muc.nhan,
+                muc.nodeFocus.text?.toString(),
+                muc.nodeFocus.contentDescription?.toString(),
+                muc.nodeClick.text?.toString(),
+                muc.nodeClick.contentDescription?.toString()
+            )
+                .joinToString(" ")
+                .lowercase()
+
+        val id =
+            listOfNotNull(
+                muc.nodeFocus.viewIdResourceName,
+                muc.nodeClick.viewIdResourceName
+            )
+                .joinToString(" ")
+                .lowercase()
+
+        return MAU_NHAN_SIM_CU_THE
+            .containsMatchIn(
+                nhan
+            ) ||
+                MAU_ID_SIM_CU_THE
+                    .containsMatchIn(
+                        id
+                    )
+    }
+
+    private fun coNguCanhBoChonSim(
+        root: AccessibilityNodeInfo
+    ): Boolean {
+        fun duyet(
+            node: AccessibilityNodeInfo
+        ): Boolean {
+            if (!node.isVisibleToUser) {
+                return false
+            }
+
+            val noiDung =
+                listOfNotNull(
+                    node.text?.toString(),
+                    node.contentDescription?.toString(),
+                    node.viewIdResourceName
+                )
+                    .joinToString(" ")
+                    .lowercase()
+
+            if (
+                CAC_CUM_TU_BO_CHON_SIM.any {
+                    noiDung.contains(
+                        it
+                    )
+                }
+            ) {
+                return true
+            }
+
+            for (index in 0 until node.childCount) {
+                val child =
+                    node.getChild(
+                        index
+                    )
+                        ?: continue
+
+                if (duyet(child)) {
+                    return true
+                }
+            }
+
+            return false
+        }
+
+        return duyet(
+            root
+        )
+    }
+
+    private fun laMucKhongPhaiSim(
+        muc: MucDieuHuong
+    ): Boolean {
+        val noiDung =
+            listOfNotNull(
+                muc.nhan,
+                muc.nodeFocus.text?.toString(),
+                muc.nodeFocus.contentDescription?.toString(),
+                muc.nodeFocus.viewIdResourceName,
+                muc.nodeClick.text?.toString(),
+                muc.nodeClick.contentDescription?.toString(),
+                muc.nodeClick.viewIdResourceName
+            )
+                .joinToString(" ")
+                .lowercase()
+
+        return CAC_NHAN_KHONG_PHAI_SIM.any {
+            noiDung.contains(
+                it
+            )
+        }
+    }
+
+    private fun sapXepVaGioiHanMucSim(
+        danhSach: List<MucDieuHuong>
+    ): List<MucDieuHuong> {
+        return danhSach
+            .distinctBy {
+                Triple(
+                    it.nodeClick.windowId,
+                    it.bounds.left,
+                    it.bounds.top
+                )
+            }
+            .sortedWith(
+                compareBy<MucDieuHuong> {
+                    it.bounds.top
+                }.thenBy {
+                    it.bounds.left
+                }
+            )
+            .take(
+                SO_MUC_SIM_TOI_DA
+            )
     }
 
     private fun ketThucCuocGoiNeuDangCoNoiBo(): Boolean {
@@ -1668,22 +2374,52 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     }
 
     private fun timNutGoiDien(
-        node: AccessibilityNodeInfo
+        nodeGoc: AccessibilityNodeInfo
     ): AccessibilityNodeInfo? {
-        val ungVien =
+        val ungVienTheoNguNghia =
             mutableListOf<Pair<Int, AccessibilityNodeInfo>>()
 
-        thuThapNutGoiDien(
-            node = node,
-            ketQua = ungVien
+        thuThapNutGoiDienTheoNguNghia(
+            node = nodeGoc,
+            ketQua = ungVienTheoNguNghia
         )
 
-        return ungVien
+        val theoNguNghia =
+            ungVienTheoNguNghia
+                .maxByOrNull { it.first }
+                ?.second
+
+        if (theoNguNghia != null) {
+            return theoNguNghia
+        }
+
+        // Fallback cuối chỉ dùng trong Dialer khi node không có label/id đủ rõ.
+        // Ưu tiên control bấm được ở vùng dưới, gần tâm màn hình và loại các
+        // phím số/xóa/video để tránh tác động nhầm.
+        val boundsGoc =
+            Rect().also {
+                nodeGoc.getBoundsInScreen(it)
+            }
+
+        if (boundsGoc.isEmpty) {
+            return null
+        }
+
+        val ungVienHinhHoc =
+            mutableListOf<Pair<Int, AccessibilityNodeInfo>>()
+
+        thuThapNutGoiDienTheoHinhHoc(
+            node = nodeGoc,
+            boundsGoc = boundsGoc,
+            ketQua = ungVienHinhHoc
+        )
+
+        return ungVienHinhHoc
             .maxByOrNull { it.first }
             ?.second
     }
 
-    private fun thuThapNutGoiDien(
+    private fun thuThapNutGoiDienTheoNguNghia(
         node: AccessibilityNodeInfo,
         ketQua: MutableList<Pair<Int, AccessibilityNodeInfo>>
     ) {
@@ -1691,13 +2427,33 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
             return
         }
 
-        val diem =
-            diemNutGoiDien(node)
-
-        if (diem > 0) {
-            ketQua.add(
-                Pair(diem, node)
+        val diemNguNghia =
+            diemNutGoiDienTheoNguNghia(
+                node
             )
+
+        if (diemNguNghia > 0) {
+            val nodeCoTheBam =
+                timNodeCoTheBamGanNhat(
+                    node
+                )
+
+            if (nodeCoTheBam != null) {
+                val diem =
+                    diemNguNghia +
+                            if (nodeCoTheBam == node) {
+                                20
+                            } else {
+                                0
+                            }
+
+                ketQua.add(
+                    Pair(
+                        diem,
+                        nodeCoTheBam
+                    )
+                )
+            }
         }
 
         for (index in 0 until node.childCount) {
@@ -1705,27 +2461,16 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 node.getChild(index)
                     ?: continue
 
-            thuThapNutGoiDien(
+            thuThapNutGoiDienTheoNguNghia(
                 node = child,
                 ketQua = ketQua
             )
         }
     }
 
-    private fun diemNutGoiDien(
+    private fun diemNutGoiDienTheoNguNghia(
         node: AccessibilityNodeInfo
     ): Int {
-        val coTheBam =
-            node.isClickable ||
-                    node.actionList.any {
-                        it.id ==
-                                AccessibilityNodeInfo.ACTION_CLICK
-                    }
-
-        if (!coTheBam) {
-            return 0
-        }
-
         val nhan =
             nhanNode(node)
 
@@ -1736,40 +2481,327 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         if (
             nhan.contains("video") ||
-            nhan.contains("cuộc gọi video")
+            nhan.contains("cuộc gọi video") ||
+            nhan.contains("kết thúc") ||
+            nhan.contains("end call") ||
+            nhan.contains("hang up") ||
+            nhan.contains("disconnect") ||
+            id.contains("video") ||
+            id.contains("end_call") ||
+            id.contains("endcall") ||
+            id.contains("hangup") ||
+            id.contains("disconnect")
         ) {
             return 0
         }
 
-        var diem = 0
+        var diem =
+            0
 
         if (
             id.contains("dial_button") ||
             id.contains("dialbutton") ||
             id.contains("call_button") ||
-            id.contains("callbutton")
+            id.contains("callbutton") ||
+            id.contains("btn_call") ||
+            id.contains("call_btn") ||
+            id.contains("voice_call") ||
+            id.contains("phone_call") ||
+            id.contains("start_call") ||
+            id.contains("dialer_call")
         ) {
-            diem += 100
+            diem +=
+                120
+        }
+
+        if (
+            id.contains("call") &&
+            (
+                    id.contains("button") ||
+                            id.contains("btn") ||
+                            id.contains("fab")
+                    )
+        ) {
+            diem +=
+                80
         }
 
         if (
             nhan == "gọi" ||
             nhan == "call" ||
             nhan == "gọi điện" ||
-            nhan == "thực hiện cuộc gọi"
+            nhan == "gọi thoại" ||
+            nhan == "cuộc gọi thoại" ||
+            nhan == "thực hiện cuộc gọi" ||
+            nhan == "quay số" ||
+            nhan == "dial" ||
+            nhan == "voice call"
         ) {
-            diem += 90
+            diem +=
+                100
         }
 
         if (
             nhan.startsWith("gọi bằng") ||
             nhan.startsWith("call with") ||
-            nhan.startsWith("call using")
+            nhan.startsWith("call using") ||
+            nhan.startsWith("gọi tới") ||
+            nhan.startsWith("gọi đến")
         ) {
-            diem += 70
+            diem +=
+                80
         }
 
         return diem
+    }
+
+    private fun timNodeCoTheBamGanNhat(
+        node: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo? {
+        var hienTai: AccessibilityNodeInfo? =
+            node
+
+        repeat(
+            SO_CAP_ANCESTOR_NUT_GOI_TOI_DA
+        ) {
+            val nodeHienTai =
+                hienTai
+                    ?: return null
+
+            val coTheBam =
+                nodeHienTai.isClickable ||
+                        nodeHienTai.actionList.any {
+                            it.id ==
+                                    AccessibilityNodeInfo.ACTION_CLICK
+                        }
+
+            if (coTheBam) {
+                return nodeHienTai
+            }
+
+            hienTai =
+                nodeHienTai.parent
+        }
+
+        return null
+    }
+
+    private fun thuThapNutGoiDienTheoHinhHoc(
+        node: AccessibilityNodeInfo,
+        boundsGoc: Rect,
+        ketQua: MutableList<Pair<Int, AccessibilityNodeInfo>>
+    ) {
+        if (!node.isVisibleToUser) {
+            return
+        }
+
+        val coTheBam =
+            node.isClickable ||
+                    node.actionList.any {
+                        it.id ==
+                                AccessibilityNodeInfo.ACTION_CLICK
+                    }
+
+        if (coTheBam) {
+            val bounds =
+                Rect().also {
+                    node.getBoundsInScreen(it)
+                }
+
+            val diem =
+                diemNutGoiDienTheoHinhHoc(
+                    node = node,
+                    bounds = bounds,
+                    boundsGoc = boundsGoc
+                )
+
+            if (diem > 0) {
+                ketQua.add(
+                    Pair(
+                        diem,
+                        node
+                    )
+                )
+            }
+        }
+
+        for (index in 0 until node.childCount) {
+            val child =
+                node.getChild(index)
+                    ?: continue
+
+            thuThapNutGoiDienTheoHinhHoc(
+                node = child,
+                boundsGoc = boundsGoc,
+                ketQua = ketQua
+            )
+        }
+    }
+
+    private fun diemNutGoiDienTheoHinhHoc(
+        node: AccessibilityNodeInfo,
+        bounds: Rect,
+        boundsGoc: Rect
+    ): Int {
+        if (
+            bounds.isEmpty ||
+            bounds.width() <= 0 ||
+            bounds.height() <= 0 ||
+            boundsGoc.width() <= 0 ||
+            boundsGoc.height() <= 0
+        ) {
+            return 0
+        }
+
+        val nhan =
+            nhanNode(node)
+
+        val nhanRutGon =
+            nhan
+                .replace(" ", "")
+                .trim()
+
+        if (
+            nhanRutGon.matches(Regex("^[0-9*#,+-]+$")) ||
+            nhan.contains("xóa") ||
+            nhan.contains("delete") ||
+            nhan.contains("backspace") ||
+            nhan.contains("video") ||
+            nhan.contains("kết thúc") ||
+            nhan.contains("end call") ||
+            nhan.contains("hang up")
+        ) {
+            return 0
+        }
+
+        val tiLeY =
+            (
+                    bounds.centerY() -
+                            boundsGoc.top
+                    ).toFloat() /
+                    boundsGoc.height()
+                        .toFloat()
+
+        if (
+            tiLeY <
+            TY_LE_Y_TOI_THIEU_NUT_GOI_FALLBACK
+        ) {
+            return 0
+        }
+
+        val lechTamX =
+            abs(
+                bounds.centerX() -
+                        boundsGoc.centerX()
+            ).toFloat() /
+                    boundsGoc.width()
+                        .toFloat()
+
+        if (
+            lechTamX >
+            TY_LE_LECH_TAM_X_TOI_DA_NUT_GOI_FALLBACK
+        ) {
+            return 0
+        }
+
+        var diem =
+            (tiLeY * 100)
+                .toInt()
+
+        val tenLop =
+            node.className
+                ?.toString()
+                .orEmpty()
+
+        if (
+            tenLop.contains("Button", ignoreCase = true) ||
+            tenLop.contains("ImageButton", ignoreCase = true) ||
+            tenLop.contains("FloatingActionButton", ignoreCase = true)
+        ) {
+            diem +=
+                25
+        }
+
+        if (nhan.isBlank()) {
+            diem +=
+                5
+        }
+
+        return diem
+    }
+
+    private fun thucThiTapNodeDialer(
+        node: AccessibilityNodeInfo
+    ): Boolean {
+        val bounds =
+            Rect().also {
+                node.getBoundsInScreen(it)
+            }
+
+        if (
+            bounds.isEmpty ||
+            bounds.width() <= 0 ||
+            bounds.height() <= 0
+        ) {
+            return false
+        }
+
+        val x =
+            bounds.centerX()
+                .toFloat()
+
+        val y =
+            bounds.centerY()
+                .toFloat()
+
+        val path =
+            Path().apply {
+                moveTo(
+                    x,
+                    y
+                )
+            }
+
+        val gesture =
+            GestureDescription
+                .Builder()
+                .addStroke(
+                    GestureDescription
+                        .StrokeDescription(
+                            path,
+                            0L,
+                            THOI_GIAN_TAP_DIALER_MS
+                        )
+                )
+                .build()
+
+        return dispatchGesture(
+            gesture,
+            object :
+                GestureResultCallback() {
+
+                override fun onCompleted(
+                    gestureDescription:
+                    GestureDescription?
+                ) {
+                    Log.d(
+                        TAG_DIALER,
+                        "GOI_TAP_COMPLETED | x=$x | y=$y"
+                    )
+                }
+
+                override fun onCancelled(
+                    gestureDescription:
+                    GestureDescription?
+                ) {
+                    Log.e(
+                        TAG_DIALER,
+                        "GOI_TAP_CANCELLED | x=$x | y=$y"
+                    )
+                }
+            },
+            null
+        )
     }
 
     private fun timNutKetThucCuocGoi(
@@ -2735,6 +3767,46 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
 
         val ketQua =
+            taoDanhSachMucTuUngVien(
+                ungVien
+            )
+
+        // Giữ nguyên đường điều hướng đang ổn trên các máy expose cây
+        // Accessibility đầy đủ. Chỉ dùng fallback khi cây OEM quá nghèo.
+        if (ketQua.size >= 2) {
+            return ketQua
+        }
+
+        val ungVienDuPhong =
+            mutableListOf<AccessibilityNodeInfo>()
+
+        thuThapNodeUngVienDieuHuongDuPhong(
+            node = root,
+            ketQua = ungVienDuPhong
+        )
+
+        val ketQuaDuPhong =
+            taoDanhSachMucTuUngVien(
+                ungVienDuPhong
+            )
+
+        if (ketQuaDuPhong.size > ketQua.size) {
+            Log.d(
+                TAG_FOCUS,
+                "SEMANTIC_FALLBACK | strict=${ketQua.size} | fallback=${ketQuaDuPhong.size}"
+            )
+
+            return ketQuaDuPhong
+        }
+
+        return ketQua
+    }
+
+    private fun taoDanhSachMucTuUngVien(
+        ungVien: List<AccessibilityNodeInfo>
+    ): MutableList<MucDieuHuong> {
+
+        val ketQua =
             mutableListOf<MucDieuHuong>()
 
         for (node in ungVien) {
@@ -3000,7 +4072,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 nguon = "$nguon/FOCUS_NODE"
             )
         ) {
-            anFocusDieuHuongOverlayNoiBo()
+            dongBoFocusHienThiSauNative(
+                muc
+            )
 
             Log.d(
                 TAG_FOCUS,
@@ -3022,7 +4096,9 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 nguon = "$nguon/CLICK_NODE"
             )
         ) {
-            anFocusDieuHuongOverlayNoiBo()
+            dongBoFocusHienThiSauNative(
+                muc
+            )
 
             Log.d(
                 TAG_FOCUS,
@@ -3047,6 +4123,35 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         )
 
         return virtualFocusThanhCong
+    }
+
+    private fun dongBoFocusHienThiSauNative(
+        muc: MucDieuHuong
+    ) {
+
+        val laMeizu =
+            Build.MANUFACTURER
+                .orEmpty()
+                .contains(
+                    "meizu",
+                    ignoreCase = true
+                ) ||
+                    Build.BRAND
+                        .orEmpty()
+                        .contains(
+                            "meizu",
+                            ignoreCase = true
+                        )
+
+        if (laMeizu) {
+            // Flyme có thể nhận ACTION_ACCESSIBILITY_FOCUS nhưng không vẽ
+            // trạng thái chọn rõ ràng, nên dùng overlay của FaceAccess.
+            hienThiFocusDieuHuongOverlayNoiBo(
+                muc.nodeClick
+            )
+        } else {
+            anFocusDieuHuongOverlayNoiBo()
+        }
     }
 
     private fun thuDatFocusVaoNode(
@@ -3546,6 +4651,153 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     it.id ==
                             AccessibilityNodeInfo.ACTION_CLICK
                 }
+    }
+
+    private fun laNodeUngVienDieuHuongDuPhong(
+        node: AccessibilityNodeInfo
+    ): Boolean {
+
+        if (
+            !node.isVisibleToUser ||
+            node.isScrollable ||
+            layNhanNodeDieuHuong(node) == null
+        ) {
+            return false
+        }
+
+        val bounds =
+            Rect().also {
+                node.getBoundsInScreen(
+                    it
+                )
+            }
+
+        if (
+            bounds.isEmpty ||
+            bounds.width() <= 0 ||
+            bounds.height() <= 0
+        ) {
+            return false
+        }
+
+        val metrics =
+            resources.displayMetrics
+
+        val ganToanManHinh =
+            bounds.width() >=
+                    (metrics.widthPixels * 0.9f).toInt() &&
+                    bounds.height() >=
+                    (metrics.heightPixels * 0.5f).toInt()
+
+        return !ganToanManHinh
+    }
+
+    private fun timNodeDieuHuongDuPhong(
+        node: AccessibilityNodeInfo
+    ): AccessibilityNodeInfo {
+
+        var ketQua =
+            node
+
+        var nodeHienTai: AccessibilityNodeInfo? =
+            node.parent
+
+        val chieuCaoHangToiDaPx =
+            (
+                    CHIEU_CAO_HANG_DU_PHONG_TOI_DA_DP *
+                            resources.displayMetrics.density
+                    ).toInt()
+
+        repeat(
+            SO_CAP_PARENT_DU_PHONG_TOI_DA
+        ) {
+            val parent =
+                nodeHienTai
+                    ?: return ketQua
+
+            if (
+                !parent.isVisibleToUser ||
+                parent.isScrollable
+            ) {
+                return ketQua
+            }
+
+            val bounds =
+                Rect().also {
+                    parent.getBoundsInScreen(
+                        it
+                    )
+                }
+
+            if (
+                bounds.isEmpty ||
+                bounds.width() <= 0 ||
+                bounds.height() <= 0 ||
+                bounds.height() >
+                chieuCaoHangToiDaPx
+            ) {
+                return ketQua
+            }
+
+            ketQua =
+                parent
+
+            nodeHienTai =
+                parent.parent
+        }
+
+        return ketQua
+    }
+
+    private fun thuThapNodeUngVienDieuHuongDuPhong(
+        node: AccessibilityNodeInfo,
+        ketQua: MutableList<AccessibilityNodeInfo>
+    ) {
+
+        if (!node.isVisibleToUser) {
+            return
+        }
+
+        if (
+            laNodeUngVienDieuHuongDuPhong(
+                node
+            )
+        ) {
+            val nodeDuPhong =
+                timNodeDieuHuongDuPhong(
+                    node
+                )
+
+            val daTonTai =
+                ketQua.any {
+                    laCungNode(
+                        a = it,
+                        b = nodeDuPhong
+                    )
+                }
+
+            if (!daTonTai) {
+                ketQua.add(
+                    nodeDuPhong
+                )
+            }
+        }
+
+        for (
+        index in 0 until
+                node.childCount
+        ) {
+            val child =
+                node.getChild(
+                    index
+                )
+                    ?: continue
+
+            thuThapNodeUngVienDieuHuongDuPhong(
+                node = child,
+                ketQua = ketQua
+            )
+        }
     }
 
     private fun thuThapNodeUngVienDieuHuong(
@@ -4402,6 +5654,63 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
     }
 
     companion object {
+        private const val SO_MUC_SIM_TOI_DA = 2
+
+        private val MAU_NHAN_SIM_CU_THE =
+            Regex(
+                """(^|[^a-z0-9])sim\s*[-_:]?\s*[12]([^0-9]|$)""",
+                RegexOption.IGNORE_CASE
+            )
+
+        private val MAU_ID_SIM_CU_THE =
+            Regex(
+                """(sim|slot|subscription|phone_account)[_\-]?[12]([^0-9]|$)""",
+                RegexOption.IGNORE_CASE
+            )
+
+        private val MAU_SO_DIEN_THOAI_TRONG_SIM =
+            Regex(
+                """(?:\+?\d[\d\s().-]{5,}\d)"""
+            )
+
+        private val MAU_CHI_SO_SIM_DON =
+            Regex(
+                """(^|\s)[12](\s|$)"""
+            )
+
+        private val CAC_CUM_TU_BO_CHON_SIM =
+            listOf(
+                "chọn sim",
+                "chon sim",
+                "chọn thẻ sim",
+                "chon the sim",
+                "sim để gọi",
+                "sim de goi",
+                "gọi bằng sim",
+                "goi bang sim",
+                "select sim",
+                "choose sim",
+                "sim for this call",
+                "call using",
+                "phone_account",
+                "select_account",
+                "subscription"
+            )
+
+        private val CAC_NHAN_KHONG_PHAI_SIM =
+            listOf(
+                "hủy",
+                "huy",
+                "cancel",
+                "always ask",
+                "ask every time",
+                "luôn hỏi",
+                "luon hoi",
+                "ghi nhớ",
+                "ghi nho",
+                "remember"
+            )
+
         private const val TAG_CON_TRO = "FaceAccessCursorTarget"
 
         private const val THOI_GIAN_TAP_CON_TRO_MS =
@@ -4409,6 +5718,18 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         private const val THOI_GIAN_TAP_DIEU_HUONG_MS =
             70L
+
+        private const val THOI_GIAN_TAP_DIALER_MS =
+            70L
+
+        private const val SO_CAP_ANCESTOR_NUT_GOI_TOI_DA =
+            4
+
+        private const val TY_LE_Y_TOI_THIEU_NUT_GOI_FALLBACK =
+            0.72f
+
+        private const val TY_LE_LECH_TAM_X_TOI_DA_NUT_GOI_FALLBACK =
+            0.22f
 
         private const val KHOANG_TAI_NHAN_DIEN_TARGET_DP =
             48
@@ -4430,6 +5751,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         private const val SO_CAP_PARENT_FOCUS_TOI_DA =
             8
+
+        private const val SO_CAP_PARENT_DU_PHONG_TOI_DA =
+            3
+
+        private const val CHIEU_CAO_HANG_DU_PHONG_TOI_DA_DP =
+            180
 
         private const val TAG =
             "DichVuTruyCap"
@@ -4633,6 +5960,37 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 .rootInActiveWindow
                 ?.packageName
                 ?.toString()
+        }
+
+        fun dangHienThiBoChonSim(): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .dangHienThiBoChonSimNoiBo()
+        }
+
+        fun thucThiDiChuyenLuaChonSim(
+            buoc: Int
+        ): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .diChuyenLuaChonSimNoiBo(
+                    buoc
+                )
+        }
+
+        fun thucThiXacNhanLuaChonSim(): Boolean {
+            val dichVu =
+                phienBanDangHoatDong
+                    ?: return false
+
+            return dichVu
+                .xacNhanLuaChonSimNoiBo()
         }
 
         fun thucThiBatDauCuocGoiTrenDialer(
