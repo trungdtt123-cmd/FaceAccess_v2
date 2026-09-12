@@ -5,14 +5,9 @@ package com.example.faceaccess.v2.cuchi.mat
 import com.example.faceaccess.v2.cuchi.cauhinh.CauHinhNhamHaiMat
 
 class NhanDienNhamHaiMat(
-
-    // Cấu hình nhận diện nhắm mắt
     private val cauHinh: CauHinhNhamHaiMat =
         CauHinhNhamHaiMat(),
-
-    // Callback khi xác nhận cử chỉ
     private val khiXacNhan: () -> Unit
-
 ) {
 
     private enum class TrangThai {
@@ -34,6 +29,11 @@ class NhanDienNhamHaiMat(
     private var batDauNhieuMs: Long? =
         null
 
+    private var batDauMatDuLieuMs: Long? =
+        null
+
+    private var daDongRoTrongLanNham =
+        false
 
     fun capNhat(
         doNhamMatTrai: Float?,
@@ -43,22 +43,38 @@ class NhanDienNhamHaiMat(
             cauHinh.thoiGianNhamXacNhanMs
     ) {
 
-        // Thiếu dữ liệu thì reset
         if (
             doNhamMatTrai == null ||
             doNhamMatPhai == null
         ) {
-            datLai()
+            xuLyMatDuLieu(
+                thoiGianMs
+            )
             return
         }
 
-        val traiDong =
+        ketThucMatDuLieuNeuCan(
+            thoiGianMs
+        )
+
+        val nguongBatDauNham =
+            layNguongBatDauNham()
+
+        val traiDongRo =
             doNhamMatTrai >=
                     cauHinh.nguongDong
 
-        val phaiDong =
+        val phaiDongRo =
             doNhamMatPhai >=
                     cauHinh.nguongDong
+
+        val traiDangNham =
+            doNhamMatTrai >=
+                    nguongBatDauNham
+
+        val phaiDangNham =
+            doNhamMatPhai >=
+                    nguongBatDauNham
 
         val traiMo =
             doNhamMatTrai <=
@@ -68,14 +84,21 @@ class NhanDienNhamHaiMat(
             doNhamMatPhai <=
                     cauHinh.nguongMo
 
-        val caHaiDong =
-            traiDong &&
-                    phaiDong
+        val caHaiDongRo =
+            traiDongRo &&
+                    phaiDongRo
+
+        val caHaiDangNham =
+            traiDangNham &&
+                    phaiDangNham
 
         val caHaiMo =
             traiMo &&
                     phaiMo
 
+        val coMotMatMo =
+            traiMo ||
+                    phaiMo
 
         when (trangThai) {
 
@@ -87,16 +110,18 @@ class NhanDienNhamHaiMat(
 
             TrangThai.SAN_SANG ->
                 xuLySanSang(
-                    caHaiDong = caHaiDong,
+                    caHaiDangNham = caHaiDangNham,
+                    caHaiDongRo = caHaiDongRo,
                     caHaiMo = caHaiMo,
                     thoiGianMs = thoiGianMs
                 )
 
             TrangThai.DANG_NHAM ->
                 xuLyDangNham(
-                    caHaiDong = caHaiDong,
+                    caHaiDangNham = caHaiDangNham,
+                    caHaiDongRo = caHaiDongRo,
                     caHaiMo = caHaiMo,
-                    coMatMo = traiMo || phaiMo,
+                    coMotMatMo = coMotMatMo,
                     thoiGianMs = thoiGianMs,
                     thoiGianXacNhanMs =
                         thoiGianXacNhanMs
@@ -111,9 +136,7 @@ class NhanDienNhamHaiMat(
         }
     }
 
-
     fun datLai() {
-
         trangThai =
             TrangThai.CHO_MO
 
@@ -125,19 +148,21 @@ class NhanDienNhamHaiMat(
 
         batDauNhieuMs =
             null
-    }
 
+        batDauMatDuLieuMs =
+            null
+
+        daDongRoTrongLanNham =
+            false
+    }
 
     private fun xuLyChoMo(
         caHaiMo: Boolean,
         thoiGianMs: Long
     ) {
-
         if (!caHaiMo) {
-
             batDauMoOnDinhMs =
                 null
-
             return
         }
 
@@ -145,19 +170,15 @@ class NhanDienNhamHaiMat(
             batDauMoOnDinhMs
 
         if (batDau == null) {
-
             batDauMoOnDinhMs =
                 thoiGianMs
-
             return
         }
 
         if (
-            thoiGianMs -
-            batDau >=
+            thoiGianMs - batDau >=
             cauHinh.thoiGianMoDeRearmMs
         ) {
-
             trangThai =
                 TrangThai.SAN_SANG
 
@@ -166,15 +187,13 @@ class NhanDienNhamHaiMat(
         }
     }
 
-
     private fun xuLySanSang(
-        caHaiDong: Boolean,
+        caHaiDangNham: Boolean,
+        caHaiDongRo: Boolean,
         caHaiMo: Boolean,
         thoiGianMs: Long
     ) {
-
-        if (caHaiDong) {
-
+        if (caHaiDangNham) {
             trangThai =
                 TrangThai.DANG_NHAM
 
@@ -184,44 +203,47 @@ class NhanDienNhamHaiMat(
             batDauNhieuMs =
                 null
 
+            daDongRoTrongLanNham =
+                caHaiDongRo
+
             return
         }
 
         if (caHaiMo) {
-
             batDauNhieuMs =
                 null
         }
     }
 
-
     private fun xuLyDangNham(
-        caHaiDong: Boolean,
+        caHaiDangNham: Boolean,
+        caHaiDongRo: Boolean,
         caHaiMo: Boolean,
-        coMatMo: Boolean,
+        coMotMatMo: Boolean,
         thoiGianMs: Long,
         thoiGianXacNhanMs: Long
     ) {
-
-        if (caHaiDong) {
-
+        if (caHaiDangNham) {
             batDauNhieuMs =
                 null
 
+            if (caHaiDongRo) {
+                daDongRoTrongLanNham =
+                    true
+            }
+
             val batDau =
                 batDauNhamMs
-                    ?: thoiGianMs
-                        .also {
-                            batDauNhamMs =
-                                it
-                        }
+                    ?: thoiGianMs.also {
+                        batDauNhamMs =
+                            it
+                    }
 
             if (
-                thoiGianMs -
-                batDau >=
+                daDongRoTrongLanNham &&
+                thoiGianMs - batDau >=
                 thoiGianXacNhanMs
             ) {
-
                 trangThai =
                     TrangThai.DA_KICH_HOAT
 
@@ -231,50 +253,37 @@ class NhanDienNhamHaiMat(
             return
         }
 
-
-        if (caHaiMo || coMatMo) {
-
+        if (caHaiMo) {
             chuyenSangChoMo(
-                thoiGianMs =
-                    if (caHaiMo) {
-                        thoiGianMs
-                    } else {
-                        null
-                    }
-            )
-
-            return
-        }
-
-
-        val batDauNhieu =
-            batDauNhieuMs
-
-        if (batDauNhieu == null) {
-
-            batDauNhieuMs =
                 thoiGianMs
-
+            )
             return
         }
 
+        // Một mắt dao động ngắn không được phá lần nhắm có chủ đích.
+        if (coMotMatMo || !caHaiDangNham) {
+            val batDauNhieu =
+                batDauNhieuMs
 
-        if (
-            thoiGianMs -
-            batDauNhieu >
-            cauHinh.thoiGianNhieuChoPhepMs
-        ) {
+            if (batDauNhieu == null) {
+                batDauNhieuMs =
+                    thoiGianMs
+                return
+            }
 
-            chuyenSangChoMo()
+            if (
+                thoiGianMs - batDauNhieu >
+                cauHinh.thoiGianNhieuChoPhepMs
+            ) {
+                chuyenSangChoMo()
+            }
         }
     }
-
 
     private fun xuLyDaKichHoat(
         caHaiMo: Boolean,
         thoiGianMs: Long
     ) {
-
         if (!caHaiMo) {
             return
         }
@@ -284,11 +293,71 @@ class NhanDienNhamHaiMat(
         )
     }
 
+    private fun xuLyMatDuLieu(
+        thoiGianMs: Long
+    ) {
+        val batDau =
+            batDauMatDuLieuMs
+
+        if (batDau == null) {
+            batDauMatDuLieuMs =
+                thoiGianMs
+            return
+        }
+
+        if (
+            thoiGianMs - batDau >
+            THOI_GIAN_MAT_DU_LIEU_CHO_PHEP_MS
+        ) {
+            datLai()
+        }
+    }
+
+    private fun ketThucMatDuLieuNeuCan(
+        thoiGianMs: Long
+    ) {
+        val batDauMatDuLieu =
+            batDauMatDuLieuMs
+                ?: return
+
+        val khoangMatDuLieu =
+            (thoiGianMs - batDauMatDuLieu)
+                .coerceAtLeast(0L)
+
+        // Không tính thời gian mất tracking vào thời gian giữ mắt.
+        if (
+            trangThai == TrangThai.DANG_NHAM &&
+            khoangMatDuLieu <=
+            THOI_GIAN_MAT_DU_LIEU_CHO_PHEP_MS
+        ) {
+            batDauNhamMs =
+                batDauNhamMs
+                    ?.plus(
+                        khoangMatDuLieu
+                    )
+        }
+
+        batDauMatDuLieuMs =
+            null
+    }
+
+    private fun layNguongBatDauNham(): Float {
+        val khoangCach =
+            cauHinh.nguongDong -
+                    cauHinh.nguongMo
+
+        if (khoangCach <= 0f) {
+            return cauHinh.nguongDong
+        }
+
+        return cauHinh.nguongMo +
+                khoangCach *
+                TY_LE_BAT_DAU_NHAM
+    }
 
     private fun chuyenSangChoMo(
         thoiGianMs: Long? = null
     ) {
-
         trangThai =
             TrangThai.CHO_MO
 
@@ -300,16 +369,25 @@ class NhanDienNhamHaiMat(
 
         batDauNhieuMs =
             null
+
+        batDauMatDuLieuMs =
+            null
+
+        daDongRoTrongLanNham =
+            false
     }
 
-
     companion object {
-
-        // Giữ tương thích với code hiện tại
         const val THOI_GIAN_NHAM_XAC_NHAN_MS =
             400L
 
         const val THOI_GIAN_MO_DE_REARM_MS =
+            150L
+
+        private const val TY_LE_BAT_DAU_NHAM =
+            0.45f
+
+        private const val THOI_GIAN_MAT_DU_LIEU_CHO_PHEP_MS =
             150L
     }
 }

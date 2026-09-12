@@ -2130,18 +2130,9 @@ class ManHinhChinhActivity : AppCompatActivity() {
                             }
 
                             val thoiGianXacNhanNhamMat =
-                                when (cheDoHienTai) {
-                                    CheDoDieuKhien.HO_TRO ->
-                                        BoDieuKhienLienHeHoTro
-                                            .THOI_GIAN_NHAM_XAC_NHAN_MS
-
-                                    CheDoDieuKhien.DIEU_HUONG,
-                                    CheDoDieuKhien.MEDIA,
-                                    CheDoDieuKhien.CON_TRO ->
-                                        cauHinhNhanDienCuChi
-                                            .nhamHaiMat
-                                            .thoiGianNhamXacNhanMs
-                                }
+                                cauHinhNhanDienCuChi
+                                    .nhamHaiMat
+                                    .thoiGianNhamXacNhanMs
 
                             nhanDienNhamHaiMat.capNhat(
                                 doNhamMatTrai =
@@ -2179,7 +2170,11 @@ class ManHinhChinhActivity : AppCompatActivity() {
                                 thoiGianMs = thoiGianHienTai
                             )
 
-                            datLaiNhanDienMat()
+                            nhanDienNhamHaiMat.capNhat(
+                                doNhamMatTrai = null,
+                                doNhamMatPhai = null,
+                                thoiGianMs = thoiGianHienTai
+                            )
 
                             capNhatTrangThaiKhuonMat(
                                 coKhuonMat = false
