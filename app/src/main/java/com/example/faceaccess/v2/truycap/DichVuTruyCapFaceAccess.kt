@@ -3532,7 +3532,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                     "indexFaceAccess=$viTriTheoDauVet"
         )
 
+        // Một số ROM Flyme trả về focusSearch() hợp lệ nhưng node nhận được
+        // không đại diện cho các hàng cài đặt đang hiển thị. Trên Meizu, khi
+        // FaceAccess chưa có dấu vết lựa chọn riêng, ưu tiên danh sách semantic
+        // theo vị trí màn hình thay vì giao toàn bộ điều hướng cho focusSearch().
         if (
+            !laThietBiMeizu() &&
             nodeFocusHeThong != null &&
             viTriTheoDauVet < 0
         ) {
@@ -3707,6 +3712,26 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         cacRoot: List<AccessibilityNodeInfo>
     ): AccessibilityNodeInfo? {
 
+        if (laThietBiMeizu()) {
+            // Flyme có thể đưa thêm system window lên trước application window.
+            // Chọn root có nhiều mục điều hướng thực sự nhất để tránh mắc kẹt
+            // ở toolbar/status window chỉ có 1-2 node focusable.
+            return cacRoot
+                .map { root ->
+                    root to
+                            taoDanhSachMucDieuHuong(
+                                root
+                            ).size
+                }
+                .filter { (_, soMuc) ->
+                    soMuc > 0
+                }
+                .maxByOrNull { (_, soMuc) ->
+                    soMuc
+                }
+                ?.first
+        }
+
         for (root in cacRoot) {
             if (
                 taoDanhSachMucDieuHuong(
@@ -3771,9 +3796,14 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 ungVien
             )
 
-        // Giữ nguyên đường điều hướng đang ổn trên các máy expose cây
-        // Accessibility đầy đủ. Chỉ dùng fallback khi cây OEM quá nghèo.
-        if (ketQua.size >= 2) {
+        val canMoRongSemantic =
+            laThietBiMeizu() ||
+                    ketQua.size < 2
+
+        // Samsung và các máy expose cây Accessibility đầy đủ vẫn chạy đúng
+        // đường cũ. Flyme cần bổ sung các hàng chỉ có nhãn nhưng container
+        // không được đánh dấu clickable/focusable.
+        if (!canMoRongSemantic) {
             return ketQua
         }
 
@@ -3790,16 +3820,113 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
                 ungVienDuPhong
             )
 
-        if (ketQuaDuPhong.size > ketQua.size) {
-            Log.d(
-                TAG_FOCUS,
-                "SEMANTIC_FALLBACK | strict=${ketQua.size} | fallback=${ketQuaDuPhong.size}"
+        val ketQuaMoRong =
+            gopVaSapXepMucDieuHuong(
+                chinh = ketQua,
+                duPhong = ketQuaDuPhong
             )
 
-            return ketQuaDuPhong
+        if (ketQuaMoRong.size > ketQua.size) {
+            Log.d(
+                TAG_FOCUS,
+                "SEMANTIC_FALLBACK | strict=${ketQua.size} | " +
+                        "fallback=${ketQuaDuPhong.size} | " +
+                        "merged=${ketQuaMoRong.size}"
+            )
+
+            return ketQuaMoRong
         }
 
         return ketQua
+    }
+
+    private fun gopVaSapXepMucDieuHuong(
+        chinh: List<MucDieuHuong>,
+        duPhong: List<MucDieuHuong>
+    ): List<MucDieuHuong> {
+
+        val ketQua =
+            mutableListOf<MucDieuHuong>()
+
+        for (muc in chinh + duPhong) {
+            val daTonTai =
+                ketQua.any { daCoMucCungVungHienThi(it, muc) }
+
+            if (!daTonTai) {
+                ketQua.add(muc)
+            }
+        }
+
+        return ketQua.sortedWith(
+            compareBy<MucDieuHuong> {
+                it.bounds.top
+            }.thenBy {
+                it.bounds.left
+            }.thenBy {
+                it.bounds.bottom
+            }
+        )
+    }
+
+    private fun daCoMucCungVungHienThi(
+        a: MucDieuHuong,
+        b: MucDieuHuong
+    ): Boolean {
+
+        if (laCungNode(a.nodeClick, b.nodeClick)) {
+            return true
+        }
+
+        val giao =
+            Rect(a.bounds)
+
+        if (!giao.intersect(b.bounds)) {
+            return false
+        }
+
+        val dienTichGiao =
+            giao.width().toLong() *
+                    giao.height().toLong()
+
+        val dienTichA =
+            a.bounds.width().toLong() *
+                    a.bounds.height().toLong()
+
+        val dienTichB =
+            b.bounds.width().toLong() *
+                    b.bounds.height().toLong()
+
+        val dienTichNhoHon =
+            minOf(
+                dienTichA,
+                dienTichB
+            )
+
+        val dienTichLonHon =
+            maxOf(
+                dienTichA,
+                dienTichB
+            )
+
+        if (
+            dienTichNhoHon <= 0L ||
+            dienTichLonHon <= 0L
+        ) {
+            return false
+        }
+
+        val tyLeTrung =
+            dienTichGiao.toDouble() /
+                    dienTichNhoHon.toDouble()
+
+        val tyLeKichThuoc =
+            dienTichNhoHon.toDouble() /
+                    dienTichLonHon.toDouble()
+
+        return tyLeTrung >=
+                TY_LE_TRUNG_VUNG_MUC_DIEU_HUONG &&
+                tyLeKichThuoc >=
+                TY_LE_KICH_THUOC_GIONG_NHAU_MUC_DIEU_HUONG
     }
 
     private fun taoDanhSachMucTuUngVien(
@@ -4125,25 +4252,26 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
         return virtualFocusThanhCong
     }
 
+    private fun laThietBiMeizu(): Boolean {
+        return Build.MANUFACTURER
+            .orEmpty()
+            .contains(
+                "meizu",
+                ignoreCase = true
+            ) ||
+                Build.BRAND
+                    .orEmpty()
+                    .contains(
+                        "meizu",
+                        ignoreCase = true
+                    )
+    }
+
     private fun dongBoFocusHienThiSauNative(
         muc: MucDieuHuong
     ) {
 
-        val laMeizu =
-            Build.MANUFACTURER
-                .orEmpty()
-                .contains(
-                    "meizu",
-                    ignoreCase = true
-                ) ||
-                    Build.BRAND
-                        .orEmpty()
-                        .contains(
-                            "meizu",
-                            ignoreCase = true
-                        )
-
-        if (laMeizu) {
+        if (laThietBiMeizu()) {
             // Flyme có thể nhận ACTION_ACCESSIBILITY_FOCUS nhưng không vẽ
             // trạng thái chọn rõ ràng, nên dùng overlay của FaceAccess.
             hienThiFocusDieuHuongOverlayNoiBo(
@@ -5757,6 +5885,12 @@ class DichVuTruyCapFaceAccess : AccessibilityService() {
 
         private const val CHIEU_CAO_HANG_DU_PHONG_TOI_DA_DP =
             180
+
+        private const val TY_LE_TRUNG_VUNG_MUC_DIEU_HUONG =
+            0.72
+
+        private const val TY_LE_KICH_THUOC_GIONG_NHAU_MUC_DIEU_HUONG =
+            0.55
 
         private const val TAG =
             "DichVuTruyCap"
