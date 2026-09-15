@@ -4,17 +4,25 @@
 
 Changelog
 
-Tất cả thay đổi đáng chú ý của FaceAccess v2 được ghi tại đây.
+Tất cả thay đổi đáng chú ý của FaceAccess được ghi tại đây.
 
 Dự án sử dụng định dạng phiên bản MAJOR.MINOR.PATCH và GitHub Release tương ứng cho mỗi bản phát hành chính thức.
 
 [Unreleased]
 
-Chưa có thay đổi nào sau v1.0.0.
+Changed
+
+Đổi tên hiển thị của ứng dụng từ FaceAccess_v2 thành FaceAccess.
+
+Thay launcher icon mặc định bằng logo FaceAccess sử dụng trong giao diện ứng dụng.
+
+Cập nhật versionCode từ 1 lên 2.
+
+Cập nhật versionName từ 1.0.0 lên 1.0.1.
 
 [1.0.0] - 2026-09-15
 
-Bản phát hành đầu tiên của FaceAccess v2 phục vụ cuộc thi Phát triển phần mềm mã nguồn mở tích hợp AI 2026.
+Bản phát hành đầu tiên của FaceAccess phục vụ cuộc thi Phát triển phần mềm mã nguồn mở tích hợp AI 2026.
 
 Added
 

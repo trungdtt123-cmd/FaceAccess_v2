@@ -2,7 +2,7 @@
 <!-- Copyright (c) 2026 Hoàng Thị Kiều Anh, Phạm Văn Dượng, Đặng Quốc Trung -->
 
 <resources>
-    <string name="app_name">FaceAccess_v2</string>
+    <string name="app_name">FaceAccess</string>
     <string name="mo_ta_dich_vu_truy_cap">
     FaceAccess sử dụng dịch vụ trợ năng để thực hiện các thao tác điều hướng Android bằng cử chỉ khuôn mặt.
 </string>
