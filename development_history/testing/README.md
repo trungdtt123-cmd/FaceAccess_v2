@@ -144,9 +144,15 @@ Lưu ảnh / video / log nếu cần
 
 Samsung
 
-Samsung Galaxy Note20 Ultra.
+Thiết bị: Samsung Galaxy Note20 Ultra.
 
-Android version / One UI / model code: chỉ bổ sung khi có thông tin đã xác minh.
+Model: SM-N985F/DS.
+
+Android: 13.
+
+OEM UI: One UI 5.1.
+
+Serial number, IMEI và các mã định danh thiết bị duy nhất không được lưu trong repository công khai.
 
 MEIZU
 

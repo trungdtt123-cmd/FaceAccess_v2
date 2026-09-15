@@ -132,9 +132,15 @@ Test Devices Recorded
 
 Samsung Galaxy Note20 Ultra
 
+Model: SM-N985F/DS
+
+Android: 13
+
+One UI: 5.1
+
 Được sử dụng trong kiểm thử chức năng và regression.
 
-Android version / One UI / model code chưa được ghi vào hồ sơ nếu chưa xác minh.
+Thông tin thiết bị được xác minh trực tiếp từ màn hình thông tin điện thoại. Serial number và IMEI không được lưu trong hồ sơ công khai.
 
 MEIZU Lucky 08
 

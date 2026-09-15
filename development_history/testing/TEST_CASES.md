@@ -484,10 +484,10 @@ development_history/screenshots/
 
 Thiết bị đã được sử dụng trong chu kỳ kiểm thử gồm:
 
-Samsung Galaxy Note20 Ultra.
+Samsung Galaxy Note20 Ultra, model SM-N985F/DS, Android 13, One UI 5.1.
 
 MEIZU Lucky 08, model M431Q, Android 14, Flyme 11.0.6.4G.
 
-Với Samsung Galaxy Note20 Ultra, các trường Android version / One UI / model code chỉ được bổ sung khi có thông tin thiết bị đã xác minh; không suy đoán các trường này.
+Thông tin Samsung đã được xác minh trực tiếp từ thiết bị: model SM-N985F/DS, Android 13, One UI 5.1. Serial number và IMEI không được lưu trong repository công khai.
 
 test_results_history.csv là hồ sơ kiểm thử lịch sử. test_results_template.csv tiếp tục được giữ làm biểu mẫu cho các phiên kiểm thử mới.

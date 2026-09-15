@@ -34,11 +34,11 @@ Status
 
 Samsung Galaxy Note20 Ultra
 
-Not recorded
+SM-N985F/DS
 
-Not recorded
+Android 13
 
-Samsung One UI
+One UI 5.1
 
 Not recorded
 
@@ -102,7 +102,14 @@ Dual-SIM selection when the system dialer displays a SIM-selection interface.
 
 Regression testing after OEM-specific compatibility fixes.
 
-The exact Android version, One UI version and hardware model code should be added later if they are recorded from the test device.
+Verified device information recorded from the physical test device:
+
+Device: Samsung Galaxy Note20 Ultra
+Model: SM-N985F/DS
+Android version: 13
+One UI version: 5.1
+
+Only compatibility-relevant device metadata is recorded in the public repository. Serial number, IMEI and other unique device identifiers are intentionally excluded.
 
 MEIZU Lucky 08
 

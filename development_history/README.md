@@ -8,31 +8,33 @@ Development & Calibration History
 
 1. Mục Đích
 
-Thư mục development_history/ lưu trữ tài liệu và minh chứng liên quan đến quá trình nghiên cứu, phát triển, thử nghiệm, hiệu chỉnh và cải tiến khả năng tương thích của FaceAccess v2.
+Thư mục development_history/ lưu tài liệu và minh chứng liên quan đến quá trình nghiên cứu, phát triển, thử nghiệm, hiệu chỉnh và cải tiến khả năng tương thích của FaceAccess v2.
 
-FaceAccess v2 sử dụng MediaPipe Face Landmarker làm thành phần AI nền tảng để phát hiện và phân tích đặc trưng khuôn mặt theo thời gian thực. Nhóm không huấn luyện lại MediaPipe Face Landmarker từ đầu.
+FaceAccess v2 sử dụng MediaPipe Face Landmarker làm thành phần AI nền tảng để phân tích khuôn mặt theo thời gian thực. Nhóm không huấn luyện lại MediaPipe Face Landmarker từ đầu.
 
 Phần phát triển của nhóm tập trung vào:
 
-Tích hợp CameraX và MediaPipe vào ứng dụng Android.
+tích hợp CameraX và MediaPipe;
 
-Trích xuất dữ liệu khuôn mặt gồm roll, yaw, pitch, độ nhắm mắt trái, độ nhắm mắt phải và độ mở miệng.
+trích xuất roll, yaw, pitch, độ nhắm mắt và độ mở miệng;
 
-Xây dựng bộ nhận diện cử chỉ theo thời gian và máy trạng thái.
+nhận diện cử chỉ theo thời gian và máy trạng thái;
 
-Điều phối cử chỉ thành thao tác điều khiển thiết bị thông qua Accessibility Service.
+điều phối cử chỉ theo từng mode;
 
-Phát triển cơ chế hiệu chỉnh thích nghi theo từng người dùng.
+điều khiển Android bằng Accessibility Service;
 
-Phát triển 4 chế độ: Điều hướng, Media, Hỗ trợ và Con trỏ.
+hiệu chỉnh thích nghi theo người dùng;
 
-Xử lý vòng đời theo dõi, con trỏ và foreground service khi dừng/bật lại theo dõi.
+4 chế độ Điều hướng, Media, Hỗ trợ và Con trỏ;
 
-Hỗ trợ luồng gọi điện và giao diện chọn SIM trên thiết bị yêu cầu xác nhận SIM.
+vòng đời tracking/service/cursor;
 
-Bổ sung fallback Accessibility/Dialer cho một số giao diện OEM khác nhau.
+Dialer và Dual SIM;
 
-Kiểm thử hồi quy trên thiết bị Android thực tế.
+fallback tương thích theo OEM;
+
+kiểm thử hồi quy trên thiết bị thật.
 
 2. Cấu Trúc Thư Mục
 
@@ -44,23 +46,24 @@ development_history/
 ├── testing/
 │   ├── README.md
 │   ├── TEST_CASES.md
+│   ├── test_results_history.csv
 │   └── test_results_template.csv
 └── screenshots/
 └── README.md
 
 calibration/
 
-Lưu mô tả, biểu mẫu và minh chứng của quy trình hiệu chỉnh thích nghi.
+Lưu mô tả và biểu mẫu của quá trình hiệu chỉnh thích nghi.
 
 testing/
 
-Lưu kế hoạch, kịch bản và kết quả kiểm thử chức năng, kiểm thử hồi quy và kiểm thử tương thích thiết bị.
+Lưu test case, hồ sơ test lịch sử và biểu mẫu cho các phiên test mới.
 
 screenshots/
 
-Lưu ảnh giao diện, ảnh quá trình hiệu chỉnh, ảnh kiểm thử và ảnh kết quả hoạt động thực tế của ứng dụng.
+Lưu ảnh giao diện, quá trình hiệu chỉnh, kiểm thử và minh chứng hoạt động của ứng dụng.
 
-3. Luồng Xử Lý Chính Của Hệ Thống
+3. Luồng Xử Lý Chính
 
 CameraX
 ↓
@@ -68,7 +71,7 @@ MediaPipe Face Landmarker
 ↓
 Trích xuất dữ liệu khuôn mặt
 ↓
-Chuẩn hóa dữ liệu theo tư thế trung tính
+Chuẩn hóa theo tư thế trung tính
 ↓
 Nhận diện cử chỉ
 ↓
@@ -78,163 +81,184 @@ Accessibility Service
 ↓
 Thao tác điều khiển thiết bị
 
-Trong một số tình huống đặc thù của thiết bị/OEM, tầng Accessibility sử dụng thêm cơ chế fallback để duy trì hành vi tương thích mà không thay đổi bộ nhận diện cử chỉ gốc.
+Trong một số giao diện OEM, tầng Accessibility sử dụng fallback để duy trì khả năng tương thích mà không thay đổi bộ nhận diện cử chỉ gốc.
 
-4. Các Cử Chỉ Được Xử Lý
+4. Các Cử Chỉ Chính
 
-Hệ thống hiện hỗ trợ các nhóm cử chỉ chính:
+Hệ thống hiện xử lý:
 
-Quay đầu sang trái.
+quay đầu trái;
 
-Quay đầu sang phải.
+quay đầu phải;
 
-Ngẩng đầu lên.
+ngẩng đầu;
 
-Cúi đầu xuống.
+cúi đầu;
 
-Nghiêng đầu sang trái.
+nghiêng đầu trái;
 
-Nghiêng đầu sang phải.
+nghiêng đầu phải;
 
-Nhắm hai mắt có chủ đích.
+nhắm hai mắt có chủ đích;
 
-Mở miệng.
+mở miệng;
 
-Mở miệng hai lần.
+mở miệng hai lần.
 
-Ý nghĩa của cùng một cử chỉ có thể thay đổi theo chế độ đang hoạt động. Ví dụ YAW được dùng để điều hướng mục, chọn liên hệ hoặc chuyển lựa chọn SIM tùy ngữ cảnh.
+Ý nghĩa của cùng một cử chỉ có thể thay đổi theo chế độ hoặc ngữ cảnh đang hoạt động.
 
 5. Cơ Chế Hiệu Chỉnh Thích Nghi
 
-Cơ chế hiệu chỉnh được triển khai trong:
+Các thành phần chính nằm tại:
 
 app/src/main/java/com/example/faceaccess/v2/ai/hieuchinh/
 
-Các thành phần chính:
+Gồm:
 
-BuocHieuChinh.kt: định nghĩa các bước hiệu chỉnh.
+BuocHieuChinh.kt
 
-BoThuThapMauHieuChinh.kt: thu thập mẫu cho từng bước.
+BoThuThapMauHieuChinh.kt
 
-BoDieuKhienHieuChinh.kt: điều khiển trình tự, kiểm tra tư thế và tiến độ.
+BoDieuKhienHieuChinh.kt
 
-BoHocNguongThichNghi.kt: tính cấu hình cá nhân từ dữ liệu hiệu chỉnh.
+BoHocNguongThichNghi.kt
 
-BoChuanHoaDuLieuKhuonMat.kt: bù sai lệch tư thế trung tính.
+BoChuanHoaDuLieuKhuonMat.kt
 
-Mặc định hệ thống thu 20 mẫu hợp lệ cho mỗi bước hiệu chỉnh.
+Hệ thống thu mẫu hợp lệ theo từng bước, xác định mốc trung tính và các ngưỡng cá nhân hóa phù hợp hơn với người dùng.
 
-Các bước gồm:
-
-Tư thế trung tính.
-
-Quay trái.
-
-Quay phải.
-
-Nhìn lên.
-
-Nhìn xuống.
-
-Nghiêng trái.
-
-Nghiêng phải.
-
-Nhắm hai mắt.
-
-Mở miệng.
-
-Sau khi đủ dữ liệu, hệ thống tính các giá trị đại diện và xác định ngưỡng nhận diện phù hợp hơn với người dùng. Cấu hình cá nhân sau hiệu chỉnh được lưu lại để sử dụng cho các lần chạy tiếp theo.
-
-Hiệu chỉnh không phải quá trình train lại MediaPipe. Đây là cơ chế cá nhân hóa các ngưỡng và mốc trung tính dựa trên dữ liệu người dùng thực tế.
+Hiệu chỉnh không phải quá trình train lại MediaPipe. Đây là bước cá nhân hóa tham số nhận diện dựa trên dữ liệu người dùng.
 
 6. Các Mốc Cải Tiến Quan Trọng
 
-Quá trình phát triển gần đây tập trung vào các nhóm cải tiến sau:
+Các nhóm cải tiến đã được ghi nhận gồm:
 
-Ổn định nhận diện YAW/PITCH và trạng thái rearm.
+ổn định YAW/PITCH và rearm;
 
-Cải thiện nhắm hai mắt có chủ đích quanh ngưỡng thời gian cấu hình.
+cải thiện intentional blink;
 
-Tách xung đột giữa mở miệng giữ và mở miệng hai lần.
+xử lý xung đột mở miệng giữ và mở miệng hai lần;
 
-Siết vòng đời con trỏ để tránh overlay cũ còn tồn tại sau khi dừng/bật lại theo dõi.
+siết vòng đời cursor overlay;
 
-Cải thiện tương thích Accessibility trên Flyme/Meizu mà vẫn giữ đường xử lý chuẩn trên Samsung.
+tăng tương thích Accessibility trên Flyme/MEIZU;
 
-Cải thiện mở Dialer và luồng gọi điện trên giao diện OEM khác nhau.
+giữ regression path cho Samsung;
 
-Hỗ trợ hộp thoại chọn SIM bằng YAW trái/phải và nhắm mắt xác nhận.
+tăng tương thích Dialer;
 
-Duy trì kiểm thử hồi quy để tránh làm hỏng các chức năng đã ổn định.
+hỗ trợ chọn SIM bằng YAW và xác nhận bằng blink;
 
-Chi tiết theo phiên bản được ghi trong:
+tăng tính ổn định sau Stop/Start;
+
+bổ sung tài liệu nguồn mở, CI và hồ sơ kiểm thử.
+
+Chi tiết theo phiên bản được duy trì tại:
 
 CHANGELOG.md
 
-7. Thiết Bị Kiểm Thử Thực Tế
+7. Thiết Bị Kiểm Thử Đã Ghi Nhận
 
-Các thiết bị đã được sử dụng trong quá trình kiểm thử hiện tại gồm:
+Samsung Galaxy Note20 Ultra
 
-Samsung Galaxy Note20 Ultra.
+Model: SM-N985F/DS
 
-Meizu chạy Flyme OS; model chính xác và phiên bản Android chưa được ghi nhận trong chu kỳ kiểm thử hiện tại.
+Android: 13
 
-Chi tiết tương thích được duy trì tại:
+One UI: 5.1
+
+Đã được sử dụng cho kiểm thử chức năng và regression.
+
+Thông tin trên được xác minh trực tiếp từ thiết bị. Serial number, IMEI và các mã định danh thiết bị duy nhất không được đưa vào repository công khai.
+
+MEIZU Lucky 08
+
+Model: M431Q
+
+Android: 14
+
+Flyme: 11.0.6.4G
+
+Đã được sử dụng cho các kiểm thử compatibility, navigation, Dialer và Dual SIM.
+
+Chi tiết được duy trì tại:
 
 docs/COMPATIBILITY.md
 
-Không suy rộng kết quả của một model thành toàn bộ thiết bị của cùng hãng nếu chưa kiểm thử.
+8. Hồ Sơ Kiểm Thử
 
-8. Theo Dõi Lịch Sử Phát Triển
+Danh sách test case:
 
-Toàn bộ thay đổi mã nguồn được quản lý bằng Git và GitHub.
+development_history/testing/TEST_CASES.md
 
-Lịch sử commit được sử dụng để thể hiện:
+Hồ sơ các test đã thực hiện trong quá trình phát triển:
 
-Các chức năng mới.
+development_history/testing/test_results_history.csv
 
-Các lỗi đã sửa.
+Biểu mẫu cho các phiên test mới:
 
-Các thay đổi trong thuật toán nhận diện.
+development_history/testing/test_results_template.csv
 
-Việc bổ sung hệ thống hiệu chỉnh thích nghi.
+Hiện trạng tổng quan:
 
-Các thay đổi tương thích thiết bị/OEM.
+41 test case;
 
-Các thay đổi về tài liệu và giấy phép.
+41 PASS;
 
-Các mốc phát hành của sản phẩm.
+0 FAIL;
+
+0 PENDING.
+
+Một số ngày trong test_results_history.csv được tái dựng từ lịch sử commit vì tài liệu kiểm thử được chuẩn hóa sau quá trình phát triển. Những dòng này được đánh dấu rõ bằng RECONSTRUCTED_FROM_COMMIT_HISTORY.
+
+Không suy đoán latency, số lần lặp hoặc raw evidence khi các thông tin đó không được ghi nhận tại thời điểm test.
+
+9. Theo Dõi Lịch Sử Phát Triển
+
+Thay đổi mã nguồn được quản lý bằng Git và GitHub.
+
+Lịch sử commit giúp truy vết:
+
+chức năng mới;
+
+bug fix;
+
+thay đổi thuật toán;
+
+hiệu chỉnh;
+
+tương thích thiết bị/OEM;
+
+tài liệu và giấy phép;
+
+các mốc phát hành.
 
 Kho mã nguồn:
 
 https://github.com/trungdtt123-cmd/FaceAccess_v2
 
-9. Nguyên Tắc Lưu Minh Chứng
+10. Nguyên Tắc Lưu Minh Chứng
 
-Chỉ lưu các kết quả đã thực hiện thật. Không điền số liệu, thiết bị, kết quả hoặc ảnh minh chứng nếu chưa kiểm thử.
+Với các phiên test mới, nên ghi ngay:
 
-Mỗi minh chứng nên có:
+ngày/giờ;
 
-Ngày thực hiện.
+version hoặc commit;
 
-Phiên bản hoặc commit được kiểm thử.
+thiết bị;
 
-Thiết bị sử dụng.
+Android/OEM UI;
 
-Phiên bản Android/OEM UI nếu biết.
+test case;
 
-Mục tiêu kiểm thử.
+expected result;
 
-Kết quả thực tế.
+actual result;
 
-Ảnh hoặc log liên quan nếu có.
+PASS/FAIL;
 
-Khi bổ sung ảnh, nên dùng tên dễ truy vết, ví dụ:
+latency nếu có đo;
 
-01_main_screen.png
-02_calibration.png
-03_cursor_mode.png
-04_samsung_note20_ultra.png
-05_meizu_navigation.png
-06_meizu_dual_sim.png
+ảnh/video/log nếu cần.
+
+Không đưa dữ liệu riêng tư, số điện thoại, danh bạ hoặc dữ liệu khuôn mặt thô vào repository công khai.
