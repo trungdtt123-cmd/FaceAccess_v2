@@ -4,7 +4,9 @@
 
 Third-Party Notices
 
-FaceAccess v2 sử dụng các dependency bên thứ ba thông qua Gradle. Mã nguồn FaceAccess mang giấy phép MIT, nhưng dependency/model bên thứ ba không bị đổi giấy phép bởi dự án.
+FaceAccess v2 sử dụng các dependency bên thứ ba thông qua Gradle. Mã nguồn do nhóm phát triển mang giấy phép MIT. Các thư viện, model và thành phần bên thứ ba giữ nguyên giấy phép của chủ sở hữu tương ứng.
+
+Dependencies
 
 Thành phần
 
@@ -96,22 +98,41 @@ Apache-2.0
 
 MediaPipe Face Landmarker model
 
-Project hiện chứa model:
+Model đang được bundle trong project:
 
 app/src/main/assets/face_landmarker (1).task
 
-MediaPipe framework và sample code được công bố theo Apache-2.0. Tuy nhiên, trước bản phát hành dự thi chính thức, nhóm cần xác nhận và lưu bằng chứng provenance/license cho chính xác model artifact đang bundle, ví dụ nguồn tải chính thức, version và SHA-256. Không nên chỉ suy luận giấy phép model từ giấy phép của thư viện runtime.
+FaceAccess sử dụng model bundle Face Landmarker chính thức của Google MediaPipe. Theo tài liệu MediaPipe, bundle này gồm các thành phần Face Detector (BlazeFace short range), FaceMesh-V2 và Blendshape.
 
-Khuyến nghị trước release:
+Provenance đã xác minh
 
-Tải lại model từ nguồn MediaPipe chính thức nếu cần.
+Nguồn chính thức: Google MediaPipe model storage.
 
-Ghi URL/version nguồn tải.
+Endpoint được dùng để đối chiếu:
+https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task
 
-Tính SHA-256 của file model đang bundle.
+Ngày xác minh: 2026-09-15.
 
-Lưu thông tin này trong tài liệu release/third-party notices.
+SHA-256 của model đang bundle:
+64184E229B263107BC2B804C6625DB1341FF2BB731874B0BCC2FE6544E0BC9FF
+
+SHA-256 của model tải trực tiếp từ endpoint chính thức ở trên:
+64184E229B263107BC2B804C6625DB1341FF2BB731874B0BCC2FE6544E0BC9FF
+
+Kết luận: hai artifact trùng khớp byte-for-byte tại thời điểm xác minh.
+
+License của các model thành phần
+
+Các model card chính thức của MediaPipe ghi Apache License, Version 2.0 cho:
+
+MediaPipe BlazeFace Short Range.
+
+MediaPipe FaceMesh V2.
+
+MediaPipe Blendshape V2.
+
+FaceAccess không sửa đổi model bundle này.
 
 Lưu ý phát hành
 
-Không copy mã nguồn của dependency vào repository FaceAccess nếu không cần thiết. Sử dụng dependency manager (Gradle) và giữ nguyên thông báo bản quyền/giấy phép của upstream.
+Không copy mã nguồn dependency vào repository FaceAccess nếu không cần thiết. Sử dụng dependency manager (Gradle), giữ nguyên thông báo bản quyền/giấy phép của upstream và giữ lại thông tin provenance + checksum của model trong tài liệu phát hành.

@@ -18,13 +18,15 @@ License
 
 Có toàn văn LICENSE MIT.
 
-Có thông báo mục đích giấy phép trong README/NOTICE.
+Có thông báo mục đích giấy phép trong README / NOTICE.
 
-Kotlin/KTS production/test có SPDX header.
+Kotlin/KTS production/test có SPDX header sau đợt rà soát 2026-09-15.
 
 Có THIRD_PARTY_NOTICES.md.
 
-Xác minh provenance/license của chính xác face_landmarker (1).task đang bundle.
+Đã xác minh provenance của chính xác face_landmarker (1).task đang bundle bằng SHA-256 đối chiếu với endpoint chính thức của Google MediaPipe.
+
+Đã ghi nguồn, ngày xác minh và checksum model trong THIRD_PARTY_NOTICES.md.
 
 Release
 
@@ -36,7 +38,9 @@ Có APK.
 
 Có source archive phù hợp yêu cầu thể lệ, ưu tiên .tar.gz thay vì chỉ có .zip.
 
-Ghi SHA-256 cho APK/source/model nếu có thể.
+Ghi SHA-256 cho APK và source archive trong release notes.
+
+Đã ghi SHA-256 của model Face Landmarker.
 
 Build from source
 
@@ -56,7 +60,7 @@ Dependency version được pin trong Gradle/TOML.
 
 Có bảng dependency/license.
 
-Kiểm tra lại license/provenance của model asset trước release.
+Đã kiểm tra provenance/license của model asset trước release.
 
 Documentation & communication
 
@@ -70,7 +74,9 @@ Bug report template.
 
 Feature request template.
 
-GitHub Issues được bật.
+Xác nhận GitHub Issues đang được bật và truy cập công khai.
+
+Rà soát hiển thị Markdown trên GitHub sau lần cập nhật cuối.
 
 Product / AI evidence
 
@@ -78,8 +84,12 @@ Có tài liệu kiến trúc AI hiện tại.
 
 Có tài liệu calibration/testing.
 
-Điền model thiết bị + Android/ROM + commit SHA vào compatibility matrix.
+Điền đủ model thiết bị + Android/ROM + commit SHA vào compatibility matrix.
+
+Hoàn thành các test case còn PENDING.
+
+Lưu bằng chứng test thực tế (ảnh/video/log/CSV).
 
 Chuẩn bị ảnh/video showcase.
 
-Nếu triển khai custom AI: công bố dataset/features, training code, metrics và model artifact.
+Nếu triển khai custom AI sau này: công bố dataset/features, training code, metrics và model artifact.
