@@ -10,35 +10,11 @@ Dự án sử dụng định dạng phiên bản MAJOR.MINOR.PATCH và GitHub Re
 
 [Unreleased]
 
-Changed
+Chưa có thay đổi nào sau v1.0.0.
 
-Chuẩn hóa versionName từ 1.0 thành 1.0.0 để đồng bộ với release/tag dự kiến v1.0.0.
+[1.0.0] - 2026-09-15
 
-Hoàn thiện hồ sơ kiểm thử lịch sử và tài liệu compatibility.
-
-Bổ sung thông tin thiết bị đã xác minh cho Samsung Galaxy Note20 Ultra và MEIZU Lucky 08.
-
-Hoàn thiện provenance/checksum của model MediaPipe Face Landmarker.
-
-Ổn định GitHub Actions cho Android SDK 37 và xác nhận CI xanh.
-
-Verified
-
-Local clean: PASS.
-
-Local testDebugUnitTest: PASS.
-
-Local assembleDebug: PASS.
-
-Debug APK được tạo thành công tại app/build/outputs/apk/debug/app-debug.apk.
-
-GitHub Actions Android CI: PASS.
-
-Hồ sơ test hiện ghi nhận 41/41 test case PASS.
-
-[1.0.0] - TBD
-
-Bản phát hành đầu tiên dự kiến dùng cho cuộc thi.
+Bản phát hành đầu tiên của FaceAccess v2 phục vụ cuộc thi Phát triển phần mềm mã nguồn mở tích hợp AI 2026.
 
 Added
 
@@ -70,12 +46,34 @@ Issue templates cho bug report và feature request.
 
 Third-party notices và checklist nguồn mở.
 
+Changed
+
+Chuẩn hóa versionName từ 1.0 thành 1.0.0.
+
+Hoàn thiện hồ sơ kiểm thử lịch sử và tài liệu compatibility.
+
+Bổ sung thông tin thiết bị đã xác minh cho Samsung Galaxy Note20 Ultra và MEIZU Lucky 08.
+
+Hoàn thiện provenance/checksum của model MediaPipe Face Landmarker.
+
+Ổn định GitHub Actions cho Android SDK 37.
+
+Verified
+
+Local clean: PASS.
+
+Local testDebugUnitTest: PASS.
+
+Local assembleDebug: PASS.
+
+Debug APK được tạo thành công tại app/build/outputs/apk/debug/app-debug.apk.
+
+GitHub Actions Android CI: PASS.
+
+Hồ sơ kiểm thử hiện ghi nhận 41/41 test case PASS.
+
 Compatibility verified
 
 Samsung Galaxy Note20 Ultra, model SM-N985F/DS, Android 13, One UI 5.1.
 
 MEIZU Lucky 08, model M431Q, Android 14, Flyme 11.0.6.4G.
-
-Release note
-
-Chỉ thay TBD bằng ngày phát hành thực tế sau khi GitHub Release v1.0.0 được tạo thành công. Không ghi ngày phát hành giả trước khi release tồn tại.
