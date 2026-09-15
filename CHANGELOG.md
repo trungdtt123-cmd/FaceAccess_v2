@@ -6,38 +6,76 @@ Changelog
 
 Tất cả thay đổi đáng chú ý của FaceAccess v2 được ghi tại đây.
 
-Dự án sử dụng định dạng phiên bản MAJOR.MINOR.PATCH và nên tạo GitHub Release tương ứng cho mỗi bản phát hành chính thức.
+Dự án sử dụng định dạng phiên bản MAJOR.MINOR.PATCH và GitHub Release tương ứng cho mỗi bản phát hành chính thức.
 
 [Unreleased]
 
+Changed
+
+Chuẩn hóa versionName từ 1.0 thành 1.0.0 để đồng bộ với release/tag dự kiến v1.0.0.
+
+Hoàn thiện hồ sơ kiểm thử lịch sử và tài liệu compatibility.
+
+Bổ sung thông tin thiết bị đã xác minh cho Samsung Galaxy Note20 Ultra và MEIZU Lucky 08.
+
+Hoàn thiện provenance/checksum của model MediaPipe Face Landmarker.
+
+Ổn định GitHub Actions cho Android SDK 37 và xác nhận CI xanh.
+
+Verified
+
+Local clean: PASS.
+
+Local testDebugUnitTest: PASS.
+
+Local assembleDebug: PASS.
+
+Debug APK được tạo thành công tại app/build/outputs/apk/debug/app-debug.apk.
+
+GitHub Actions Android CI: PASS.
+
+Hồ sơ test hiện ghi nhận 41/41 test case PASS.
+
+[1.0.0] - TBD
+
+Bản phát hành đầu tiên dự kiến dùng cho cuộc thi.
+
 Added
 
-Tài liệu kiến trúc, AI, build, testing và compatibility cho bản dự thi.
+4 chế độ điều khiển: Điều hướng, Media, Hỗ trợ và Con trỏ.
 
-GitHub Actions để kiểm tra build/test từ mã nguồn.
+Nhận diện cử chỉ đầu YAW/PITCH/ROLL.
+
+Intentional blink.
+
+Cử chỉ mở miệng và mở miệng hai lần.
+
+Hiệu chỉnh thích nghi theo người dùng.
+
+Điều khiển Android thông qua Accessibility Service.
+
+Foreground tracking và quản lý vòng đời camera/service.
+
+Cursor overlay và cơ chế khóa/mở khóa.
+
+Support mode với luồng Dialer và lựa chọn SIM khi hệ thống yêu cầu.
+
+Tương thích bổ sung cho Flyme/MEIZU trong điều hướng Accessibility.
+
+Tài liệu kiến trúc, AI, build, testing, compatibility và lịch sử phát triển.
+
+GitHub Actions CI.
 
 Issue templates cho bug report và feature request.
 
 Third-party notices và checklist nguồn mở.
 
-Changed
+Compatibility verified
 
-Hoàn thiện README và hướng dẫn build từ mã nguồn.
+Samsung Galaxy Note20 Ultra, model SM-N985F/DS, Android 13, One UI 5.1.
 
-Chuẩn hóa SPDX header cho các tệp Kotlin còn thiếu.
+MEIZU Lucky 08, model M431Q, Android 14, Flyme 11.0.6.4G.
 
-[1.0.0] - TBD
+Release note
 
-Planned for competition release
-
-4 chế độ Điều hướng, Media, Hỗ trợ và Con trỏ.
-
-Nhận diện Yaw/Pitch/Roll, nhắm mắt và cử chỉ miệng.
-
-Hiệu chỉnh thích nghi theo người dùng.
-
-Điều khiển Android qua Accessibility Service.
-
-Tương thích luồng gọi điện và chọn SIM trên thiết bị đã kiểm thử.
-
-Thay TBD bằng ngày phát hành thực tế khi tạo release v1.0.0. Không ghi ngày giả trước khi release tồn tại.
+Chỉ thay TBD bằng ngày phát hành thực tế sau khi GitHub Release v1.0.0 được tạo thành công. Không ghi ngày phát hành giả trước khi release tồn tại.
