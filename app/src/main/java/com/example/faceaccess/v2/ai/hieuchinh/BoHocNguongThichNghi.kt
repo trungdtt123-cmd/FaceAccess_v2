@@ -168,7 +168,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     macDinh.huongDau.nguongYaw,
 
-                toiThieu = 8f,
+                toiThieu = 13f,
                 toiDa = 18f
             )
 
@@ -183,7 +183,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     macDinh.huongDau.nguongPitch,
 
-                toiThieu = 6f,
+                toiThieu = 10f,
                 toiDa = 14f
             )
 
@@ -197,7 +197,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     macDinh.huongDau.nguongYaw,
 
-                toiThieu = 8f,
+                toiThieu = 13f,
                 toiDa = 18f
             )
 
@@ -209,7 +209,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     macDinh.huongDau.nguongYaw,
 
-                toiThieu = 8f,
+                toiThieu = 13f,
                 toiDa = 18f
             )
 
@@ -221,7 +221,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     macDinh.huongDau.nguongPitch,
 
-                toiThieu = 6f,
+                toiThieu = 10f,
                 toiDa = 14f
             )
 
@@ -233,7 +233,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     macDinh.huongDau.nguongPitch,
 
-                toiThieu = 6f,
+                toiThieu = 10f,
                 toiDa = 14f
             )
 
@@ -252,7 +252,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     -macDinh.nghiengDau.nguongTrai,
 
-                toiThieu = 9f,
+                toiThieu = 13f,
                 toiDa = 18f
             ) * -1f
 
@@ -271,7 +271,7 @@ class BoHocNguongThichNghi {
                 macDinh =
                     macDinh.nghiengDau.nguongPhai,
 
-                toiThieu = 9f,
+                toiThieu = 13f,
                 toiDa = 18f
             )
 
@@ -322,24 +322,7 @@ class BoHocNguongThichNghi {
             )
 
 
-        val nguongMiengHaiLan =
-            hocNguongMiengHaiLan(
-                mauDong =
-                    mauTrungTinh.mapNotNull {
-                        it.doMoMieng
-                    },
 
-                mauMo =
-                    mauMoMieng.mapNotNull {
-                        it.doMoMieng
-                    },
-
-                nguongMoMacDinh =
-                    macDinh.moMiengHaiLan.nguongMo,
-
-                nguongDongMacDinh =
-                    macDinh.moMiengHaiLan.nguongDong
-            )
 
 
         // Giữ nguyên các tham số thời gian
@@ -415,15 +398,12 @@ class BoHocNguongThichNghi {
                 ),
 
 
+            // Giữ ngưỡng mở-miệng-hai-lần mặc định đã ổn định.
+            // Double-mouth khóa/mở khóa con trỏ và đồng thời giữ cờ chặn hướng đầu
+            // cho đến khi miệng được xác nhận đã đóng. Học nguongDong quá thấp
+            // có thể khiến cờ này không được nhả, làm YAW/PITCH bị bỏ qua ở chế độ con trỏ.
             moMiengHaiLan =
-                macDinh.moMiengHaiLan.copy(
-
-                    nguongMo =
-                        nguongMiengHaiLan.first,
-
-                    nguongDong =
-                        nguongMiengHaiLan.second
-                )
+                macDinh.moMiengHaiLan
         )
     }
 
@@ -757,7 +737,7 @@ class BoHocNguongThichNghi {
 
     companion object {
 
-        // Dùng khoảng 72% biên độ cử chỉ đã học
+        // Dùng khoảng 72% biên độ đã học, nhưng luôn giữ sàn an toàn phía trên
         private const val TY_LE_NGUONG_CHUYEN_DONG =
             0.72f
 

@@ -639,15 +639,17 @@ class BoDieuKhienHieuChinh(
         private const val THOI_GIAN_SAI_TU_THE_CHO_PHEP_MS =
             500L
 
-        // Ngưỡng nhẹ để xác nhận người dùng đã bắt đầu cử chỉ
+        // Chỉ thu mẫu khi cử chỉ đủ rõ và ổn định.
+        // Mốc thu mẫu phải cao hơn ngưỡng runtime an toàn để profile sau hiệu chỉnh
+        // luôn dễ kích hoạt hơn chính tư thế người dùng vừa dùng để hiệu chỉnh.
         private const val NGUONG_XAC_NHAN_YAW =
-            6f
+            15f
 
         private const val NGUONG_XAC_NHAN_PITCH =
-            5f
+            12f
 
         private const val NGUONG_XAC_NHAN_ROLL =
-            6f
+            15f
 
         // Đồng bộ với quy tắc trục chi phối của detector khi chạy thật
         private const val TY_LE_CHI_PHOI_HUONG_DAU =
